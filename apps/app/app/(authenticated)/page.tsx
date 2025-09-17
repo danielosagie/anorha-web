@@ -1,6 +1,6 @@
 import { env } from '@/env';
 import { auth } from '@repo/auth/server';
-import { database } from '@repo/database';
+// import { database } from '@repo/database';
 import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import { notFound } from 'next/navigation';
@@ -8,7 +8,7 @@ import { AvatarStack } from './components/avatar-stack';
 import { Cursors } from './components/cursors';
 import { Header } from './components/header';
 
-const title = 'Acme Inc';
+const title = 'Anorha';
 const description = 'My application.';
 
 const CollaborationProvider = dynamic(() =>
@@ -23,12 +23,14 @@ export const metadata: Metadata = {
 };
 
 const App = async () => {
-  const pages = await database.page.findMany();
-  const { orgId } = await auth();
+  // const pages = await database.page.findMany();
+  const pages: { id: number; name: string }[] = []; // Temporary fallback while database is disabled
+  // const { orgId } = await auth();
+  const orgId = 'temp-org'; // Temporary fallback while auth is disabled
 
-  if (!orgId) {
-    notFound();
-  }
+  // if (!orgId) {
+  //   notFound();
+  // }
 
   return (
     <>

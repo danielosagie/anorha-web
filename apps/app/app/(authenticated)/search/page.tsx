@@ -1,5 +1,5 @@
 import { auth } from '@repo/auth/server';
-import { database } from '@repo/database';
+// import { database } from '@repo/database';
 import { notFound, redirect } from 'next/navigation';
 import { Header } from '../components/header';
 
@@ -22,18 +22,20 @@ export const generateMetadata = async ({
 
 const SearchPage = async ({ searchParams }: SearchPageProperties) => {
   const { q } = await searchParams;
-  const pages = await database.page.findMany({
-    where: {
-      name: {
-        contains: q,
-      },
-    },
-  });
-  const { orgId } = await auth();
+  // const pages = await database.page.findMany({
+  //   where: {
+  //     name: {
+  //       contains: q,
+  //     },
+  //   },
+  // });
+  const pages: { id: number; name: string }[] = []; // Temporary fallback while database is disabled
+  // const { orgId } = await auth();
+  const orgId = 'temp-org'; // Temporary fallback while auth is disabled
 
-  if (!orgId) {
-    notFound();
-  }
+  // if (!orgId) {
+  //   notFound();
+  // }
 
   if (!q) {
     redirect('/');
