@@ -1,36 +1,29 @@
 import { env } from '@/env';
-import { blog } from '@repo/cms';
-import { Feed } from '@repo/cms/components/feed';
 import { Button } from '@repo/design-system/components/ui/button';
 import type { Dictionary } from '@repo/internationalization';
 import { MoveRight, PhoneCall } from 'lucide-react';
+import { FlickeringGrid } from '@repo/design-system/components/ui/flickering-grid';
 import Link from 'next/link';
+import { GradientBars } from '@repo/design-system/components/ui/gradient-bars';
+import { TextReveal } from '@repo/design-system/components/ui/text-reveal';
 
 type HeroProps = {
   dictionary: Dictionary;
 };
 
 export const Hero = async ({ dictionary }: HeroProps) => (
-  <div className="w-full">
-    <div className="container mx-auto">
-      <div className="flex flex-col items-center justify-center gap-8 py-20 lg:py-40">
-        <div>
-          <Feed queries={[blog.latestPostQuery]}>
-            {/* biome-ignore lint/suspicious/useAwait: "Server Actions must be async" */}
-            {async ([data]) => {
-              'use server';
-
-              return (
-                <Button variant="secondary" size="sm" className="gap-4" asChild>
-                  <Link href={`/blog/${data.blog.posts.item?._slug}`}>
-                    {dictionary.web.home.hero.announcement}{' '}
-                    <MoveRight className="h-4 w-4" />
-                  </Link>
-                </Button>
-              );
-            }}
-          </Feed>
-        </div>
+  <div className="w-full relative">
+    <div className="w-full overflow-hidden rounded-lg bg-background">
+    <div className="flex h-full w-full flex-col items-center justify-center">
+      <GradientBars />
+      <TextReveal className="text-foreground text-center text-4xl">
+        Awesome backgrounds :)
+      </TextReveal>
+    </div>
+        
+      <div className="container mx-auto">
+      <div className="relative flex flex-col items-center justify-center gap-8 py-20 lg:py-40">
+        {/* CMS disabled: announcement button hidden for now */}
         <div className="flex flex-col gap-4">
           <h1 className="max-w-2xl text-center font-regular text-5xl tracking-tighter md:text-7xl">
             {dictionary.web.home.meta.title}
@@ -53,12 +46,10 @@ export const Hero = async ({ dictionary }: HeroProps) => (
             </Link>
           </Button>
         </div>
-        <>
-        <image className="border-radius" href=''>
-
-        </image>
-        </>
+        {/* Background visual handled by AnimatedGridPattern above */}
       </div>
     </div>
+    </div>
+  
   </div>
 );

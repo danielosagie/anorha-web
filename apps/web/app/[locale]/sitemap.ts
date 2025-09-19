@@ -1,6 +1,6 @@
 import fs from 'node:fs';
 import { env } from '@/env';
-import { blog, legal } from '@repo/cms';
+// CMS disabled temporarily
 import type { MetadataRoute } from 'next';
 
 const appFolders = fs.readdirSync('app', { withFileTypes: true });
@@ -9,8 +9,8 @@ const pages = appFolders
   .filter((folder) => !folder.name.startsWith('_'))
   .filter((folder) => !folder.name.startsWith('('))
   .map((folder) => folder.name);
-const blogs = (await blog.getPosts()).map((post) => post._slug);
-const legals = (await legal.getPosts()).map((post) => post._slug);
+const blogs: string[] = [];
+const legals: string[] = [];
 const protocol = env.VERCEL_PROJECT_PRODUCTION_URL?.startsWith('https')
   ? 'https'
   : 'http';

@@ -24,6 +24,7 @@
     "@repo/seo": "workspace:*",
     "@sentry/nextjs": "^9.22.0",
     "@t3-oss/env-nextjs": "^0.13.4",
+    "@tailwindcss/cli": "^4.1.13",
     "basehub": "^8.2.7",
     "date-fns": "^4.1.0",
     "fumadocs-core": "^15.4.0",

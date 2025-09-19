@@ -1,14 +1,10 @@
 import { env } from '@/env';
-import { legal } from '@repo/cms';
-import { Feed } from '@repo/cms/components/feed';
+// CMS disabled temporarily
 import { Status } from '@repo/observability/status';
 import Link from 'next/link';
 
 export const Footer = () => (
-  <Feed queries={[legal.postsQuery]}>
-    {async ([data]) => {
-      'use server';
-
+  (() => {
       const navigationItems = [
         {
           title: 'Home',
@@ -28,10 +24,10 @@ export const Footer = () => (
         {
           title: 'Legal',
           description: 'We stay on top of the latest legal requirements.',
-          items: data.legalPages.items.map((post) => ({
-            title: post._title,
-            href: `/legal/${post._slug}`,
-          })),
+          items: [
+            { title: 'Privacy', href: '/legal/privacy' },
+            { title: 'Terms', href: '/legal/terms' },
+          ],
         },
       ];
 
@@ -113,6 +109,5 @@ export const Footer = () => (
           </div>
         </section>
       );
-    }}
-  </Feed>
+  })()
 );

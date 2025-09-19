@@ -1,4 +1,5 @@
 @import "@repo/design-system/styles/globals.css";
+@import "tailwindcss";
 
 .shiki {
   background-color: var(--shiki-light-bg);

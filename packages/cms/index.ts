@@ -1,5 +1,9 @@
-import { basehub as basehubClient, fragmentOn } from 'basehub';
+/*import { basehub as basehubClient, fragmentOn } from 'basehub'; */
+import 'server-only';
+import basehubPkg from 'basehub';
 import { keys } from './keys';
+
+const { basehub: basehubClient, fragmentOn } = basehubPkg as any;
 
 const basehub = basehubClient({
   token: keys().BASEHUB_TOKEN,
