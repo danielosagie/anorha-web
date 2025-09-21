@@ -67,7 +67,6 @@ export const Header = ({ dictionary }: HeaderProps) => {
             alt="Logo"
             width={44}
             height={44}
-            className="dark:invert"
           />
           <p className="whitespace-nowrap text-5xl text-white font-semibold">anorha</p>
         </div>
@@ -79,7 +78,6 @@ export const Header = ({ dictionary }: HeaderProps) => {
             alt="Logo"
             width={32}
             height={32}
-            className="dark:invert"
           />
           <p className="whitespace-nowrap text-2xl text-white font-semibold">anorha</p>
           
