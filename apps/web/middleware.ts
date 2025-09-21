@@ -2,7 +2,7 @@ import { internationalizationMiddleware } from '@repo/internationalization/middl
 import type { NextMiddleware, NextRequest } from 'next/server';
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.json).*)'],
 };
 
 const middleware = ((request: NextRequest) => {

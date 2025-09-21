@@ -19,8 +19,9 @@
     },
     "home": {
       "meta": {
-        "title": "A platform to help you sell anything, everywhere, fast",
-        "description": "Join our waitlist to be the first to experience the future of selling."
+        "icon": "anorha/apps/web/app/[locale]/favicon.ico",
+        "title": "Anorha - The wind behind your sales",
+        "description": "Smart mobile inventory management for small businesses that makes your inventory work for you."
       },
       "hero": {
         "announcement": "Read our latest article"
