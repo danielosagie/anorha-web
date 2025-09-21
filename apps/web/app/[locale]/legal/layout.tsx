@@ -1,4 +1,4 @@
-import { Toolbar } from '@repo/cms/components/toolbar';
+// CMS toolbar disabled
 import type { ReactNode } from 'react';
 
 type LegalLayoutProps = {
@@ -6,10 +6,7 @@ type LegalLayoutProps = {
 };
 
 const LegalLayout = ({ children }: LegalLayoutProps) => (
-  <>
-    {children}
-    <Toolbar />
-  </>
+  <>{children}</>
 );
 
 export default LegalLayout;

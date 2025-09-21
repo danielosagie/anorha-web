@@ -8,6 +8,7 @@ import { getDictionary } from '@repo/internationalization';
 import type { ReactNode } from 'react';
 import { Footer } from './components/footer';
 import { Header } from './components/header';
+import type { Metadata } from 'next';
 
 type RootLayoutProperties = {
   readonly children: ReactNode;
@@ -16,9 +17,19 @@ type RootLayoutProperties = {
   }>;
 };
 
+export const metadata: Metadata = {
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/apple-icon.png',
+  },
+  manifest: '/manifest.json', // For PWA
+};
+
 const RootLayout = async ({ children, params }: RootLayoutProperties) => {
   const { locale } = await params;
   const dictionary = await getDictionary(locale);
+
+  
 
   return (
     <html

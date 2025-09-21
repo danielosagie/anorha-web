@@ -18,7 +18,7 @@ import { useState } from 'react';
 import type { Dictionary } from '@repo/internationalization';
 import Image from 'next/image';
 import { LanguageSwitcher } from './language-switcher';
-import Logo from './logo.svg';
+import Logo from './../../logo.png';
 
 type HeaderProps = {
   dictionary: Dictionary;
@@ -58,7 +58,97 @@ export const Header = ({ dictionary }: HeaderProps) => {
 
   const [isOpen, setOpen] = useState(false);
   return (
-    <header className="sticky top-0 left-0 z-40 w-full border-b bg-background">
+    <header className="fixed top-0 left-0 z-50 w-full border-b border-transparent bg-background/0 backdrop-blur-md px-9">
+      <div className="container relative mx-auto flex min-h-20 justify-between flex-row items-center gap-4 lg:grid lg:grid-cols-2">
+        <div className="hidden padding-left: 5% flex-row items-center justify-start gap-4 lg:flex md:min-l:flex">
+          <Image
+            src={Logo}
+            alt="Logo"
+            width={44}
+            height={44}
+            className="dark:invert"
+          />
+          <p className="whitespace-nowrap text-5xl text-white font-semibold">anorha</p>
+        </div>
+
+        {/* Mobile Home Button */}
+        <div className="flex items-center gap-2 lg:justify-center lg:hidden md:min-s:flex md:max-m:flex">
+          <Image
+            src={Logo}
+            alt="Logo"
+            width={32}
+            height={32}
+            className="dark:invert"
+          />
+          <p className="whitespace-nowrap text-2xl text-white font-semibold">anorha</p>
+          
+        </div>
+
+        {/* Sign In */}
+        <div className="flex w-full justify-end gap-4">
+          
+          <Button variant="whiteGhost" asChild className="hidden md:inline rounded-full">
+            <Link href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}>
+              {dictionary.web.header.signIn}
+            </Link>
+          </Button>
+          
+        </div>
+
+        <div className="flex  w-12 shrink items-end justify-end md:hidden">
+          <Button variant="ghost" onClick={() => setOpen(!isOpen)}>
+            {isOpen ? <X className="h-5 w-5" style={{color: 'white'}} /> : <Menu className="h-5 w-5" style={{color: 'white'}} />}
+          </Button>
+          {isOpen && (
+            <div className="container absolute top-20 right-0 flex w-full flex-col gap-8 border rounded-lg bg-background py-4 shadow-lg px-7">
+              {navigationItems.map((item) => (
+                <div key={item.title}>
+                  <div className="flex flex-col gap-2">
+                    {item.href ? (
+                      <Link
+                        href={item.href}
+                        className="flex items-center justify-between"
+                        target={
+                          item.href.startsWith('http') ? '_blank' : undefined
+                        }
+                        rel={
+                          item.href.startsWith('http')
+                            ? 'noopener noreferrer'
+                            : undefined
+                        }
+                      >
+                        <span className="text-lg">{item.title}</span>
+                        <MoveRight className="h-4 w-4 stroke-1 text-muted-foreground" />
+                      </Link>
+                    ) : (
+                      <p className="text-lg">{item.title}</p>
+                    )}
+                    {item.items?.map((subItem) => (
+                      <Link
+                        key={subItem.title}
+                        href={subItem.href}
+                        className="flex items-center justify-between"
+                      >
+                        <span className="text-muted-foreground">
+                          {subItem.title}
+                        </span>
+                        <MoveRight className="h-4 w-4 stroke-1" />
+                      </Link>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </header>
+  );
+};
+
+
+{/*
+  <header className="fixed top-0 left-0 z-50 w-full border-b border-transparent bg-background/30 backdrop-blur-md">
       <div className="container relative mx-auto flex min-h-20 flex-row items-center gap-4 lg:grid lg:grid-cols-3">
         <div className="hidden flex-row items-center justify-start gap-4 lg:flex">
           <NavigationMenu className="flex items-start justify-start">
@@ -122,7 +212,7 @@ export const Header = ({ dictionary }: HeaderProps) => {
             height={24}
             className="dark:invert"
           />
-          <p className="whitespace-nowrap font-semibold">next-forge</p>
+          <p className="whitespace-nowrap font-semibold">Anorha</p>
         </div>
         <div className="flex w-full justify-end gap-4">
           <Button variant="ghost" className="hidden md:inline" asChild>
@@ -135,7 +225,7 @@ export const Header = ({ dictionary }: HeaderProps) => {
           <div className="hidden md:inline">
             <ModeToggle />
           </div>
-          <Button variant="outline" asChild className="hidden md:inline">
+          <Button variant="outline" asChild className="hidden md:inline rounded-full">
             <Link href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}>
               {dictionary.web.header.signIn}
             </Link>
@@ -194,5 +284,4 @@ export const Header = ({ dictionary }: HeaderProps) => {
         </div>
       </div>
     </header>
-  );
-};
+  */}
