@@ -4,6 +4,7 @@ import { useState, useTransition } from 'react';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Input } from '@repo/design-system/components/ui/input';
 import { cn } from '@repo/design-system/lib/utils';
+import { MoveRight } from 'lucide-react';
 
 type WaitlistProps = {
   className?: string;
@@ -75,7 +76,17 @@ export function Waitlist({ className }: WaitlistProps) {
           <p className="text-sm font-medium">You're on the list!</p>
           <p className="text-muted-foreground text-xs">Optionally, tell us more so we can prioritize features for you.</p>
           <div className="flex flex-col gap-2">
-            <Button variant="outline" size="sm">Take 30‑sec survey</Button>
+            
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => {
+                window.location.href = 'https://anorha.fillout.com/t/o8WtoyuYDRus';
+              }}
+            >
+              Take 5-min survey 
+              <MoveRight />
+            </Button>
           </div>
         </div>
       )}

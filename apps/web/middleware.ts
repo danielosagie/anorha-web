@@ -2,7 +2,10 @@ import { internationalizationMiddleware } from '@repo/internationalization/middl
 import type { NextMiddleware, NextRequest } from 'next/server';
 
 export const config = {
-  matcher: ['/((?!_next/static|_next/image|favicon.ico|manifest.json).*)'],
+  // exclude api routes and static assets from i18n middleware
+  matcher: [
+    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|\.well-known|ingest).*)',
+  ],
 };
 
 const middleware = ((request: NextRequest) => {

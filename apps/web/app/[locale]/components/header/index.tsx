@@ -19,6 +19,7 @@ import type { Dictionary } from '@repo/internationalization';
 import Image from 'next/image';
 import { LanguageSwitcher } from './language-switcher';
 import Logo from './../../logo.png';
+import { Popover, PopoverContent, PopoverTrigger } from '@repo/design-system/components/ui/popover';
 
 type HeaderProps = {
   dictionary: Dictionary;
@@ -87,12 +88,31 @@ export const Header = ({ dictionary }: HeaderProps) => {
         {/* Sign In */}
         <div className="flex w-full justify-end gap-4">
           
-          <Button variant="whiteGhost" asChild className="hidden md:inline rounded-full">
+          {/* 
+          <Button variant="whiteGhost" asChild className="hidden md:inline rounded-full" }>
             <Link href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}>
               {dictionary.web.header.signIn}
             </Link>
+          </Button> 
+          <Button asChild>
+            <Link href={`${env.NEXT_PUBLIC_APP_URL}/sign-up`}>
+              {dictionary.web.header.signUp}
+            </Link>
           </Button>
+           */}
           
+          <Button variant="whiteGhost" asChild className="hidden md:inline rounded-full">
+            <Popover>
+              <PopoverTrigger>
+                <Button variant="whiteGhost" asChild className="hidden md:inline rounded-full">
+                  Sign In
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent>
+                Currently on waitlist
+              </PopoverContent>
+            </Popover>
+          </Button>
         </div>
 
         <div className="flex  w-12 shrink items-end justify-end md:hidden">
