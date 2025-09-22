@@ -54,23 +54,23 @@ export const Hero = async ({ dictionary }: HeroProps) => (
             <div className="hidden lg:block w-full">
               <Accordion type="single" defaultValue="item-1" className="w-full space-y-2">
                 <AccordionItem value="item-1" className="rounded-lg bg-background/60 px-3" style={{backgroundColor: '#FFFBF1B2', borderColor: "#C1C8BA", borderWidth: "2px"}}>
-                  <AccordionTrigger className="py-3 text-md ">Snap & Match</AccordionTrigger>
-                  <AccordionContent className="pb-3 text-md">
+                  <AccordionTrigger className="py-3 text-md text-black">Snap & Match</AccordionTrigger>
+                  <AccordionContent className="pb-3 text-md text-black">
                     <div className="h-32 overflow-auto text-gray-700 text-sm">
                     List products in seconds, not hours. Just snap a photo and let our AI do the heavy lifting. It automatically recognizes, matches, and tags your product with accurate details. No more copy-pasting descriptions or filling out endless forms.
                     </div>
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-2" className="rounded-lg bg-background/60 px-3" style={{backgroundColor: '#FFFBF1B2', borderColor: "#C1C8BA", borderWidth: "2px"}}>
-                  <AccordionTrigger className="py-3 text-md ">Always in Sync</AccordionTrigger>
-                  <AccordionContent className="pb-3 text-md">
+                  <AccordionTrigger className="py-3 text-md text-black">Always in Sync</AccordionTrigger>
+                  <AccordionContent className="pb-3 text-md text-black">
                     <div className="h-32 overflow-auto text-gray-700 text-sm">
                     Manage all your channels from one simple dashboard. Update price, stock, or details once and it reflects instantly across all your platforms. Whether you’re selling online, in-store, or both, Anorha keeps everything in sync so you never miss a sale.
                     </div>
                   </AccordionContent>
                 </AccordionItem>
                 <AccordionItem value="item-3" className="rounded-lg bg-background/60 px-3" style={{backgroundColor: '#FFFBF1B2', borderColor: "#C1C8BA", borderWidth: "2px"}}>
-                  <AccordionTrigger className="py-3 text-md items-center"> 
+                  <AccordionTrigger className="py-3 text-md text-black items-center"> 
                     <div className="flex items-center gap-2">
                       Works Where You Sell 
                       <div className="flex items-center z-10 flex -space-x-1.5 rtl:space-x-reverse">
@@ -94,7 +94,7 @@ export const Hero = async ({ dictionary }: HeroProps) => (
                     </div>
                     
                     </AccordionTrigger>
-                  <AccordionContent className="pb-3 text-md">
+                  <AccordionContent className="pb-3 text-md text-black">
                     <div className="h-32 overflow-auto text-gray-700 text-sm">
                     Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, Facebook Marketplace, eBay, or more, we’ve got you covered. Add once, sell everywhere — without switching systems or learning a new way to work. We’re constantly adding new integrations so your business never has to slow down just to keep up with the tools.
                     </div>

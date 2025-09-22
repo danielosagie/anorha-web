@@ -51,7 +51,7 @@ export function Waitlist({ className }: WaitlistProps) {
       {!submitted ? (
         <div className="flex flex-col gap-3">
           <div>
-            <p className="text-sm font-medium">Join our waitlist</p>
+            <p className="text-sm text-black font-medium">Join our waitlist</p>
             <p className="text-gray-700 text-xs">You'll be the first to get access/to have features built around your needs.</p>
           </div>
           <form onSubmit={onSubmit} className="flex items-center gap-2">
