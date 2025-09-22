@@ -63,7 +63,7 @@ export function Waitlist({ className }: WaitlistProps) {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 className="landing-input:"
-                style={{backgroundColor: '#647653', color: 'white',}}/>
+                style={{backgroundColor: '#647653', color: 'white', borderColor: '#FFFFFF'}}/>
             </div>
             <Button type="submit" size="sm" disabled={isPending} style={{backgroundColor: '#647653', color: 'white'}}>
               {isPending ? 'Submitting…' : 'Join'}
