@@ -55,7 +55,7 @@ export function Waitlist({ className }: WaitlistProps) {
             <p className="text-gray-700 text-xs">You'll be the first to get access/to have features built around your needs.</p>
           </div>
           <form onSubmit={onSubmit} className="flex items-center gap-2">
-            <div className="flex-1">
+            <div className="flex-1 ">
               <Input
                 type="email"
                 placeholder="Johndoe@gmail.com"
@@ -65,7 +65,7 @@ export function Waitlist({ className }: WaitlistProps) {
                 className="landing-input:"
                 style={{backgroundColor: '#647653', color: 'white',}}/>
             </div>
-            <Button type="submit" size="sm" disabled={isPending} style={{backgroundColor: '#647653'}}>
+            <Button type="submit" size="sm" disabled={isPending} style={{backgroundColor: '#647653', color: 'white'}}>
               {isPending ? 'Submitting…' : 'Join'}
             </Button>
           </form>
