@@ -105,18 +105,18 @@ export const Hero = async ({ dictionary }: HeroProps) => (
             {/* Mobile: convert to stacked sections with image placeholders */}
             <div className="flex flex-col gap-4 lg:hidden">
               <div className="rounded-lg border-white bg-background/60 p-3">
-                <p className="font-semibold mb-2 font-white">Snap & Match</p>
-                <p className="text-white text-sm mb-3">List products in seconds, not hours. Just snap a photo and let our AI do the heavy lifting. It automatically recognizes, matches, and tags your product with accurate details. No more copy-pasting descriptions or filling out endless forms.</p>
+                <p className="font-semibold mb-2">Snap & Match</p>
+                <p className="text-gray-700 text-sm mb-3">List products in seconds, not hours. Just snap a photo and let our AI do the heavy lifting. It automatically recognizes, matches, and tags your product with accurate details. No more copy-pasting descriptions or filling out endless forms.</p>
                 <div className="aspect-video w-full rounded-md bg-zinc-900" />
               </div>
               <div className="rounded-lg border-white bg-background/60 p-3">
-                <p className="font-semibold mb-2 font-white">Always in Sync</p>
-                <p className="text-white text-sm mb-3">Manage all your channels from one simple dashboard. Update price, stock, or details once and it reflects instantly across all your platforms. Whether you’re selling online, in-store, or both, Anorha keeps everything in sync so you never miss a sale.</p>
+                <p className="font-semibold mb-2">Always in Sync</p>
+                <p className="text-gray-700 text-sm mb-3">Manage all your channels from one simple dashboard. Update price, stock, or details once and it reflects instantly across all your platforms. Whether you’re selling online, in-store, or both, Anorha keeps everything in sync so you never miss a sale.</p>
                 <div className="aspect-video w-full rounded-md bg-zinc-900" />
               </div>
               <div className="rounded-lg border-white bg-background/60 p-3">
                 <div className="flex items-center gap-2 mb-2">
-                  <p className="font-semibold font-white">Works Where You Sell</p>
+                  <p className="font-semibold">Works Where You Sell</p>
                   <div className="flex items-center z-10 flex -space-x-1.5 rtl:space-x-reverse">
                     <Avatar className="bg-white border-1 border-gray-300">
                       <AvatarImage src="https://dxeikk2e6c.ufs.sh/f/0UWZWh8ye0t5MjfGso2zKhfNEjBx9Q2zpulADRPmGrvCHMeU" />
@@ -136,13 +136,13 @@ export const Hero = async ({ dictionary }: HeroProps) => (
                     </Avatar>
                   </div>
                 </div>
-                <p className="text-white text-sm mb-3">Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, Facebook Marketplace, eBay, or more, we’ve got you covered. Add once, sell everywhere — without switching systems or learning a new way to work. We’re constantly adding new integrations so your business never has to slow down just to keep up with the tools.</p>
+                <p className="text-gray-700 text-sm mb-3">Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, Facebook Marketplace, eBay, or more, we’ve got you covered. Add once, sell everywhere — without switching systems or learning a new way to work. We’re constantly adding new integrations so your business never has to slow down just to keep up with the tools.</p>
                 <div className="aspect-video w-full rounded-md bg-zinc-900" />
               </div>
             </div>
           </div>
           {/* Desktop/large screens: comparison on the right */}
-          <div className="hidden md:block flex-1">
+          <div className="hidden lg:block flex-1">
             <div className="rounded-3xl bg-amber-100 p-4 shadow-inner" style={{background: "linear-gradient(158deg, #FFFBF1 -8.56%, #FAE1A2 100.33%)", borderRadius: "20px"}} >
               <div className="grid grid-cols-2 gap-4">
                 <div>

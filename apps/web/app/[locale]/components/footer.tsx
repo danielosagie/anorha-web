@@ -41,7 +41,7 @@ export const Footer = () => (
       return (
         <section className="dark border-foreground/10 border-t">
           <div className="w-full bg-background py-20 text-foreground lg:py-40">
-            <div className="container mx-auto">
+            <div className="container mx-auto px-10">
               <div className="grid items-center gap-10 lg:grid-cols-2">
                 <div className="flex flex-col items-start gap-8">
                   <div className="flex flex-col gap-2">
