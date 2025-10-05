@@ -130,21 +130,21 @@ export const Hero = async ({ dictionary }: HeroProps) => (
             </div>
             {/* Mobile: convert to stacked sections with image placeholders */}
             <div className="flex flex-col gap-4 lg:hidden">
-              <div className="rounded-lg border-white bg-background/60 p-3">
+              <div className="rounded-lg bg-background/60 px-3 pt-3 pb-3" style={{backgroundColor: '#FFFBF1B2', borderColor: "#C1C8BA", borderWidth: "2px"}}>
                 <p className="font-semibold mb-2">Snap & Match</p>
                 <p className="text-gray-700 text-sm mb-3">List products in seconds, not hours. Just snap a photo and let our AI do the heavy lifting. It automatically recognizes, matches, and tags your product with accurate details. No more copy-pasting descriptions or filling out endless forms.</p>
                 <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900">
                   
                 </div>
               </div>
-              <div className="rounded-lg border-white bg-background/60 p-3">
+              <div className="rounded-lg bg-background/60 px-3 pt-3 pb-3" style={{backgroundColor: '#FFFBF1B2', borderColor: "#C1C8BA", borderWidth: "2px"}}>
                 <p className="font-semibold mb-2">Always in Sync</p>
                 <p className="text-gray-700 text-sm mb-3">Manage all your channels from one simple dashboard. Update price, stock, or details once and it reflects instantly across all your platforms. Whether you're selling online, in-store, or both, Anorha keeps everything in sync so you never miss a sale.</p>
                 <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900">
                  
                 </div>
               </div>
-              <div className="rounded-lg border-white bg-background/60 p-3">
+              <div className="rounded-lg bg-background/60 px-3 pt-3 pb-3" style={{backgroundColor: '#FFFBF1B2', borderColor: "#C1C8BA", borderWidth: "2px"}}>
                 <div className="flex items-center gap-2 mb-2">
                   <p className="font-semibold">Works Where You Sell</p>
                   <div className="flex items-center z-10 flex -space-x-1.5 rtl:space-x-reverse">
