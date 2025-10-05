@@ -37,11 +37,37 @@ export const Hero = async ({ dictionary }: HeroProps) => (
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <div className="mb-2 rounded-lg bg-zinc-600 px-4 py-2 text-center font-semibold text-white">Before</div>
-                  <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900" />
+                  <div className="relative aspect-[7.5/16] w-full rounded-4xl border-4 bg-zinc-900 overflow-hidden">
+                    {env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL ? (
+                      <video
+                        src={env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL}
+                        className="absolute inset-0 h-full w-full object-cover rounded-4xl border-4 border-zinc-900"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        controls
+                      />
+                    ) : null}
+                  </div>
                 </div>
                 <div>
                   <div className="mb-2 rounded-lg bg-orange-500 px-4 py-2 text-center font-semibold text-white">After</div>
-                  <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900" />
+                  <div className="relative aspect-[7.5/16] border-4 border-zinc-900 w-full rounded-4xl bg-zinc-900 overflow-hidden">
+                    {env.NEXT_PUBLIC_HERO_VIDEO_URL ? (
+                      <video
+                        src={env.NEXT_PUBLIC_HERO_VIDEO_URL}
+                        className="absolute inset-0 h-full w-full object-cover rounded-4xl border-4 border-zinc-900"
+                        autoPlay
+                        muted
+                        loop
+                        playsInline
+                        preload="metadata"
+                        controls
+                      />
+                    ) : null}
+                  </div>
                 </div>
               </div>
             </div>
@@ -107,12 +133,16 @@ export const Hero = async ({ dictionary }: HeroProps) => (
               <div className="rounded-lg border-white bg-background/60 p-3">
                 <p className="font-semibold mb-2">Snap & Match</p>
                 <p className="text-gray-700 text-sm mb-3">List products in seconds, not hours. Just snap a photo and let our AI do the heavy lifting. It automatically recognizes, matches, and tags your product with accurate details. No more copy-pasting descriptions or filling out endless forms.</p>
-                <div className="aspect-video w-full rounded-md bg-zinc-900" />
+                <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900">
+                  
+                </div>
               </div>
               <div className="rounded-lg border-white bg-background/60 p-3">
                 <p className="font-semibold mb-2">Always in Sync</p>
-                <p className="text-gray-700 text-sm mb-3">Manage all your channels from one simple dashboard. Update price, stock, or details once and it reflects instantly across all your platforms. Whether you’re selling online, in-store, or both, Anorha keeps everything in sync so you never miss a sale.</p>
-                <div className="aspect-video w-full rounded-md bg-zinc-900" />
+                <p className="text-gray-700 text-sm mb-3">Manage all your channels from one simple dashboard. Update price, stock, or details once and it reflects instantly across all your platforms. Whether you're selling online, in-store, or both, Anorha keeps everything in sync so you never miss a sale.</p>
+                <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900">
+                 
+                </div>
               </div>
               <div className="rounded-lg border-white bg-background/60 p-3">
                 <div className="flex items-center gap-2 mb-2">
@@ -136,22 +166,54 @@ export const Hero = async ({ dictionary }: HeroProps) => (
                     </Avatar>
                   </div>
                 </div>
-                <p className="text-gray-700 text-sm mb-3">Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, Facebook Marketplace, eBay, or more, we’ve got you covered. Add once, sell everywhere — without switching systems or learning a new way to work. We’re constantly adding new integrations so your business never has to slow down just to keep up with the tools.</p>
-                <div className="aspect-video w-full rounded-md bg-zinc-900" />
+                <p className="text-gray-700 text-sm mb-3">Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, Facebook Marketplace, eBay, or more, we've got you covered. Add once, sell everywhere — without switching systems or learning a new way to work. We're constantly adding new integrations so your business never has to slow down just to keep up with the tools.</p>
+                <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900" >
+                 
+                </div>
               </div>
             </div>
           </div>
           {/* Desktop/large screens: comparison on the right */}
-          <div className="hidden lg:block flex-1">
-            <div className="rounded-3xl bg-amber-100 p-4 shadow-inner" style={{background: "linear-gradient(158deg, #FFFBF1 -8.56%, #FAE1A2 100.33%)", borderRadius: "20px"}} >
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <div className="mb-2 rounded-lg bg-zinc-600 px-4 py-2 text-center font-semibold text-white">Before</div>
-                  <div className="h-[540px] rounded-2xl bg-zinc-900" />
+          <div className="hidden lg:block flex-1 w-auto">
+            <div className="rounded-3xl w-auto bg-amber-100 p-4 shadow-inner" style={{background: "linear-gradient(158deg, #FFFBF1 -8.56%, #FAE1A2 100.33%)", borderRadius: "20px"}} >
+              <div className="grid grid-cols-2 gap-1">
+                <div className="flex flex-col items-center">
+                  <div className="mb-2 rounded-lg bg-zinc-600  w-full max-w-[360px] px-4 py-2 text-center font-semibold text-white">5+ Mins of Manual Work</div>
+                  <div className="flex w-full justify-center">
+                    <div className="relative aspect-[7.5/16]  w-full max-w-[360px] rounded-4xl overflow-hidden bg-zinc-900 border-4 border-zinc-900">
+                      {env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL ? (
+                        <video
+                          src={env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL}
+                          className="absolute inset-0 h-full w-full object-cover rounded-4xl border-4 border-zinc-900 rounded-4xl border-4 border-zinc-900"
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                          controls
+                        />
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
-                <div>
-                  <div className="mb-2 rounded-lg bg-orange-500 px-4 py-2 text-center font-semibold text-white">After</div>
-                  <div className="h-[540px] rounded-2xl bg-zinc-900" />
+                <div className="flex flex-col items-center">
+                  <div className="mb-2 rounded-lg  w-full max-w-[360px] bg-orange-500 px-4 py-2 text-center font-semibold text-white">1 Min w/ Anorha</div>
+                  <div className="flex w-full justify-center">
+                    <div className="relative aspect-[7.5/16] w-full max-w-[360px] rounded-4xl overflow-hidden bg-zinc-900 border-4 border-zinc-900">
+                      {env.NEXT_PUBLIC_HERO_VIDEO_URL ? (
+                        <video
+                          src={env.NEXT_PUBLIC_HERO_VIDEO_URL}
+                          className="absolute inset-0 h-full w-full object-cover rounded-4xl border-4 border-zinc-900 rounded-4xl border-4 border-zinc-900"
+                          autoPlay
+                          muted
+                          loop
+                          playsInline
+                          preload="metadata"
+                          controls
+                        />
+                      ) : null}
+                    </div>
+                  </div>
                 </div>
               </div>
             </div>

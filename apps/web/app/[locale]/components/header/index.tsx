@@ -86,18 +86,20 @@ export const Header = ({ dictionary }: HeaderProps) => {
         {/* Sign In */}
         <div className="flex w-full justify-end gap-4">
           
-          {/* 
-          <Button variant="whiteGhost" asChild className="hidden md:inline rounded-full" }>
+           {/* Sign In 
+          <Button variant="whiteGhost" asChild className="hidden md:inline">
             <Link href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}>
               {dictionary.web.header.signIn}
             </Link>
           </Button> 
-          <Button asChild>
+          
+          <Button variant={"blackGhost"} asChild style={{backgroundColor: "rgb(82, 82, 91))"}}>
             <Link href={`${env.NEXT_PUBLIC_APP_URL}/sign-up`}>
               {dictionary.web.header.signUp}
             </Link>
           </Button>
-           */}
+          */}
+          
           
           <Button variant="whiteGhost" asChild className="hidden md:inline rounded-full">
             <Popover>

@@ -4,7 +4,7 @@ import { useState, useTransition } from 'react';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Input } from '@repo/design-system/components/ui/input';
 import { cn } from '@repo/design-system/lib/utils';
-import { MoveRight } from 'lucide-react';
+import { MoveRight, Send, Mail } from 'lucide-react';
 
 type WaitlistProps = {
   className?: string;
@@ -55,19 +55,53 @@ export function Waitlist({ className }: WaitlistProps) {
             <p className="text-gray-700 text-xs">You'll be the first to get access/to have features built around your needs.</p>
           </div>
           <form onSubmit={onSubmit} className="flex items-center gap-2">
-            <div className="flex-1 ">
+            <div className="flex-1 relative flex items-center">
+              <span className="absolute left-3 flex items-center pointer-events-none">
+                <Mail
+                  width={16}
+                  height={16}
+                  className="text-gray-300"
+                  style={{ color: '#D1D5DB' }} // Tailwind gray-300
+                />
+              </span>
               <Input
                 type="email"
                 placeholder="Johndoe@gmail.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
-                className="landing-input:"
-                style={{backgroundColor: '#647653', color: 'white', borderColor: '#FFFFFF'}}/>
+                className="landing-input: pl-10 h-12 pr-24 "
+                style={{
+                  backgroundColor: '#647653',
+                  color: 'white',
+                  borderColor: 'rgba(255, 255, 255, 0.6)',
+                  borderWidth: "2",
+                  // placeholder color handled by Tailwind or global styles, but can be forced if needed
+                }}
+              />
+              <Button
+                type="submit"
+                size="sm"
+                disabled={isPending}
+                style={{
+                  backgroundColor: '#A7CE38',
+                  color: 'white',
+                  position: 'absolute',
+                  right: 4,
+                  top: '50%',
+                  transform: 'translateY(-50%)',
+                  height: '32px',
+                  padding: '0 12px',
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '0.5rem',
+                  marginRight: 4,
+                }}
+              >
+                <Send width={12} height={12} />
+                {isPending ? 'Submitting…' : 'Join'}
+              </Button>
             </div>
-            <Button type="submit" size="sm" disabled={isPending} style={{backgroundColor: '#647653', color: 'white'}}>
-              {isPending ? 'Submitting…' : 'Join'}
-            </Button>
           </form>
           {error && <p className="text-destructive text-xs">{error}</p>}
         </div>

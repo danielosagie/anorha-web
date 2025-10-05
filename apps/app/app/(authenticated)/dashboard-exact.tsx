@@ -16,7 +16,6 @@ import { Separator } from '@repo/design-system/components/ui/separator';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@repo/design-system/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/design-system/components/ui/table';
 import { getDashboardData } from '@/lib/data/dashboard';
-import { UserProfile } from '@clerk/nextjs'
 import { formatCurrency, formatNumber, formatPercent, formatDistanceToNow } from '@/lib/utils/format';
 import {
   ArrowUpRightIcon,

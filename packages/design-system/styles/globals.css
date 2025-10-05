@@ -9,6 +9,10 @@
 :root {
   --anorhaGreen: oklch(0.7235 0.1383 122.18);
   --anorhaDarkGreen: oklch(0.3981 0.0712 121.65);
+  --brand: var(--anorhaGreen);
+  --brand-foreground: oklch(0.145 0 0);
+  --brand-muted: oklch(0.97 0 0);
+  --brand-muted-foreground: oklch(0.556 0 0);
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);
   --card: oklch(1 0 0);
@@ -45,6 +49,15 @@
   --sidebar-ring: oklch(0.708 0 0);
 
   --font-weight-bold: 700;
+
+  /* Motion tokens */
+  --ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --ease-emphasized: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration-1: 100ms;
+  --duration-2: 200ms;
+  --duration-3: 350ms;
+  --duration-4: 700ms;
+  --duration-5: 1200ms;
 }
 
 .dark {
@@ -81,6 +94,16 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(0.269 0 0);
   --sidebar-ring: oklch(0.439 0 0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --duration-1: 0ms;
+    --duration-2: 0ms;
+    --duration-3: 0ms;
+    --duration-4: 0ms;
+    --duration-5: 0ms;
+  }
 }
 
 @theme inline {
@@ -122,8 +145,8 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
-  --animate-accordion-down: accordion-down 0.2s ease-out;
-  --animate-accordion-up: accordion-up 0.2s ease-out;
+  --animate-accordion-down: accordion-down var(--duration-2) var(--ease-standard);
+  --animate-accordion-up: accordion-up var(--duration-2) var(--ease-standard);
 
   @keyframes accordion-down {
     from {
