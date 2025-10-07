@@ -19,11 +19,10 @@ type HeroProps = {
   dictionary: Dictionary;
 };
 
-export const Hero = async ({ dictionary }: HeroProps) => (
+export const Hero = async ({ dictionary }: HeroProps) => {
+  return (
   <div className="w-full relative">
-    <div className="w-full overflow-hidden bg-gradient-to-br from-lime-600/30 to-lime-900/60 p-4 min-h-[100svh] flex items-center" style={{
-    background: "linear-gradient(135deg, var(--anorhaGreen) 0%, var(--anorhaDarkGreen) 100%)"
-  }}>  {/*rounded 2xl*/} 
+    <div className="w-full overflow-hidden bg-gradient-to-br from-lime-600/30 to-lime-900/60 p-4 min-h-[100svh] flex items-center" style={{background: "linear-gradient(135deg, var(--anorhaGreen) 0%, var(--anorhaDarkGreen) 100%)"}}>  {/*rounded 2xl*/} 
       <div className="container mx-auto">
         <div className="flex h-full flex-col items-center gap-8 lg:flex-row mt-12">
           <div className="flex h-full w-full max-w-lg flex-col gap-6 p-4">
@@ -51,7 +50,7 @@ export const Hero = async ({ dictionary }: HeroProps) => (
                       />
                     ) : null}
                   </div>
-                </div>
+              </div>
                 <div>
                   <div className="mb-2 rounded-lg bg-orange-500 px-4 py-2 text-center font-semibold text-white">After</div>
                   <div className="relative aspect-[7.5/16] border-4 border-zinc-900 w-full rounded-4xl bg-zinc-900 overflow-hidden">
@@ -133,16 +132,16 @@ export const Hero = async ({ dictionary }: HeroProps) => (
               <div className="rounded-lg bg-background/60 px-3 pt-3 pb-3" style={{backgroundColor: '#FFFBF1B2', borderColor: "#C1C8BA", borderWidth: "2px"}}>
                 <p className="font-semibold mb-2">Snap & Match</p>
                 <p className="text-gray-700 text-sm mb-3">List products in seconds, not hours. Just snap a photo and let our AI do the heavy lifting. It automatically recognizes, matches, and tags your product with accurate details. No more copy-pasting descriptions or filling out endless forms.</p>
+                {/*
                 <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900">
-                  
-                </div>
-              </div>
+                */}
+              </div>   
               <div className="rounded-lg bg-background/60 px-3 pt-3 pb-3" style={{backgroundColor: '#FFFBF1B2', borderColor: "#C1C8BA", borderWidth: "2px"}}>
                 <p className="font-semibold mb-2">Always in Sync</p>
                 <p className="text-gray-700 text-sm mb-3">Manage all your channels from one simple dashboard. Update price, stock, or details once and it reflects instantly across all your platforms. Whether you're selling online, in-store, or both, Anorha keeps everything in sync so you never miss a sale.</p>
+                {/*
                 <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900">
-                 
-                </div>
+                */}
               </div>
               <div className="rounded-lg bg-background/60 px-3 pt-3 pb-3" style={{backgroundColor: '#FFFBF1B2', borderColor: "#C1C8BA", borderWidth: "2px"}}>
                 <div className="flex items-center gap-2 mb-2">
@@ -167,9 +166,9 @@ export const Hero = async ({ dictionary }: HeroProps) => (
                   </div>
                 </div>
                 <p className="text-gray-700 text-sm mb-3">Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, Facebook Marketplace, eBay, or more, we've got you covered. Add once, sell everywhere — without switching systems or learning a new way to work. We're constantly adding new integrations so your business never has to slow down just to keep up with the tools.</p>
+                {/*
                 <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900" >
-                 
-                </div>
+                 */}
               </div>
             </div>
           </div>
@@ -222,4 +221,5 @@ export const Hero = async ({ dictionary }: HeroProps) => (
       </div>
     </div>
   </div>
-);
+  );
+};
