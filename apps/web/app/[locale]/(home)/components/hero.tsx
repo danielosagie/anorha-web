@@ -107,14 +107,23 @@ export const Hero = async ({ dictionary }: HeroProps) => {
                           <AvatarImage src="https://dxeikk2e6c.ufs.sh/f/0UWZWh8ye0t5uu4A1tRPuIMFSAwTZgvGC2BzXq5Hyk1DRNe8" />
                         <AvatarFallback>CN</AvatarFallback>
                         </Avatar>    
+
+                        {/*
+                        Amazon
                         <Avatar className="bg-white px-1.5 border-1 border-gray-300">  
                           <AvatarImage src="https://dxeikk2e6c.ufs.sh/f/0UWZWh8ye0t5bGLqL8IRHnfzVBgFT0WMP9t8awbJ2rOESokd" />
-                        <AvatarFallback>CN</AvatarFallback>
+                          <AvatarFallback>CN</AvatarFallback>
                         </Avatar>    
+                        */}
+                        
                         <Avatar className="bg-white px-1.5 border-1 border-gray-300">  
                           <AvatarImage src="https://dxeikk2e6c.ufs.sh/f/0UWZWh8ye0t5r68Y3eDIWUX741uOAt8sNM3aKmjDlELbpfR2" />
                         <AvatarFallback>CN</AvatarFallback>
                         </Avatar>    
+                        <Avatar className="bg-white px-1.5 border-1 border-gray-300">
+                          <AvatarImage src="https://dxiqonv894.ufs.sh/f/47mT5CowzZs8JR0QzKVN6JSsKq5WEYw7LcUiyPf0MORkVeo8" />
+                          <AvatarFallback>CN</AvatarFallback>
+                        </Avatar>
                       </div>
                     </div>
                     
@@ -155,12 +164,19 @@ export const Hero = async ({ dictionary }: HeroProps) => {
                       <AvatarImage src="https://dxeikk2e6c.ufs.sh/f/0UWZWh8ye0t5uu4A1tRPuIMFSAwTZgvGC2BzXq5Hyk1DRNe8" />
                       <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
+                    {/*
+                        Amazon
+                        <Avatar className="bg-white px-1.5 border-1 border-gray-300">  
+                          <AvatarImage src="https://dxeikk2e6c.ufs.sh/f/0UWZWh8ye0t5bGLqL8IRHnfzVBgFT0WMP9t8awbJ2rOESokd" />
+                          <AvatarFallback>CN</AvatarFallback>
+                        </Avatar>    
+                        */}
                     <Avatar className="bg-white px-1.5 border-1 border-gray-300">
-                      <AvatarImage src="https://dxeikk2e6c.ufs.sh/f/0UWZWh8ye0t5bGLqL8IRHnfzVBgFT0WMP9t8awbJ2rOESokd" />
+                      <AvatarImage src="https://dxeikk2e6c.ufs.sh/f/0UWZWh8ye0t5r68Y3eDIWUX741uOAt8sNM3aKmjDlELbpfR2" />
                       <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
                     <Avatar className="bg-white px-1.5 border-1 border-gray-300">
-                      <AvatarImage src="https://dxeikk2e6c.ufs.sh/f/0UWZWh8ye0t5r68Y3eDIWUX741uOAt8sNM3aKmjDlELbpfR2" />
+                      <AvatarImage src="https://dxiqonv894.ufs.sh/f/47mT5CowzZs8JR0QzKVN6JSsKq5WEYw7LcUiyPf0MORkVeo8" />
                       <AvatarFallback>CN</AvatarFallback>
                     </Avatar>
                   </div>
@@ -174,7 +190,7 @@ export const Hero = async ({ dictionary }: HeroProps) => {
           </div>
           {/* Desktop/large screens: comparison on the right */}
           <div className="hidden lg:block flex-1 w-auto">
-            <div className="rounded-3xl w-auto bg-amber-100 p-4 shadow-inner" style={{background: "linear-gradient(158deg, #FFFBF1 -8.56%, #FAE1A2 100.33%)", borderRadius: "20px"}} >
+            <div className="rounded-3xl w-auto bg-amber-100 p-4 shadow-inner my-10" style={{background: "linear-gradient(158deg, #FFFBF1 -8.56%, #FAE1A2 100.33%)", borderRadius: "20px"}} >
               <div className="grid grid-cols-2 gap-1">
                 <div className="flex flex-col items-center">
                   <div className="mb-2 rounded-lg bg-zinc-600  w-full max-w-[360px] px-4 py-2 text-center font-semibold text-white">5+ Mins of Manual Work</div>
