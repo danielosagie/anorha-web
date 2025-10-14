@@ -1,6 +1,19 @@
 import { render, screen } from '@testing-library/react';
-import { expect, test } from 'vitest';
+import { expect, test, vi } from 'vitest';
 import Page from '../app/(unauthenticated)/sign-up/[[...sign-up]]/page';
+
+// Mock Clerk hooks and components
+vi.mock('@clerk/nextjs', () => ({
+  ClerkProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  SignUp: () => <div data-testid="clerk-sign-up">Sign Up Component</div>,
+  useSession: () => ({ isLoaded: false, isSignedIn: false }),
+  useUser: () => ({ isLoaded: false, user: null }),
+}));
+
+vi.mock('next-themes', () => ({
+  ThemeProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useTheme: () => ({ resolvedTheme: 'light', setTheme: vi.fn() }),
+}));
 
 test('Sign Up Page', () => {
   render(<Page />);
