@@ -39,6 +39,17 @@ export interface DashboardData {
 export async function getDashboardData(userId: string): Promise<DashboardData> {
     const supabase = await getServerSupabaseClient();
     
+    type RevenueOnlyOrderRow = { readonly TotalAmount: number | string };
+    type InventoryAlertRow = { readonly Quantity: number };
+    type UsageEventRow = { readonly FeatureKey: string; readonly Quantity: number };
+    type ActivityLogRow = {
+      readonly Id: number | string;
+      readonly EventType: string;
+      readonly Message: string;
+      readonly Timestamp: string;
+      readonly Status: string;
+    };
+    
     // Get today's date range
     const today = new Date();
     const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
@@ -46,30 +57,33 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
     const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
     
     // Fetch revenue data from Orders
-    const { data: todayOrders } = await supabase
+    const todayOrdersRes = await supabase
       .from('Orders')
       .select('TotalAmount')
       .eq('UserId', userId)
       .gte('OrderDate', todayStart.toISOString())
       .lt('OrderDate', today.toISOString());
+    const todayOrders = (todayOrdersRes.data ?? null) as ReadonlyArray<RevenueOnlyOrderRow> | null;
     
-    const { data: yesterdayOrders } = await supabase
+    const yesterdayOrdersRes = await supabase
       .from('Orders')
       .select('TotalAmount')
       .eq('UserId', userId)
       .gte('OrderDate', yesterdayStart.toISOString())
       .lt('OrderDate', todayStart.toISOString());
+    const yesterdayOrders = (yesterdayOrdersRes.data ?? null) as ReadonlyArray<RevenueOnlyOrderRow> | null;
     
-    const { data: mtdOrders } = await supabase
+    const mtdOrdersRes = await supabase
       .from('Orders')
       .select('TotalAmount')
       .eq('UserId', userId)
       .gte('OrderDate', monthStart.toISOString());
+    const mtdOrders = (mtdOrdersRes.data ?? null) as ReadonlyArray<RevenueOnlyOrderRow> | null;
     
     // Calculate revenue
-    const todayRevenue = todayOrders?.reduce((sum, order) => sum + Number(order.TotalAmount), 0) || 0;
-    const yesterdayRevenue = yesterdayOrders?.reduce((sum, order) => sum + Number(order.TotalAmount), 0) || 0;
-    const mtdRevenue = mtdOrders?.reduce((sum, order) => sum + Number(order.TotalAmount), 0) || 0;
+    const todayRevenue = todayOrders?.reduce((sum: number, order: RevenueOnlyOrderRow) => sum + Number(order.TotalAmount), 0) || 0;
+    const yesterdayRevenue = yesterdayOrders?.reduce((sum: number, order: RevenueOnlyOrderRow) => sum + Number(order.TotalAmount), 0) || 0;
+    const mtdRevenue = mtdOrders?.reduce((sum: number, order: RevenueOnlyOrderRow) => sum + Number(order.TotalAmount), 0) || 0;
     const revenueTrend = yesterdayRevenue > 0 ? ((todayRevenue - yesterdayRevenue) / yesterdayRevenue) * 100 : 0;
     
     // Get orders count and trends
@@ -91,7 +105,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       : 0;
     
     // Get inventory alerts
-    const { data: inventoryAlerts } = await supabase
+    const inventoryAlertsRes = await supabase
       .from('InventoryLevels')
       .select(`
         *,
@@ -99,9 +113,10 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       `)
       .eq('ProductVariants.UserId', userId)
       .or('Quantity.eq.0,Quantity.lt.10');
+    const inventoryAlerts = (inventoryAlertsRes.data ?? null) as ReadonlyArray<InventoryAlertRow> | null;
     
-    const lowStock = inventoryAlerts?.filter(item => item.Quantity > 0 && item.Quantity < 10).length || 0;
-    const outOfStock = inventoryAlerts?.filter(item => item.Quantity === 0).length || 0;
+    const lowStock = inventoryAlerts?.filter((item: InventoryAlertRow) => item.Quantity > 0 && item.Quantity < 10).length || 0;
+    const outOfStock = inventoryAlerts?.filter((item: InventoryAlertRow) => item.Quantity === 0).length || 0;
     
     // Get platform connections for sync status
     const { data: connections } = await supabase
@@ -111,35 +126,40 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
       .eq('IsEnabled', true);
     
     // Get recent activity
-    const { data: activityData } = await supabase
+    const activityDataRes = await supabase
       .from('ActivityLogs')
       .select('*')
       .eq('UserId', userId)
       .order('Timestamp', { ascending: false })
       .limit(10);
+    const activityData = (activityDataRes.data ?? null) as ReadonlyArray<ActivityLogRow> | null;
     
     // Get usage data
-    const { data: usageData } = await supabase
+    const usageDataRes = await supabase
       .from('UsageEvents')
       .select('FeatureKey, Quantity')
       .eq('UserId', userId)
       .gte('OccurredAt', monthStart.toISOString());
+    const usageData = (usageDataRes.data ?? null) as ReadonlyArray<UsageEventRow> | null;
     
     // Aggregate usage by feature
-    const usage = usageData?.reduce((acc, event) => {
-      if (event.FeatureKey === 'import') {
-        acc.imports.used += event.Quantity;
-      } else if (event.FeatureKey === 'ai_quick_scan' || event.FeatureKey === 'ai_recognize_match') {
-        acc.aiScans.used += event.Quantity;
-      } else if (event.FeatureKey === 'marketplace_sync') {
-        acc.syncs.used += event.Quantity;
-      }
-      return acc;
-    }, {
-      imports: { used: 0, total: 2500 },
-      aiScans: { used: 0, total: 1000 },
-      syncs: { used: 0, total: 50 }
-    }) || { imports: { used: 0, total: 2500 }, aiScans: { used: 0, total: 1000 }, syncs: { used: 0, total: 50 } };
+    const emptyUsage = { imports: { used: 0, total: 2500 }, aiScans: { used: 0, total: 1000 }, syncs: { used: 0, total: 50 } };
+    const usage = usageData?.reduce(
+      (acc: typeof emptyUsage, event: UsageEventRow) => {
+        if (event.FeatureKey === 'import') {
+          acc.imports.used += event.Quantity;
+        } else if (
+          event.FeatureKey === 'ai_quick_scan' ||
+          event.FeatureKey === 'ai_recognize_match'
+        ) {
+          acc.aiScans.used += event.Quantity;
+        } else if (event.FeatureKey === 'marketplace_sync') {
+          acc.syncs.used += event.Quantity;
+        }
+        return acc;
+      },
+      { ...emptyUsage }
+    ) || emptyUsage;
     
     return {
       revenue: {
@@ -163,7 +183,7 @@ export async function getDashboardData(userId: string): Promise<DashboardData> {
         lastSync: new Date(),
         connectedChannels: connections?.length || 0
       },
-      activity: activityData?.map(log => ({
+      activity: activityData?.map((log: ActivityLogRow) => ({
         id: log.Id.toString(),
         type: log.EventType.toLowerCase() as any,
         message: log.Message,

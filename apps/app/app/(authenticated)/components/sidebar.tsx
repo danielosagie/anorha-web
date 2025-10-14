@@ -46,13 +46,31 @@ import {
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
+import type { LucideIcon } from 'lucide-react';
 import { Search } from './search';
 
 type GlobalSidebarProperties = {
   readonly children: ReactNode;
 };
 
-const data = {
+type SubNavItem = {
+  readonly title: string;
+  readonly url: string;
+};
+
+type NavItem = {
+  readonly title: string;
+  readonly url: string;
+  readonly icon: LucideIcon;
+  readonly items?: ReadonlyArray<SubNavItem>;
+};
+
+const data: {
+  readonly user: { readonly name: string; readonly email: string; readonly avatar: string };
+  readonly navMain: ReadonlyArray<NavItem>;
+  readonly navSecondary: ReadonlyArray<NavItem>;
+  readonly projects: ReadonlyArray<unknown>;
+} = {
   user: {
     name: 'shadcn',
     email: 'm@example.com',
@@ -103,7 +121,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                 <Collapsible
                   key={item.title}
                   asChild
-                  defaultOpen={item.isActive}
+                  defaultOpen={item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)}
                 >
                   <SidebarMenuItem>
                     <SidebarMenuButton
@@ -126,7 +144,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                         </CollapsibleTrigger>
                         <CollapsibleContent>
                           <SidebarMenuSub>
-                            {item.items?.map((subItem) => (
+                            {item.items?.map((subItem: SubNavItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
                                 <SidebarMenuSubButton asChild>
                                   <Link href={subItem.url}>

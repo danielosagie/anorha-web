@@ -25,12 +25,22 @@ export async function POST(request: NextRequest) {
 
   await stripe.invoiceItems.create({
     customer: customerId,
-    price: priceId,
+    pricing: { price: priceId },
     quantity: 1,
   });
 
-  const invoice = await stripe.invoices.create({ customer: customerId, collection_method: 'charge_automatically' });
-  await stripe.invoices.finalizeInvoice(invoice.id);
+  const created = await stripe.invoices.create({
+    customer: customerId,
+    collection_method: 'charge_automatically',
+  });
+  const invoiceId = created.id;
+  if (!invoiceId) {
+    return NextResponse.json(
+      { error: 'Failed to create invoice' },
+      { status: 500 }
+    );
+  }
+  await stripe.invoices.finalizeInvoice(invoiceId);
 
   return NextResponse.json({ ok: true });
 }
