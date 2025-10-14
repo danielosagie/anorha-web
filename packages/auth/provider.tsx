@@ -55,6 +55,22 @@ export const AuthProvider = ({
   const afterSignInUrl = process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL;
   const afterSignUpUrl = process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL;
 
+  // Debug logging - remove after verification
+  if (typeof window !== 'undefined') {
+    console.log('Clerk Config:', {
+      publishableKey: publishableKey ? `${publishableKey.slice(0, 10)}...` : 'MISSING',
+      signInUrl,
+      signUpUrl,
+      afterSignInUrl,
+      afterSignUpUrl,
+    });
+  }
+
+  if (!publishableKey) {
+    console.error('NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY is not set!');
+    return <div>Clerk configuration error: Missing publishable key</div>;
+  }
+
   return (
     <ClerkProvider
       publishableKey={publishableKey}

@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
-import Page from '../app/(unauthenticated)/sign-up/[[...sign-up]]/page';
+import { SignUpClientPage } from '../app/(unauthenticated)/sign-up/[[...sign-up]]/client-page';
 
 // Mock Clerk hooks and components
 vi.mock('@clerk/nextjs', () => ({
@@ -16,7 +16,7 @@ vi.mock('next-themes', () => ({
 }));
 
 test('Sign Up Page', () => {
-  render(<Page />);
+  render(<SignUpClientPage title="Create an account" description="Enter your details to get started." />);
   expect(
     screen.getByRole('heading', {
       level: 1,

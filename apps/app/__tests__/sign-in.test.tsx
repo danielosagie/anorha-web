@@ -1,6 +1,6 @@
 import { render, screen } from '@testing-library/react';
 import { expect, test, vi } from 'vitest';
-import Page from '../app/(unauthenticated)/sign-in/[[...sign-in]]/page';
+import { SignInClientPage } from '../app/(unauthenticated)/sign-in/[[...sign-in]]/client-page';
 
 // Mock Clerk hooks and components
 vi.mock('@clerk/nextjs', () => ({
@@ -16,7 +16,7 @@ vi.mock('next-themes', () => ({
 }));
 
 test('Sign In Page', () => {
-  render(<Page />);
+  render(<SignInClientPage title="Welcome back" description="Enter your details to sign in." />);
   expect(
     screen.getByRole('heading', {
       level: 1,
