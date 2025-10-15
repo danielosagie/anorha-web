@@ -26,18 +26,7 @@ export default function TeamPage() {
           </p>
         </div>
 
-        <OrganizationSwitcher 
-          hidePersonal={false}
-          appearance={{
-            elements: {
-              rootBox: {
-                display: 'flex',
-                justifyContent: 'center',
-                alignItems: 'center',
-              },
-            },
-          }}
-        />
+        
       </div>
     
       {/* Clerk Organization Profile Component */}
@@ -69,7 +58,8 @@ export default function TeamPage() {
                 colorPrimary: 'hsl(var(--primary))',
                 colorText: 'hsl(var(--foreground))',
                 colorTextSecondary: 'hsl(var(--muted-foreground))',
-                colorBackground: 'transparent',
+                // Use themed background to avoid dark/black sidebar inside Clerk UI
+                colorBackground: 'hsl(var(--background))',
                 colorInputBackground: 'hsl(var(--background))',
                 colorInputText: 'hsl(var(--foreground))',
                 borderRadius: '0.5rem',
