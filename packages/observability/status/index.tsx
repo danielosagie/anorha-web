@@ -50,7 +50,7 @@ export const Status = async () => {
 
   return (
     <a
-      className="flex items-center gap-3 font-medium text-sm"
+      className="flex items-start font-medium text-sm"
       target="_blank"
       rel="noreferrer"
       href={url}

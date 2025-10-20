@@ -15,11 +15,70 @@ import {
   CalendarIcon,
   DollarSignIcon
 } from 'lucide-react';
+import { currentUser } from '@repo/auth/server';
+import { BillingActions } from './billing-actions';
+import { Header } from '../components/header';
+import type { Metadata } from 'next';
+
+export const metadata: Metadata = {
+  title: 'Billing | Anorha',
+  description: 'Manage your subscription, usage, and billing information',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/logo.png',
+  },
+  manifest: '/manifest.json',
+};
+
+async function getBillingData() {
+  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
+    fetch(`${origin}/api/billing/summary`, { cache: 'no-store' }),
+    fetch(`${origin}/api/billing/invoices?limit=12`, { cache: 'no-store' }),
+    fetch(`${origin}/api/billing/upcoming`, { cache: 'no-store' }),
+  ]);
+  
+  if (!summaryRes.ok) {
+    console.error('Failed to fetch billing summary:', await summaryRes.text());
+    throw new Error('Failed to fetch billing summary');
+  }
+  if (!invoicesRes.ok) {
+    console.error('Failed to fetch invoices:', await invoicesRes.text());
+    throw new Error('Failed to fetch invoices');
+  }
+  if (!upcomingRes.ok) {
+    console.error('Failed to fetch upcoming invoice:', await upcomingRes.text());
+    // Don't throw for upcoming invoice as it might not exist
+  }
+  
+  const [summary, invoices, upcoming] = await Promise.all([
+    summaryRes.json(),
+    invoicesRes.json(),
+    upcomingRes.ok ? upcomingRes.json() : Promise.resolve({ upcoming: null }),
+  ]);
+  return { summary, invoices, upcoming } as const;
+}
 
 export default async function BillingPage() {
+  const user = await currentUser();
+  if (!user) {
+    return <div>Please log in to view billing information.</div>;
+  }
+
+  const { summary, invoices, upcoming } = await getBillingData();
+  const subscription = summary?.subscription || null;
+  const usage = summary?.usage || {} as Record<string, number>;
+  const paymentProvider = subscription?.PolarCustomerId ? 'polar' : 'stripe';
+  const hasActiveSubscription = subscription?.Status === 'active';
+
   return (
-    <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-      {/* Page Header */}
+    <>
+      <Header pages={['Dashboard']} page="Billing">
+        <BillingActions 
+          paymentProvider={paymentProvider} 
+          hasActiveSubscription={hasActiveSubscription}
+        />
+      </Header>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Billing</h1>
@@ -27,193 +86,156 @@ export default async function BillingPage() {
             Manage your subscription, usage, and billing information
           </p>
         </div>
+      </div>  
+      
+      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 
-        <Button className="w-full md:w-auto" size="sm">
-          <ExternalLinkIcon className="mr-2 size-4" />
-          Manage Subscription
-        </Button>
-      </div>
-
-      {/* Pro Student Plan Summary - Main Feature Card */}
-      <Card className="border-2">
-        <CardHeader className="pb-4">
-          <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+      {/* Growth Plan Summary - Main Feature Card (Match provided image UI) */}
+      <Card className="border-2 shadow-none">
+        <CardHeader className="pb-2">
+          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
             <div>
-              <CardTitle className="text-xl font-semibold">Pro Student Plan Summary</CardTitle>
-              <p className="text-sm text-muted-foreground">Sep 8, 2025 - Oct 8, 2025</p>
+              <CardTitle className="text-lg font-semibold mb-0">
+                {subscription?.CurrentPlan || 'Growth Plan'}
+              </CardTitle>
+              <p className="text-xs mt-1 text-muted-foreground">
+                Unlimited team members, unlimited syncs and edits.<br />$7.10 / budget for product scanning
+              </p>
             </div>
-            <Button variant="outline" size="sm" className="w-full md:w-auto">
-              Manage Subscription
-              <ExternalLinkIcon className="ml-2 size-4" />
-            </Button>
+            <div className="flex flex-col gap-3 items-end">
+              <span className="text-xs text-muted-foreground">
+                {subscription?.CurrentPeriodEnd
+                  ? new Date(subscription.CurrentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
+                  : 'No active subscription'}
+              </span>
+              <Badge variant={subscription?.Status === 'active' ? 'default' : 'secondary'}>
+                {subscription?.Status === 'active' ? 'Active' : 'Inactive'}
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {/* Plan Items Table - Mobile Responsive */}
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="border-b">
-                    <TableHead className="text-sm font-medium">Item</TableHead>
-                    <TableHead className="text-sm font-medium text-right">Quantity</TableHead>
-                    <TableHead className="text-sm font-medium text-right">Cost</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  <TableRow className="border-b">
-                    <TableCell className="text-sm">
-                      <div className="font-medium">gpt-5-high</div>
-                      <div className="text-xs text-muted-foreground">75.9M tokens</div>
-                    </TableCell>
-                    <TableCell className="text-right text-sm font-mono">75.9M</TableCell>
-                    <TableCell className="text-right text-sm font-medium text-green-600">$27.17</TableCell>
-                  </TableRow>
-                  <TableRow className="border-b">
-                    <TableCell className="text-sm">
-                      <div className="font-medium">claude-4-sonnet-thinking</div>
-                      <div className="text-xs text-muted-foreground">32.4M tokens</div>
-                    </TableCell>
-                    <TableCell className="text-right text-sm font-mono">32.4M</TableCell>
-                    <TableCell className="text-right text-sm font-medium text-green-600">$19.25</TableCell>
-                  </TableRow>
-                  <TableRow className="border-b">
-                    <TableCell className="text-sm">
-                      <div className="font-medium">Auto - Unlimited</div>
-                      <div className="text-xs text-muted-foreground">3.3M tokens</div>
-                    </TableCell>
-                    <TableCell className="text-right text-sm font-mono">3.3M</TableCell>
-                    <TableCell className="text-right text-sm font-medium">Free</TableCell>
-                  </TableRow>
-                  <TableRow className="border-b">
-                    <TableCell className="text-sm">
-                      <div className="font-medium">code-supernova-1-million</div>
-                      <div className="text-xs text-muted-foreground">8.3M tokens</div>
-                    </TableCell>
-                    <TableCell className="text-right text-sm font-mono">8.3M</TableCell>
-                    <TableCell className="text-right text-sm font-medium text-green-600">$0.00</TableCell>
-                  </TableRow>
-                  <TableRow className="bg-muted/30">
-                    <TableCell className="text-sm font-semibold">Total</TableCell>
-                    <TableCell className="text-right text-sm font-mono font-semibold">119.9M</TableCell>
-                    <TableCell className="text-right text-sm font-semibold text-green-600">$47.75</TableCell>
-                  </TableRow>
-                </TableBody>
-              </Table>
-            </div>
+          <div className="overflow-x-auto">
+            <Table className="text-xs">
+              <TableHeader>
+                <TableRow className="border-b">
+                  <TableHead className="w-1/4 font-semibold text-muted-foreground">Items</TableHead>
+                  <TableHead className="w-1/4 text-right font-semibold text-muted-foreground">Usage</TableHead>
+                  <TableHead className="w-1/4 text-right font-semibold text-muted-foreground">Cost</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                <TableRow>
+                  <TableCell>Products</TableCell>
+                  <TableCell className="text-right">47 <span className="text-muted-foreground">unlimited</span></TableCell>
+                  <TableCell className="text-right text-green-700">Included</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Syncs/Edits Events</TableCell>
+                  <TableCell className="text-right">144 <span className="text-muted-foreground">events</span></TableCell>
+                  <TableCell className="text-right text-green-700">Included</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Platforms Connected</TableCell>
+                  <TableCell className="text-right">2 <span className="text-muted-foreground">(Shopify, Square)</span></TableCell>
+                  <TableCell className="text-right text-green-700">Included</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Team Members</TableCell>
+                  <TableCell className="text-right">1 / <span className="text-muted-foreground">1</span></TableCell>
+                  <TableCell className="text-right text-green-700">Free</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>AI Credit Budget</TableCell>
+                  <TableCell className="text-right">{summary?.ai_credits_used || '5.8'} / {summary?.ai_credits_limit || '7.00'} <span className="text-muted-foreground">used</span></TableCell>
+                  <TableCell className="text-right">
+                    ${Number(summary?.ai_credits_used || 5.8).toFixed(2)}
+                  </TableCell>
+                </TableRow>
+                <TableRow className="border-t">
+                  <TableCell className="font-semibold">Total</TableCell>
+                  <TableCell />
+                  <TableCell className="text-right font-semibold ">
+                    ${Number(summary?.total || 5.8).toFixed(2)}
+                  </TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
           </div>
         </CardContent>
       </Card>
 
-      {/* Current Usage - Mobile Responsive Grid */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
+      {/* Current Usage - Match image's two usage bars style */}
+      <Card className="shadow-none mt-4">
+        <CardHeader className="pb-2">
+          <CardTitle className="flex items-center gap-2 text-base">
             <TrendingUpIcon className="size-5" />
             Current Usage
           </CardTitle>
-          <CardDescription>Your usage for the current billing period</CardDescription>
+          <CardDescription>Usage for the current billing period</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">Product Imports</span>
-                <span className="font-mono text-muted-foreground">1,247 / 2,500</span>
+          <div className="flex flex-col gap-4">
+            {/* "AI Credits" progress bar */}
+            <div>
+              <div className="flex justify-between items-baseline mb-1 text-xs">
+                <span className="font-semibold">AI Credits</span>
+                <span className="font-mono">{summary?.ai_credits_used || 17} / {summary?.ai_credits_limit || 23}</span>
               </div>
-              <Progress value={50} className="h-2" />
+              <Progress
+                value={((summary?.ai_credits_used || 17) / (summary?.ai_credits_limit || 23)) * 100}
+                className="h-3 bg-yellow-500 bg-gray-200"
+                indicatorClassName="bg-yellow-500"
+              />
             </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">AI Recognition</span>
-                <span className="font-mono text-muted-foreground">834 / 1,000</span>
+            {/* On-Demand Usage progress bar */}
+            <div>
+              <div className="flex justify-between items-baseline mb-1 text-xs">
+                <span className="font-semibold">On-Demand Usage This Month</span>
+                <span className="font-mono">{summary?.on_demand_usage_this_month || 50} / {summary?.on_demand_limit || 80}</span>
               </div>
-              <Progress value={83} className="h-2" />
+              <Progress
+                value={((summary?.on_demand_usage_this_month || 50) / (summary?.on_demand_limit || 80)) * 100}
+                className="h-3 bg-gray-200"
+                indicatorClassName="bg-gray-400"
+              />
             </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">Marketplace Syncs</span>
-                <span className="font-mono text-muted-foreground">12 / 50</span>
-              </div>
-              <Progress value={24} className="h-2" />
-            </div>
-
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span className="font-medium">Data Generation</span>
-                <span className="font-mono text-muted-foreground">456 / 500</span>
-              </div>
-              <Progress value={91} className="h-2" />
+            {/* Edit usage limit button */}
+            <div>
+              <Button
+                variant="default"
+                size="sm"
+                className="rounded-md bg-gray-50 border font-normal text-xs py-1 hover:bg-gray-100"
+                disabled
+              >
+                Edit Limit
+              </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      {/* Invoice Section */}
+      {/* Upcoming Invoice */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <CalendarIcon className="size-5" />
-            September 2025 - Upcoming invoice
+            {upcoming?.upcoming ? 'Upcoming Invoice' : 'No Upcoming Invoice'}
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-              <div className="text-2xl font-bold">$40.24</div>
-              <div className="text-muted-foreground">$60.00</div>
-            </div>
-
-            <Separator />
-
-            <div className="space-y-3 text-sm">
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  token-based usage calls to non-max-gpt-5-high, totaling: $26.94. Input tokens: 1411138, Output tokens: 414053, Cache write tokens: 6467656, Cache read tokens: 6557373
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">$0.05</span>
-                  <span className="text-muted-foreground">× 578</span>
-                  <span className="font-medium">$26.94</span>
-                </div>
+          {upcoming?.upcoming ? (
+            <div className="flex items-center justify-between">
+              <div className="text-2xl font-bold">
+                {(upcoming.upcoming.total || 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
               </div>
-
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">
-                  token-based usage calls to non-max-gpt-5-high, totaling: $13.30. Input tokens: 8570508, Output tokens: 194374, Cache write tokens: 0, Cache read tokens: 15592064
-                </span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium">$0.08</span>
-                  <span className="text-muted-foreground">× 157</span>
-                  <span className="font-medium">$13.30</span>
-                </div>
-              </div>
-
-              <div className="flex justify-between">
-                <span className="text-muted-foreground">Mid-month usage paid for September 2025</span>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-red-600">-$40.24</span>
-                  <span className="text-muted-foreground">× 1</span>
-                  <span className="font-medium text-red-600">-$40.24</span>
-                </div>
+              <div className="text-muted-foreground">
+                Due {new Date(upcoming.upcoming.due_date || Date.now()).toLocaleDateString()}
               </div>
             </div>
-
-            <Separator />
-
-            <div className="flex justify-between items-center">
-              <span className="font-medium">Subtotal:</span>
-              <span className="font-medium">$0.00</span>
-            </div>
-
-            <div className="bg-blue-50 dark:bg-blue-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-3">
-              <p className="text-sm text-blue-800 dark:text-blue-200">
-                You may have an unpaid invoice. Please check your billing settings.
-              </p>
-            </div>
-          </div>
+          ) : (
+            <div className="text-muted-foreground">You have no upcoming invoice.</div>
+          )}
         </CardContent>
       </Card>
 
@@ -225,40 +247,34 @@ export default async function BillingPage() {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            <div className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="font-medium">Sep 27, 2025</div>
-                <div className="text-sm text-muted-foreground">Cursor Usage for September 2025 (Mid-Month Invoice)</div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge variant="secondary">Open</Badge>
-                <div className="text-right">
-                  <div className="font-medium">0.00 USD</div>
+            {(invoices?.invoices || []).map((inv: any) => (
+              <div key={inv.id} className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
+                <div>
+                  <div className="font-medium">{new Date(inv.created || Date.now()).toLocaleDateString()}</div>
+                  <div className="text-sm text-muted-foreground">{inv.number || 'Invoice'}</div>
                 </div>
-                <Button variant="ghost" size="sm">
-                  <ExternalLinkIcon className="size-4" />
-                </Button>
-              </div>
-            </div>
-
-            <div className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
-              <div>
-                <div className="font-medium">Sep 05, 2025</div>
-                <div className="text-sm text-muted-foreground">Cursor Usage for August 2025</div>
-              </div>
-              <div className="flex items-center gap-3">
-                <Badge className="bg-green-100 text-green-800">Paid</Badge>
-                <div className="text-right">
-                  <div className="font-medium">5.00 USD</div>
+                <div className="flex items-center gap-3">
+                  <Badge className={inv.status === 'paid' ? 'bg-green-100 text-green-800' : undefined}>{inv.status || 'open'}</Badge>
+                  <div className="text-right">
+                    <div className="font-medium">{((inv.total || 0)/100).toLocaleString(undefined, { style: 'currency', currency: inv.currency?.toUpperCase() || 'USD' })}</div>
+                  </div>
+                  {inv.hosted_invoice_url && (
+                    <Button asChild variant="ghost" size="sm">
+                      <a href={inv.hosted_invoice_url} target="_blank" rel="noreferrer">
+                        <ExternalLinkIcon className="size-4" />
+                      </a>
+                    </Button>
+                  )}
                 </div>
-                <Button variant="ghost" size="sm">
-                  <ExternalLinkIcon className="size-4" />
-                </Button>
               </div>
-            </div>
+            ))}
+            {(!invoices || (invoices?.invoices || []).length === 0) && (
+              <div className="text-muted-foreground">No invoices found.</div>
+            )}
           </div>
         </CardContent>
       </Card>
-    </div>
+      </div>
+    </>
   );
 }

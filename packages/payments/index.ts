@@ -7,3 +7,7 @@ export const stripe = new Stripe(keys().STRIPE_SECRET_KEY, {
 });
 
 export type { Stripe } from 'stripe';
+
+// Export Polar
+export { polar } from './polar';
+export type { Polar } from '@polar-sh/sdk';

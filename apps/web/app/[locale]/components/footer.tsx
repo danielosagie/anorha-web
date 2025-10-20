@@ -29,6 +29,7 @@ export const Footer = () => (
             { title: 'Terms', href: '/legal/terms' },
           ],
         },
+        
       ];
 
       if (env.NEXT_PUBLIC_DOCS_URL) {
@@ -37,6 +38,29 @@ export const Footer = () => (
           href: env.NEXT_PUBLIC_DOCS_URL,
         });
       }
+
+      {/*
+
+        {
+          title: 'Pages',
+          description: 'Managing a small business today is already tough.',
+          items: [
+            {
+              title: 'Blog',
+              href: '/blog',
+            },
+          ],
+        },
+        {
+          title: 'Legal',
+          description: 'We stay on top of the latest legal requirements.',
+          items: [
+            { title: 'Privacy', href: '/legal/privacy' },
+            { title: 'Terms', href: '/legal/terms' },
+          ],
+        },
+        
+        */}
 
       return (
         <section className="dark border-foreground/10 border-t">
@@ -51,8 +75,21 @@ export const Footer = () => (
                     <p className="max-w-lg text-left text-foreground/75 text-lg leading-relaxed tracking-tight">
                       The wind behind your sales.
                     </p>
+                  
+                   
                   </div>
                   <Status />
+                  <div>
+                  <a
+                    className="flex items-center gap-3 color-white font-medium text-md"
+                    target="_blank"
+                    rel="noreferrer"
+                    href={"https://inirha.com"}
+                  >
+                    <span className="text-muted-foreground">Made by inirha (© 2025)</span>
+                  </a>
+                  </div>
+
                 </div>
                 <div className="grid items-start gap-10 lg:grid-cols-3">
                   {navigationItems.map((item) => (

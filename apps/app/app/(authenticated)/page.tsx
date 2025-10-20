@@ -41,8 +41,13 @@ import {
 // Components are now handled in separate client components
 
 export const metadata: Metadata = {
-  title: 'Anorha Dashboard',
+  title: 'Dashboard | Anorha',
   description: 'Your operational control center.',
+  icons: {
+    icon: '/favicon.ico',
+    apple: '/logo.png',
+  },
+  manifest: '/manifest.json',
 };
 
 const App = async () => {
@@ -59,6 +64,9 @@ const App = async () => {
   return (
     <>
       <Header pages={['Dashboard']} page="Overview">
+        {/* Liveblocks disabled intentionally 
+        false && env.LIVEBLOCKS_SECRET && 
+        */}
         {env.LIVEBLOCKS_SECRET && (
           <CollaborationWrapper orgId={orgId}>
             <AvatarStack />
