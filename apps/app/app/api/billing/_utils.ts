@@ -21,7 +21,13 @@ export async function getSupabaseToken() {
     }
     
     console.log('[getSupabaseToken] Exchanging Clerk token for Supabase token...');
-    const res = await fetch(`${apiBase}/auth/exchange`, {
+    // Ensure /api prefix is in the URL
+    const exchangeUrl = apiBase.endsWith('/api') 
+      ? `${apiBase}/auth/exchange`
+      : `${apiBase}/api/auth/exchange`;
+    
+    console.log('[getSupabaseToken] Exchange URL:', exchangeUrl);
+    const res = await fetch(exchangeUrl, {
       method: 'POST',
       headers: { 
         'Authorization': `Bearer ${clerkToken}`,
