@@ -31,7 +31,7 @@ export const metadata: Metadata = {
 };
 
 async function getBillingData() {
-  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const origin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
   const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
     fetch(`${origin}/api/billing/summary`, { cache: 'no-store' }),
     fetch(`${origin}/api/billing/invoices?limit=12`, { cache: 'no-store' }),
