@@ -30,4 +30,20 @@ export async function getSupabaseToken() {
   return { token: data.supabase_token, apiBase } as const;
 }
 
+export async function getAuthenticatedBackendHeaders() {
+  const { token } = await getSupabaseToken();
+  return {
+    'Authorization': `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+}
+
+export function handleBackendError(error: any) {
+  console.error('Backend request failed:', error);
+  return Response.json(
+    { error: error?.message || 'Backend request failed' },
+    { status: 500 }
+  );
+}
+
 

@@ -27,7 +27,16 @@ export function BillingActions({ paymentProvider = 'stripe', hasActiveSubscripti
     setIsLoading(true);
     try {
       // Use POST to preserve future options (tier/price)
-      const res = await fetch('/api/billing/checkout', { method: 'POST' });
+      const res = await fetch('/api/billing/checkout', { 
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ 
+          tier: 'Growth',
+          paymentProvider: paymentProvider
+        }),
+      });
       if (res.redirected) {
         window.location.href = res.url;
       } else {
