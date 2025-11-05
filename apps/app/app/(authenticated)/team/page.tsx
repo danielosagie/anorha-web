@@ -4,17 +4,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { Header } from '../components/header';
+import MemberPermissionsPage from './components/MemberPermissionsPage';
+import { Settings } from 'lucide-react';
 
-// Dynamically import Clerk component`s to avoid server-side issues
-const OrganizationProfile = dynamic(
-  () => import('@clerk/nextjs').then((mod) => mod.OrganizationProfile),
-  { ssr: false }
-);
-
-const OrganizationSwitcher = dynamic(
-  () => import('@clerk/nextjs').then((mod) => mod.OrganizationSwitcher),
-  { ssr: false }
-);
+import { OrganizationProfile, OrganizationSwitcher } from '@clerk/nextjs';
 
 
 export default function TeamPage() {
@@ -41,7 +34,7 @@ export default function TeamPage() {
           style={{ paddingTop: 0, paddingBottom: 0, paddingLeft: 0, paddingRight: 0, border: 'none' }}
         >
           <div className="flex-1 min-h-0 flex flex-col p-0 w-fit border-gray-100 border-2 rounded-md">
-            <OrganizationProfile 
+            <OrganizationProfile
               routing="hash"
               appearance={{
                 elements: {
@@ -56,7 +49,7 @@ export default function TeamPage() {
                     flexDirection: 'column',
                     flex: '1 1 0%',
                     overflow: 'hidden',
-                 
+
                     backgroundColor: 'rgb(255, 255, 255)',
                   },
                   card: {
@@ -64,7 +57,7 @@ export default function TeamPage() {
                     boxShadow: 'none',
                     backgroundColor: 'rgb(255, 255, 255)',
                     height: '100%',
-                    
+
                     minHeight: 0,
                     minWidth: 0,
                     flex: '1 1 0%',
@@ -73,7 +66,7 @@ export default function TeamPage() {
                   },
                   cardBox: {
                     border: 'none',
-                
+
                     minHeight: 0,
                     minWidth: 0,
                     flex: '1 1 0%',
@@ -102,7 +95,7 @@ export default function TeamPage() {
                       paddingLeft: '0.5rem',
                       paddingRight: '0.5rem',
                     },
-           
+
                   },
                   navbar: {
                     borderBottom: `0px solid ${borderColor}`,
@@ -133,7 +126,16 @@ export default function TeamPage() {
                   borderRadius: '0.2rem',
                 },
               }}
-            />
+            >
+              {/* @ts-ignore - OrganizationProfile.Page exists at runtime per Clerk docs */}
+              <OrganizationProfile.Page
+                label="Permissions"
+                url="permissions"
+                labelIcon={<Settings className="w-4 h-4" />}
+              >
+                <MemberPermissionsPage />
+              </OrganizationProfile.Page>
+            </OrganizationProfile>
           </div>
         </CardContent>
       </Card>
