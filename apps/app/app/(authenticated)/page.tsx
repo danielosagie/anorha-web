@@ -63,7 +63,7 @@ const App = async () => {
 
   return (
     <>
-      <Header pages={['Dashboard']} page="Overview">
+      <Header page="Overview">
         {/* Liveblocks disabled intentionally 
         false && env.LIVEBLOCKS_SECRET && 
         */}

@@ -32,33 +32,25 @@ export const metadata: Metadata = {
 
 async function getBillingData() {
   const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  
-  // Use the proxy routes that handle JWT token exchange
-  const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
-    fetch(`${origin}/api/billing/summary`, { cache: 'no-store' }),
-    fetch(`${origin}/api/billing/invoices?limit=12`, { cache: 'no-store' }),
-    fetch(`${origin}/api/billing/upcoming`, { cache: 'no-store' }),
-  ]);
-  
-  if (!summaryRes.ok) {
-    console.error('Failed to fetch billing summary:', await summaryRes.text());
-    throw new Error('Failed to fetch billing summary');
+
+  try {
+    // Use the proxy routes that handle JWT token exchange
+    const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
+      fetch(`${origin}/api/billing/summary`, { cache: 'no-store' }).catch(() => null),
+      fetch(`${origin}/api/billing/invoices?limit=12`, { cache: 'no-store' }).catch(() => null),
+      fetch(`${origin}/api/billing/upcoming`, { cache: 'no-store' }).catch(() => null),
+    ]);
+
+    const summary = summaryRes?.ok ? await summaryRes.json() : null;
+    const invoices = invoicesRes?.ok ? await invoicesRes.json() : null;
+    const upcoming = upcomingRes?.ok ? await upcomingRes.json() : { upcoming: null };
+
+    return { summary, invoices, upcoming } as const;
+  } catch (error) {
+    console.error('Failed to fetch billing data:', error);
+    // Return null data instead of throwing to prevent page crash
+    return { summary: null, invoices: null, upcoming: { upcoming: null } } as const;
   }
-  if (!invoicesRes.ok) {
-    console.error('Failed to fetch invoices:', await invoicesRes.text());
-    throw new Error('Failed to fetch invoices');
-  }
-  if (!upcomingRes.ok) {
-    console.error('Failed to fetch upcoming invoice:', await upcomingRes.text());
-    // Don't throw for upcoming invoice as it might not exist
-  }
-  
-  const [summary, invoices, upcoming] = await Promise.all([
-    summaryRes.json(),
-    invoicesRes.json(),
-    upcomingRes.ok ? upcomingRes.json() : Promise.resolve({ upcoming: null }),
-  ]);
-  return { summary, invoices, upcoming } as const;
 }
 
 export default async function BillingPage() {
@@ -73,14 +65,47 @@ export default async function BillingPage() {
   const paymentProvider = subscription?.PolarCustomerId ? 'polar' : 'stripe';
   const hasActiveSubscription = subscription?.Status === 'active';
 
+  // Show loading/error state if no data
+  if (!summary && !invoices && !upcoming) {
+    return (
+      <>
+        <Header page="Billing">
+          <BillingActions
+            paymentProvider={paymentProvider}
+            hasActiveSubscription={hasActiveSubscription}
+          />
+        </Header>
+      </>
+    );
+  }
+
+  
+
   return (
     <>
-      <Header pages={['Dashboard']} page="Billing">
+      <Header page="Billing">
         <BillingActions 
           paymentProvider={paymentProvider} 
           hasActiveSubscription={hasActiveSubscription}
         />
       </Header>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+          <div>
+            <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Billing</h1>
+            <p className="text-muted-foreground text-sm md:text-base">
+              Manage your subscription, usage, and billing information
+            </p>
+          </div>
+        </div>
+        <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+          <Card className="border-2 shadow-none">
+            <CardContent className="p-8">
+              <div className="text-center text-muted-foreground">
+                <p>Unable to load billing information. Please try again later.</p>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Billing</h1>

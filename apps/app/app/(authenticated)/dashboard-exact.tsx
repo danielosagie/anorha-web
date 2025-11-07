@@ -57,7 +57,7 @@ const App = async () => {
 
   return (
     <>
-      <Header pages={['Dashboard']} page="Overview">
+      <Header page="Overview">
         {env.LIVEBLOCKS_SECRET && (
           <CollaborationWrapper orgId={orgId}>
             <AvatarStack />

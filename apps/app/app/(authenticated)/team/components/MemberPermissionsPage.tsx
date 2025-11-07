@@ -67,16 +67,16 @@ export default function MemberPermissionsPage() {
     try {
       // Call frontend API routes - they handle Clerk → Supabase token exchange
       const [poolsRes, schemaRes] = await Promise.all([
-        fetch(`${API_BASE}/pools/org/${orgId}`, { cache: 'no-store' }),
-        fetch(`${API_BASE}/organizations/${orgId}/schema`, { cache: 'no-store' })
+        fetch(`${API_BASE}/pools/org/${orgId}`, { cache: 'no-store' }).catch(() => null),
+        fetch(`${API_BASE}/organizations/${orgId}/schema`, { cache: 'no-store' }).catch(() => null)
       ]);
 
-      if (poolsRes.ok) {
+      if (poolsRes?.ok) {
         const poolsData = await poolsRes.json();
         setPools(Array.isArray(poolsData) ? poolsData : []);
       }
 
-      if (schemaRes.ok) {
+      if (schemaRes?.ok) {
         const schemaData = await schemaRes.json();
         setSchema(schemaData);
       }
@@ -96,8 +96,8 @@ export default function MemberPermissionsPage() {
               const permRes = await fetch(
                 `${API_BASE}/organizations/${orgId}/members/${member.publicUserData?.userId}/permissions`,
                 { cache: 'no-store' }
-              );
-              if (permRes.ok) {
+              ).catch(() => null);
+              if (permRes?.ok) {
                 const permData = await permRes.json();
                 permissionsMap[member.publicUserData?.userId || ''] = permData;
               }

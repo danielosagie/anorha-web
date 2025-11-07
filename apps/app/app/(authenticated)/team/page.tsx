@@ -15,7 +15,7 @@ export default function TeamPage() {
 
   return (
     <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <Header pages={['Team']} page="Team" />
+      <Header page="Team" />
 
       <div className="flex items-center gap-2 flex-wrap mb-1">
         <div>
