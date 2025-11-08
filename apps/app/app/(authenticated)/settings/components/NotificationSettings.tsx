@@ -29,6 +29,25 @@ interface NotificationSettings {
   };
 }
 
+const DEFAULT_SETTINGS: NotificationSettings = {
+  syncErrors: {
+    enabled: true,
+    channels: { inApp: true, email: true },
+  },
+  lowStock: {
+    enabled: true,
+    threshold: 10,
+    channels: { inApp: true, email: true },
+    frequency: 'immediate',
+  },
+  reports: {
+    enabled: true,
+    cadence: 'daily',
+    timeUtc: '09:00',
+    channels: { inApp: true, email: true },
+  },
+};
+
 interface NotificationSettingsProps {
   orgId: string;
   isAdmin: boolean;
@@ -39,17 +58,17 @@ export function NotificationSettings({ orgId, isAdmin, userId }: NotificationSet
   const { getToken } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [orgSettings, setOrgSettings] = useState<NotificationSettings | null>(null);
+  const [orgSettings, setOrgSettings] = useState<NotificationSettings>(DEFAULT_SETTINGS);
   const [userOverrides, setUserOverrides] = useState<Partial<NotificationSettings> | null>(null);
   const [useOrgDefaults, setUseOrgDefaults] = useState(true);
 
-  // Merge org settings with user overrides
+  // Merge org settings with user overrides, falling back to defaults
   const effectiveSettings = useOrgDefaults || !userOverrides
     ? orgSettings
     : {
-        syncErrors: userOverrides.syncErrors || orgSettings?.syncErrors,
-        lowStock: userOverrides.lowStock || orgSettings?.lowStock,
-        reports: userOverrides.reports || orgSettings?.reports,
+        syncErrors: { ...orgSettings.syncErrors, ...userOverrides.syncErrors },
+        lowStock: { ...orgSettings.lowStock, ...userOverrides.lowStock },
+        reports: { ...orgSettings.reports, ...userOverrides.reports },
       };
 
   useEffect(() => {
@@ -64,10 +83,12 @@ export function NotificationSettings({ orgId, isAdmin, userId }: NotificationSet
         fetch(`/api/users/${userId}/notifications`),
       ]);
 
+      let loadedOrgSettings = DEFAULT_SETTINGS;
       if (orgRes.ok) {
         const orgData = await orgRes.json();
-        setOrgSettings(orgData);
+        loadedOrgSettings = { ...DEFAULT_SETTINGS, ...orgData };
       }
+      setOrgSettings(loadedOrgSettings);
 
       if (userRes.ok) {
         const userData = await userRes.json();
@@ -115,7 +136,6 @@ export function NotificationSettings({ orgId, isAdmin, userId }: NotificationSet
   };
 
   const updateOrgSetting = (path: string[], value: any) => {
-    if (!orgSettings) return;
     const newSettings = { ...orgSettings };
     let current: any = newSettings;
     for (let i = 0; i < path.length - 1; i++) {
@@ -144,7 +164,7 @@ export function NotificationSettings({ orgId, isAdmin, userId }: NotificationSet
     }
   };
 
-  if (loading || !effectiveSettings) {
+  if (loading) {
     return <div className="p-4 text-sm text-muted-foreground">Loading notification settings...</div>;
   }
 

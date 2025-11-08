@@ -1,19 +1,20 @@
-import { NextResponse } from 'next/server';
-import { getSupabaseToken } from '../../../billing/_utils';
+import { NextRequest, NextResponse } from 'next/server';
+import { getSupabaseToken } from '../../../../../billing/_utils';
 
 export const dynamic = 'force-dynamic';
 
-export async function GET(
-  request: Request,
-  context: { params: Promise<{ orgId: string }> }
+export async function DELETE(
+  request: NextRequest,
+  context: { params: Promise<{ poolId: string; locationId: string }> }
 ) {
   try {
-    const { orgId } = await context.params;
-    console.log('[pools/org] GET request for org:', orgId);
+    const { poolId, locationId } = await context.params;
+    console.log(`[pools/id/locations/id] DELETE request for location ${locationId} from pool ${poolId}`);
 
     const { token, apiBase } = await getSupabaseToken();
 
-    const res = await fetch(`${apiBase}/pools/org/${orgId}`, {
+    const res = await fetch(`${apiBase}/pools/${poolId}/locations/${locationId}`, {
+      method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -21,7 +22,7 @@ export async function GET(
       cache: 'no-store',
     });
 
-    console.log('[pools/org] Backend response status:', res.status);
+    console.log(`[pools/id/locations/id] Backend response status:`, res.status);
 
     if (!res.ok) {
       let errorBody = null;
@@ -36,7 +37,7 @@ export async function GET(
         errorBody = { message: `HTTP ${res.status}: ${res.statusText}` };
       }
 
-      console.error('[pools/org] Backend error response:', {
+      console.error(`[pools/id/locations/id] Backend error response:`, {
         status: res.status,
         statusText: res.statusText,
         body: errorBody
@@ -44,7 +45,7 @@ export async function GET(
 
       return NextResponse.json(
         { 
-          error: errorBody?.message || 'Failed to fetch organization pools',
+          error: errorBody?.message || 'Failed to remove location from pool',
           status: res.status,
           details: errorBody
         },
@@ -55,7 +56,7 @@ export async function GET(
     const json = await res.json();
     return NextResponse.json(json, { status: res.status });
   } catch (e: any) {
-    console.error('[pools/org] Unexpected error:', e);
+    console.error(`[pools/id/locations/id] Unexpected error:`, e);
     return NextResponse.json(
       { error: e?.message || 'Internal server error' },
       { status: 500 }

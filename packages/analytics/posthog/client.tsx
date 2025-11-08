@@ -14,9 +14,15 @@ export const PostHogProvider = (
   properties: Omit<PostHogProviderProps, 'client'>
 ) => {
   useEffect(() => {
-    posthog.init(keys().NEXT_PUBLIC_POSTHOG_KEY, {
+    const env = keys();
+    if (!env.NEXT_PUBLIC_POSTHOG_KEY || !env.NEXT_PUBLIC_POSTHOG_HOST) {
+      console.warn('[PostHog] Missing API key or host. PostHog disabled.');
+      return;
+    }
+    
+    posthog.init(env.NEXT_PUBLIC_POSTHOG_KEY, {
       api_host: '/ingest',
-      ui_host: keys().NEXT_PUBLIC_POSTHOG_HOST,
+      ui_host: env.NEXT_PUBLIC_POSTHOG_HOST,
       person_profiles: 'identified_only',
       capture_pageview: false, // Disable automatic pageview capture, as we capture manually
       capture_pageleave: true, // Overrides the `capture_pageview` setting
