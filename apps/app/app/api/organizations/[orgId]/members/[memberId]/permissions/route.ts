@@ -5,14 +5,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
-  { params }: { params: { orgId: string; memberId: string } }
+  context: { params: Promise<{ orgId: string; memberId: string }> }
 ) {
   try {
-    console.log('[organizations/members/permissions] GET request for org:', params.orgId, 'member:', params.memberId);
+    const { orgId, memberId } = await context.params;
+    console.log('[organizations/members/permissions] GET request for org:', orgId, 'member:', memberId);
 
     const { token, apiBase } = await getSupabaseToken();
 
-    const res = await fetch(`${apiBase}/organizations/${params.orgId}/members/${params.memberId}/permissions`, {
+    const res = await fetch(`${apiBase}/organizations/${orgId}/members/${memberId}/permissions`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
@@ -35,15 +36,16 @@ export async function GET(
 
 export async function PATCH(
   request: Request,
-  { params }: { params: { orgId: string; memberId: string } }
+  context: { params: Promise<{ orgId: string; memberId: string }> }
 ) {
   try {
-    console.log('[organizations/members/permissions] PATCH request for org:', params.orgId, 'member:', params.memberId);
+    const { orgId, memberId } = await context.params;
+    console.log('[organizations/members/permissions] PATCH request for org:', orgId, 'member:', memberId);
 
     const { token, apiBase } = await getSupabaseToken();
     const body = await request.json();
 
-    const res = await fetch(`${apiBase}/organizations/${params.orgId}/members/${params.memberId}/permissions`, {
+    const res = await fetch(`${apiBase}/organizations/${orgId}/members/${memberId}/permissions`, {
       method: 'PATCH',
       headers: {
         'Authorization': `Bearer ${token}`,

@@ -5,14 +5,15 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
-  { params }: { params: { orgId: string } }
+  context: { params: Promise<{ orgId: string }> }
 ) {
   try {
-    console.log('[pools/org] GET request for org:', params.orgId);
+    const { orgId } = await context.params;
+    console.log('[pools/org] GET request for org:', orgId);
 
     const { token, apiBase } = await getSupabaseToken();
 
-    const res = await fetch(`${apiBase}/pools/org/${params.orgId}`, {
+    const res = await fetch(`${apiBase}/pools/org/${orgId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',

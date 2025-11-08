@@ -2,180 +2,153 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo
 import { Button } from '@repo/design-system/components/ui/button';
 import { Badge } from '@repo/design-system/components/ui/badge';
 import { Separator } from '@repo/design-system/components/ui/separator';
-import { UserIcon, BellIcon, ShieldIcon, CreditCardIcon, TrashIcon, SettingsIcon, ExternalLinkIcon, CheckCircleIcon } from 'lucide-react';
+import { ExternalLinkIcon, SettingsIcon, UsersIcon, Building2Icon, CreditCardIcon, LogOutIcon, NetworkIcon, MapIcon, BellIcon } from 'lucide-react';
+import { auth, currentUser } from '@repo/auth/server';
+import MemberPermissionsPage from '../team/components/MemberPermissionsPage';
+import { OrgProfileClient } from './components/OrgProfileClient';
+import { SignOutControl } from './components/SignOutControl';
+import { NotificationSettings } from './components/NotificationSettings';
+
+async function getBillingSummary() {
+  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  try {
+    const res = await fetch(`${origin}/api/billing/summary`, { cache: 'no-store' });
+    if (!res.ok) return null;
+    return await res.json();
+  } catch {
+    return null;
+  }
+}
+
+async function getUpcomingInvoice() {
+  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  try {
+    const res = await fetch(`${origin}/api/billing/upcoming`, { cache: 'no-store' });
+    if (!res.ok) return { upcoming: null } as any;
+    return await res.json();
+  } catch {
+    return { upcoming: null } as any;
+  }
+}
+
+async function getPools(orgId: string) {
+  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  try {
+    const res = await fetch(`${origin}/api/pools/org/${orgId}`, { cache: 'no-store' });
+    if (!res.ok) return [] as Array<{ id: string; name: string; description?: string }>;
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [] as Array<{ id: string; name: string; description?: string }>;
+  }
+}
 
 export default async function SettingsPage() {
+  const { orgId, orgRole } = await auth();
+  const user = await currentUser();
+  const isAdmin = orgRole === 'org:admin' || orgRole === 'org:owner';
+
+  if (!orgId) {
+    return (
+      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Settings</h1>
+        <p className="text-muted-foreground text-sm md:text-base">Select an organization to manage settings.</p>
+      </div>
+    );
+  }
+
+  const [summary, upcoming, pools] = await Promise.all([
+    getBillingSummary(),
+    getUpcomingInvoice(),
+    getPools(orgId),
+  ]);
+
+  const subscription = summary?.subscription || null;
+  const nextDue = upcoming?.upcoming?.due_date ? new Date(upcoming.upcoming.due_date) : null;
+
   return (
     <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
       {/* Page Header */}
-      <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground text-sm md:text-base">
-          Manage your account and preferences
-        </p>
+      <div className="flex items-start justify-between flex-wrap gap-4">
+        <div>
+          <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Web Settings</h1>
+          <p className="text-muted-foreground text-sm md:text-base">Organization-wide configuration. Admins/Owners only.</p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button asChild variant="outline" size="sm">
+            <a href="/billing">
+              <CreditCardIcon className="w-4 h-4 mr-2" />
+              Open Billing
+            </a>
+          </Button>
+          <Button asChild variant="outline" size="sm">
+            <a href="/team">
+              <UsersIcon className="w-4 h-4 mr-2" />
+              Team Manager
+            </a>
+          </Button>
+          <SignOutControl />
+        </div>
       </div>
 
-      {/* Profile Settings */}
+      {/* Organization 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <UserIcon className="size-5" />
-            Profile
+            <Building2Icon className="size-5" />
+            Organization
           </CardTitle>
-          <CardDescription>Manage your personal information</CardDescription>
+          <CardDescription>Manage name, billing email, timezone, and deletion.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-3">
-            <div>
-              <label className="text-sm font-medium">Display Name</label>
-              <div className="mt-1 p-3 border rounded-lg bg-muted/50">
-                <div className="font-medium">John Doe</div>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Email Address</label>
-              <div className="mt-1 p-3 border rounded-lg bg-muted/50">
-                <div className="font-medium">john@company.com</div>
-                <div className="text-sm text-green-600 mt-1">✓ Verified</div>
-              </div>
-            </div>
-
-            <div>
-              <label className="text-sm font-medium">Company</label>
-              <div className="mt-1 p-3 border rounded-lg bg-muted/50">
-                <div className="font-medium">Acme Corp</div>
-              </div>
-            </div>
+        <CardContent className="p-0">
+          <div className="border rounded-md overflow-hidden">
+            <OrgProfileClient />
           </div>
-
-          <Button variant="outline" className="w-full">
-            Edit Profile
-          </Button>
         </CardContent>
       </Card>
 
-      {/* Integrations */}
+      Team Management 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <SettingsIcon className="size-5" />
+            <UsersIcon className="size-5" />
+            Team Management
+          </CardTitle>
+          <CardDescription>Invite, revoke, assign roles and pool access.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="border rounded-md overflow-hidden">
+            <OrgProfileClient />
+          </div>
+          <Separator />
+          <div>
+            <div className="text-sm text-muted-foreground mb-2">Fine-grained access by pool</div>
+            <MemberPermissionsPage />
+          </div>
+        </CardContent>
+      </Card>
+
+       Integrations - Connected Platforms 
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <NetworkIcon className="size-5" />
             Integrations
           </CardTitle>
-          <CardDescription>Connect your favorite platforms and tools</CardDescription>
+          <CardDescription>Connect Shopify, Square, and more.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 sm:grid-cols-2">
-            {/* Shopify Integration */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded-lg flex items-center justify-center">
-                  <CheckCircleIcon className="w-5 h-5 text-green-600" />
-                </div>
-                <div>
-                  <div className="font-medium">Shopify</div>
-                  <div className="text-sm text-muted-foreground">Sync your store data</div>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                <ExternalLinkIcon className="w-4 h-4 mr-2" />
-                Configure
-              </Button>
-            </div>
-
-            {/* eBay Integration */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900 rounded-lg flex items-center justify-center">
-                  <CheckCircleIcon className="w-5 h-5 text-blue-600" />
-                </div>
-                <div>
-                  <div className="font-medium">eBay</div>
-                  <div className="text-sm text-muted-foreground">Import listings</div>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                <ExternalLinkIcon className="w-4 h-4 mr-2" />
-                Configure
-              </Button>
-            </div>
-
-            {/* Etsy Integration */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-orange-100 dark:bg-orange-900 rounded-lg flex items-center justify-center">
-                  <CheckCircleIcon className="w-5 h-5 text-orange-600" />
-                </div>
-                <div>
-                  <div className="font-medium">Etsy</div>
-                  <div className="text-sm text-muted-foreground">Sync shop inventory</div>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                <ExternalLinkIcon className="w-4 h-4 mr-2" />
-                Configure
-              </Button>
-            </div>
-
-            {/* Amazon Integration */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-yellow-100 dark:bg-yellow-900 rounded-lg flex items-center justify-center">
-                  <CheckCircleIcon className="w-5 h-5 text-yellow-600" />
-                </div>
-                <div>
-                  <div className="font-medium">Amazon</div>
-                  <div className="text-sm text-muted-foreground">Seller Central sync</div>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                <ExternalLinkIcon className="w-4 h-4 mr-2" />
-                Configure
-              </Button>
-            </div>
-
-            {/* WooCommerce Integration */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900 rounded-lg flex items-center justify-center">
-                  <CheckCircleIcon className="w-5 h-5 text-purple-600" />
-                </div>
-                <div>
-                  <div className="font-medium">WooCommerce</div>
-                  <div className="text-sm text-muted-foreground">WordPress store sync</div>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                <ExternalLinkIcon className="w-4 h-4 mr-2" />
-                Configure
-              </Button>
-            </div>
-
-            {/* BigCommerce Integration */}
-            <div className="flex items-center justify-between p-4 border rounded-lg">
-              <div className="flex items-center gap-3">
-                <div className="w-8 h-8 bg-indigo-100 dark:bg-indigo-900 rounded-lg flex items-center justify-center">
-                  <CheckCircleIcon className="w-5 h-5 text-indigo-600" />
-                </div>
-                <div>
-                  <div className="font-medium">BigCommerce</div>
-                  <div className="text-sm text-muted-foreground">Enterprise sync</div>
-                </div>
-              </div>
-              <Button variant="outline" size="sm">
-                <ExternalLinkIcon className="w-4 h-4 mr-2" />
-                Configure
-              </Button>
-            </div>
-          </div>
-
-          <Separator />
-
-          <Button variant="outline" className="w-full">
-            Browse More Integrations
+        <CardContent className="flex flex-wrap gap-3">
+          <Button asChild variant="default" size="sm">
+            <a href="/import">
+              <ExternalLinkIcon className="w-4 h-4 mr-2" />
+              Add New Integration
+            </a>
           </Button>
+          To fully wire live connections (list/reconnect/disconnect), I will add /api/platform-connections proxy routes to the backend endpoints on your approval. 
         </CardContent>
       </Card>
+
+      */}
 
       {/* Notifications */}
       <Card>
@@ -184,155 +157,80 @@ export default async function SettingsPage() {
             <BellIcon className="size-5" />
             Notifications
           </CardTitle>
-          <CardDescription>Configure how you receive updates</CardDescription>
+          <CardDescription>Configure how you receive notifications for sync errors, low stock, and inventory reports.</CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium">Email Notifications</div>
-                <div className="text-sm text-muted-foreground">Order updates and alerts</div>
-              </div>
-              <Badge className="bg-green-100 text-green-800">Enabled</Badge>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium">Usage Alerts</div>
-                <div className="text-sm text-muted-foreground">When approaching limits</div>
-              </div>
-              <Badge variant="outline">Disabled</Badge>
-            </div>
-
-            <Separator />
-
-            <div className="flex items-center justify-between">
-              <div>
-                <div className="font-medium">Weekly Reports</div>
-                <div className="text-sm text-muted-foreground">Performance summaries</div>
-              </div>
-              <Badge className="bg-green-100 text-green-800">Enabled</Badge>
-            </div>
-          </div>
-
-          <Button variant="outline" className="w-full">
-            Configure Notifications
-          </Button>
+        <CardContent>
+          {user && (
+            <NotificationSettings 
+              orgId={orgId} 
+              isAdmin={isAdmin}
+              userId={user.id}
+            />
+          )}
         </CardContent>
       </Card>
 
-      {/* Security & Billing */}
-      <div className="grid gap-6 md:grid-cols-2">
-        {/* Security */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <ShieldIcon className="size-5" />
-              Security
-            </CardTitle>
-            <CardDescription>Protect your account</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Two-Factor Authentication</div>
-                  <div className="text-sm text-muted-foreground">Add an extra layer of security</div>
-                </div>
-                <Button variant="outline" size="sm">Enable</Button>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Password</div>
-                  <div className="text-sm text-muted-foreground">Last changed 30 days ago</div>
-                </div>
-                <Button variant="outline" size="sm">Change</Button>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Active Sessions</div>
-                  <div className="text-sm text-muted-foreground">Manage your login sessions</div>
-                </div>
-                <Button variant="outline" size="sm">View</Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Billing */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <CreditCardIcon className="size-5" />
-              Billing
-            </CardTitle>
-            <CardDescription>Manage your subscription</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Current Plan</div>
-                  <div className="text-sm text-muted-foreground">Pro Plan - $79/month</div>
-                </div>
-                <Badge className="bg-green-100 text-green-800">Active</Badge>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Payment Method</div>
-                  <div className="text-sm text-muted-foreground">•••• 4242</div>
-                </div>
-                <Button variant="outline" size="sm">Update</Button>
-              </div>
-
-              <Separator />
-
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium">Billing History</div>
-                  <div className="text-sm text-muted-foreground">View past invoices</div>
-                </div>
-                <Button variant="outline" size="sm">View</Button>
-              </div>
-            </div>
-
-            <Button className="w-full">
-              Manage Subscription
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Danger Zone */}
-      <Card className="border-red-200 dark:border-red-800">
+      {/* Pools & Locations */}
+      <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-red-600 dark:text-red-400">
-            <TrashIcon className="size-5" />
-            Danger Zone
+          <CardTitle className="flex items-center gap-2">
+            <MapIcon className="size-5" />
+            Pools & Locations
           </CardTitle>
-          <CardDescription className="text-red-600 dark:text-red-400">
-            Irreversible actions that affect your account
-          </CardDescription>
+          <CardDescription>Manage pools used for permissions and syncing.</CardDescription>
         </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 border border-red-200 dark:border-red-800 rounded-lg">
-            <div>
-              <div className="font-medium text-red-600 dark:text-red-400">Delete Account</div>
-              <div className="text-sm text-muted-foreground">Permanently delete your account and all data</div>
+        <CardContent className="space-y-4">
+          <div>
+            <div className="text-sm font-medium mb-2">Pools</div>
+            <div className="grid gap-2">
+              {pools.map((p) => (
+                <div key={p.id} className="flex items-center justify-between rounded-md border p-3">
+                  <div>
+                    <div className="font-medium">{p.name}</div>
+                    {p.description && <div className="text-sm text-muted-foreground">{p.description}</div>}
+                  </div>
+                  <Badge variant="secondary">Active</Badge>
+                </div>
+              ))}
+              {pools.length === 0 && (
+                <div className="text-sm text-muted-foreground">No pools found.</div>
+              )}
             </div>
-            <Button variant="destructive" size="sm">
-              Delete Account
+          </div>
+          {/* Locations listing requires platform-connections endpoints. I can wire this once the proxy routes are added. */}
+        </CardContent>
+      </Card>
+
+      {/* Billing Summary */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <CreditCardIcon className="size-5" />
+            Billing
+          </CardTitle>
+          <CardDescription>Plan, usage, and next invoice.</CardDescription>
+        </CardHeader>
+        <CardContent className="flex items-center justify-between flex-wrap gap-4">
+          <div>
+            <div className="text-sm text-muted-foreground">Current Plan</div>
+            <div className="font-medium">{subscription?.CurrentPlan || 'Growth'}</div>
+          </div>
+          <div>
+            <div className="text-sm text-muted-foreground">Status</div>
+            <Badge variant={subscription?.Status === 'active' ? 'default' : 'secondary'}>
+              {subscription?.Status || 'active'}
+            </Badge>
+          </div>
+          <div>
+            <div className="text-sm text-muted-foreground">Next Billing Date</div>
+            <div className="font-medium">{nextDue ? nextDue.toLocaleDateString() : '—'}</div>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button asChild variant="outline" size="sm">
+              <a href="/billing">
+                <SettingsIcon className="w-4 h-4 mr-2" />
+                Manage Billing
+              </a>
             </Button>
           </div>
         </CardContent>
