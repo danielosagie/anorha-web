@@ -459,3 +459,5 @@ Uses Supabase for database and auth. No direct frontend access needed.
 - Check backend controllers in `sssync-bknd/src/` to see what endpoints exist
 - Run `npm run docs:generate` to see all available endpoints
 
+
+

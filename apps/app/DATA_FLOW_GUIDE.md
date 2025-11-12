@@ -337,3 +337,5 @@ const poolPerms = memberPerms?.poolPermissions?.[pool.id] || {
 **For Interviews:** "Data flows from backend into state, gets displayed in UI, user changes trigger updates back to backend, state refreshes, UI re-renders."
 
 
+
+

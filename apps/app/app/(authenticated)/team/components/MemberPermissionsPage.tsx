@@ -153,7 +153,8 @@ export default function MemberPermissionsPage() {
 
       // Handle pools
       if (poolsRes.ok) {
-        setPools(Array.isArray(await poolsRes.json()) ? await poolsRes.json() : []);
+        const poolsData = await poolsRes.json();
+        setPools(Array.isArray(poolsData) ? poolsData : []);
       } else {
         console.error('[MemberPermissionsPage] Failed to load pools:', poolsRes.status);
         setPools([]);
@@ -161,7 +162,8 @@ export default function MemberPermissionsPage() {
 
       // Handle locations
       if (locationsRes.ok) {
-        setAllLocations(await locationsRes.json());
+        const locationsData = await locationsRes.json();
+        setAllLocations(locationsData);
       } else {
         console.error('[MemberPermissionsPage] Failed to load locations:', locationsRes.status);
         setAllLocations({});
@@ -169,7 +171,8 @@ export default function MemberPermissionsPage() {
 
       // Handle schema
       if (schemaRes.ok) {
-        setSchema(await schemaRes.json());
+        const schemaData = await schemaRes.json();
+        setSchema(schemaData);
       }
 
       // Load members with their permissions
