@@ -13,7 +13,7 @@ interface PageWrapperProps {
 export function PageWrapper({ children, title, description }: PageWrapperProps) {
   return (
     <div 
-      className="flex flex-col border-2 border-[#AFAFAF] rounded-lg w-full p-2 h-full min-h-0"
+      className="flex flex-col border-2 border-[#AFAFAF] rounded-lg w-full p-2 min-h-0 min-h-[98vh]"
       style={{ backgroundColor: '#FFFCF5' }}
     >
     <Header page={title || ''} />

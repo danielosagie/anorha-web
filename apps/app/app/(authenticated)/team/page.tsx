@@ -4,7 +4,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { Header } from '../components/header';
-import { PageWrapper } from '../components/page-wrapper';
 import MemberPermissionsPage from './components/MemberPermissionsPage';
 import { Settings } from 'lucide-react';
 
@@ -16,8 +15,9 @@ export default function TeamPage() {
 
   return (
     <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
-      <PageWrapper title="Team" description="Manage your organization and team members">
-        <div className="flex-1 min-h-0 flex flex-col">
+      <div className="bg-[#FFFCF5] rounded-lg border-2 p-4 flex flex-col flex-1 overflow-hidden" style={{ borderColor: '#AFAFAF' }}>
+        <Header page="Team"></Header>
+        <div className="flex flex-1 min-h-0 flex-col rounded-lg border-2 border-[#E4E4E7]">
               <OrganizationProfile
                 routing="hash"
                 appearance={{
@@ -26,14 +26,14 @@ export default function TeamPage() {
                       boxShadow: 'none',
                       width: '100%',
                       height: '100%',
-                      minWidth: 0,
+                      minWidth: '100%',
                       minHeight: 0,
                       margin: 0,
+                      padding: 0,
                       display: 'flex',
                       flexDirection: 'column',
                       flex: '1 1 0%',
                       overflow: 'hidden',
-
                       backgroundColor: 'rgb(255, 255, 255)',
                     },
                     card: {
@@ -50,9 +50,8 @@ export default function TeamPage() {
                     },
                     cardBox: {
                       border: 'none',
-
                       minHeight: 0,
-                      minWidth: 0,
+                      minWidth: "100%",
                       flex: '1 1 0%',
                       backgroundColor: 'rgb(255, 255, 255)',
                     },
@@ -121,7 +120,7 @@ export default function TeamPage() {
                 </OrganizationProfile.Page>
               </OrganizationProfile>
         </div>
-      </PageWrapper>
+      </div>
     </div>
   );
 }

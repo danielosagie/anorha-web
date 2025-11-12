@@ -109,6 +109,11 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                 <OrganizationSwitcher
                   hidePersonal
                   afterSelectOrganizationUrl="/"
+                  appearance={{
+                    elements: {
+                      organizationSwitcherTrigger: 'hover:bg-black/10 focus:bg-black/10',
+                    },
+                  }}
                 />
               </div>
             </SidebarMenuItem>
@@ -132,7 +137,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                       asChild
                       tooltip={item.title}
                       className={cn(
-                        "relative data-[active=true]:bg-[#647653] data-[active=true]:text-white",
+                        "relative data-[active=true]:bg-[#647653] data-[active=true]:text-white hover:bg-black/10 focus:bg-black/10",
                         // Border only shows when active
                         "data-[active=true]:border-[3px] data-[active=true]:border-[#647653] data-[active=true]:px-3 data-[active=true]:py-2",
                         // White ring inside for active
@@ -148,7 +153,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                     {item.items?.length ? (
                       <>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuAction className="data-[state=open]:rotate-90">
+                          <SidebarMenuAction className="data-[state=open]:rotate-90 hover:bg-black/10 focus:bg-black/10">
                             <ChevronRightIcon />
                             <span className="sr-only">Toggle</span>
                           </SidebarMenuAction>
@@ -157,7 +162,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                           <SidebarMenuSub>
                             {item.items?.map((subItem: SubNavItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild>
+                                <SidebarMenuSubButton asChild className="hover:bg-black/10 focus:bg-black/10">
                                   <Link href={subItem.url}>
                                     <span>{subItem.title}</span>
                                   </Link>
@@ -182,7 +187,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                     <SidebarMenuButton
                       asChild
                       className={cn(
-                        "relative data-[active=true]:bg-[#647653] data-[active=true]:text-white",
+                        "relative data-[active=true]:bg-[#647653] data-[active=true]:text-white hover:bg-black/10 focus:bg-black/10",
                         // Border only shows when active
                         "data-[active=true]:border-[3px] data-[active=true]:border-[#647653] data-[active=true]:px-3 data-[active=true]:py-2",
                         // White ring inside for active
@@ -211,6 +216,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                     rootBox: 'flex overflow-hidden w-full',
                     userButtonBox: 'flex-row-reverse',
                     userButtonOuterIdentifier: 'truncate pl-0',
+                    userButtonTrigger: 'hover:bg-black/10 focus:bg-black/10',
                   },
                 }}
               />
@@ -219,7 +225,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="shrink-0"
+                  className="shrink-0 hover:bg-black/10 focus:bg-black/10"
                   asChild
                 >
                   <div className="h-4 w-4">
@@ -235,3 +241,4 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
     </>
   );
 };
+         
