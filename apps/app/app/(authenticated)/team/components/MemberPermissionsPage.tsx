@@ -188,6 +188,8 @@ export default function MemberPermissionsPage() {
 
   // Update loadData to use Clerk token directly for backend APIs
   useEffect(() => {
+    console.log('[MemberPermissionsPage] useEffect triggered: isLoaded=', isLoaded, 'orgId=', orgId, 'organization=', organization);
+    
     if (!isLoaded || !orgId) {
       if (!isLoaded) {
         console.log('[MemberPermissionsPage] Waiting for organization to load...');
@@ -197,6 +199,8 @@ export default function MemberPermissionsPage() {
       }
       return;
     }
+    
+    console.log('[MemberPermissionsPage] Loading data for orgId:', orgId);
     loadData();
   }, [isLoaded, orgId]);
 
