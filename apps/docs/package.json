@@ -3,9 +3,11 @@
   "private": true,
   "scripts": {
     "dev": "mintlify dev --port 3004",
-    "lint": "mintlify broken-links"
+    "lint": "mintlify broken-links",
+    "generate:api": "cd ../../../scripts && pnpm generate:mintlify"
   },
   "devDependencies": {
     "typescript": "^5.8.3"
-  }
+  },
+  "packageManager": "pnpm@10.11.0"
 }

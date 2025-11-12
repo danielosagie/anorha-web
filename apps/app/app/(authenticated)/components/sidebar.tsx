@@ -38,10 +38,11 @@ import { NotificationsTrigger } from '@repo/notifications/components/trigger';
 import {
   ChevronRightIcon,
   CreditCardIcon,
-  PieChartIcon,
+  PackageIcon,
+  LayoutDashboardIcon,
   Settings2Icon,
-  SquareTerminalIcon,
   UsersIcon,
+  BoxesIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -77,11 +78,11 @@ const data: {
     avatar: '/avatars/shadcn.jpg',
   },
   navMain: [
-    { title: 'Dashboard', url: '/', icon: SquareTerminalIcon },
-    { title: 'Analytics', url: '/analytics', icon: PieChartIcon },
+    { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon },
+    { title: 'Inventory', url: '/inventory', icon: BoxesIcon },
   ],
   navSecondary: [
-    { title: 'Billing', url: '/billing', icon: CreditCardIcon },
+    { title: 'Billing/Usage', url: '/billing', icon: CreditCardIcon },
     { title: 'Team', url: '/team', icon: UsersIcon },
     { title: 'Settings', url: '/settings', icon: Settings2Icon },
   ],
@@ -94,8 +95,8 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
 
   return (
     <>
-      <Sidebar variant="inset">
-        <SidebarHeader>
+      <Sidebar variant="inset" className='bg-[#FEF4DD]'>
+        <SidebarHeader className='bg-[#FEF4DD]'>
           <SidebarMenu>
             <SidebarMenuItem>
               <div
@@ -103,6 +104,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                   'h-[36px] overflow-hidden transition-all [&>div]:w-full',
                   sidebar.open ? '' : '-mx-1'
                 )}
+                style={{backgroundColor: "#FEF4DD"}}
               >
                 <OrganizationSwitcher
                   hidePersonal
@@ -112,9 +114,11 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
-        <Search />
-        <SidebarContent>
-            <SidebarGroup>
+        <div className='bg-[#FEF4DD]' >
+          <Search />
+        </div>
+        <SidebarContent className='bg-[#FEF4DD]'>
+            <SidebarGroup className='bg-[#FEF4DD]'>
             <SidebarGroupLabel>Platform</SidebarGroupLabel>
             <SidebarMenu>
               {data.navMain.map((item) => (
@@ -127,6 +131,13 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                     <SidebarMenuButton
                       asChild
                       tooltip={item.title}
+                      className={cn(
+                        "relative data-[active=true]:bg-[#647653] data-[active=true]:text-white",
+                        // Border only shows when active
+                        "data-[active=true]:border-[3px] data-[active=true]:border-[#647653] data-[active=true]:px-3 data-[active=true]:py-2",
+                        // White ring inside for active
+                        "data-[active=true]:ring-2 data-[active=true]:ring-white data-[active=true]:ring-inset"
+                      )}
                       isActive={item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)}
                     >
                       <Link href={item.url}>
@@ -170,6 +181,13 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton
                       asChild
+                      className={cn(
+                        "relative data-[active=true]:bg-[#647653] data-[active=true]:text-white",
+                        // Border only shows when active
+                        "data-[active=true]:border-[3px] data-[active=true]:border-[#647653] data-[active=true]:px-3 data-[active=true]:py-2",
+                        // White ring inside for active
+                        "data-[active=true]:ring-2 data-[active=true]:ring-white data-[active=true]:ring-inset"
+                      )}
                       isActive={pathname.startsWith(item.url)}
                     >
                       <Link href={item.url}>
@@ -183,9 +201,9 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter>
+        <SidebarFooter className='bg-[#FEF4DD]' >
           <SidebarMenu>
-            <SidebarMenuItem className="flex items-center gap-2">
+            <SidebarMenuItem className="flex items-center gap-2 bg-[#FEF4DD]">
               <UserButton
                 showName
                 appearance={{

@@ -8,7 +8,9 @@
     "analyze": "ANALYZE=true npm run build",
     "test": "NODE_ENV=test vitest run",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
-    "typecheck": "tsc --noEmit --emitDeclarationOnly false"
+    "typecheck": "tsc --noEmit --emitDeclarationOnly false",
+    "docs:generate": "cd ../../scripts && npm run generate",
+    "docs:generate:ai": "cd ../../scripts && npm run generate:ai"
   },
   "dependencies": {
     "@clerk/nextjs": "^6.20.0",

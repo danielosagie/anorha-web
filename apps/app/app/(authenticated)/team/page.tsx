@@ -14,8 +14,9 @@ export default function TeamPage() {
   const [borderColor, setBorderColor] = useState('rgba(0, 0, 0, 0)');
 
   return (
-    <div className="flex flex-1 flex-col gap-4 p-4 md:gap-8 md:p-8">
-      <Header page="Team" />
+    <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
+      <div className="flex flex-1 flex-col gap-4"
+      >
 
       <div className="flex items-center gap-2 flex-wrap mb-1">
         <div>
@@ -139,6 +140,7 @@ export default function TeamPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

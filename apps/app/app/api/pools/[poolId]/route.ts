@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getSupabaseToken } from '../../../billing/_utils';
+import { getSupabaseToken } from '../../billing/_utils';
 
 export const dynamic = 'force-dynamic';
 

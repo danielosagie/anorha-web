@@ -69,8 +69,7 @@ export async function PUT(
     }
 
     const client = await clerkClient();
-    await client.organizations.updateOrganizationMetadata({
-      organizationId: orgId,
+    await client.organizations.updateOrganizationMetadata(orgId, {
       privateMetadata: {
         notifications_settings: body,
       },
@@ -85,4 +84,5 @@ export async function PUT(
     );
   }
 }
+
 

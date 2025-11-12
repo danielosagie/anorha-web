@@ -128,3 +128,4 @@ The web app should now:
 2. Check browser DevTools Console for `[supabase.ts]` logs during page load
 3. Monitor network tab to see actual API calls being made
 
+

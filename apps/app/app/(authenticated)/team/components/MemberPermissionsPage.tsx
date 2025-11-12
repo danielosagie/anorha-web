@@ -20,12 +20,39 @@ if (typeof window !== 'undefined') {
   console.log('[DEBUG] NEXT_PUBLIC_API_URL env:', process.env.NEXT_PUBLIC_API_URL);
 }
 
+interface Location {
+  platformLocationId: string;
+  locationName: string;
+  timezone?: string;
+  platformConnection?: {
+    platformType: string;
+    displayName: string;
+    id: string;
+  };
+}
+
+interface AvailableLocations {
+  [connectionId: string]: {
+    connectionName: string;
+    platformType: string;
+    locations: Array<{
+      platformLocationId: string;
+      locationName: string;
+      timezone?: string;
+    }>;
+  };
+}
+
 interface Pool {
   id: string;
+  orgId: string;
   name: string;
   description?: string;
-  sync_inventory: boolean;
-  sync_pricing: boolean;
+  syncInventory: boolean;
+  syncPricing: boolean;
+  locationIds?: string[];
+  createdAt: string;
+  updatedAt: string;
 }
 
 interface MemberPermissions {
@@ -53,8 +80,9 @@ interface EditingPool {
   id: string;
   name: string;
   description: string;
-  sync_inventory: boolean;
-  sync_pricing: boolean;
+  syncInventory: boolean;
+  syncPricing: boolean;
+  locationIds?: string[];
 }
 
 // Delete state
@@ -72,7 +100,7 @@ const showToast = (message: string, type: 'success' | 'error' = 'success') => {
 };
 
 export default function MemberPermissionsPage() {
-  const { organization, isLoaded } = useOrganization();
+  const { organization, isLoaded, membership } = useOrganization();
   const { getToken } = useAuth();  // Direct Clerk token for APIs
   // const supabase = useSupabase();  // Use if direct DB fetches needed
 
@@ -86,10 +114,77 @@ export default function MemberPermissionsPage() {
   const [poolLoading, setPoolLoading] = useState(false);
   const [editingPool, setEditingPool] = useState<EditingPool | null>(null);
   const [deletingPool, setDeletingPool] = useState<DeletingPool | null>(null);
+  const [availableLocations, setAvailableLocations] = useState<AvailableLocations>({});
+  const [poolLocations, setPoolLocations] = useState<Record<string, Location[]>>({});
+  const [locationsLoading, setLocationsLoading] = useState(false);
+  const [selectedPoolLocationIds, setSelectedPoolLocationIds] = useState<string[]>([]);
 
   const orgId = organization?.id;
 
+  // RBAC: Check if current user can manage pools (admin only)
+  const canManagePools = membership?.role === 'org:admin';
+
   // Remove initializeSupabase useEffect - native is always ready with Clerk session
+
+  // Load available locations after pools are loaded
+  const loadAvailableLocations = async () => {
+    if (!orgId) return;
+    
+    setLocationsLoading(true);
+    try {
+      const clerkToken = await getToken();
+      const res = await fetch(`${API_BASE}/api/pools/locations/available?orgId=${orgId}`, {
+        headers: {
+          'Authorization': `Bearer ${clerkToken}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      });
+
+      if (!res.ok) {
+        console.error('[MemberPermissionsPage] Failed to load available locations:', res.status);
+        return;
+      }
+
+      const locationData = await res.json();
+      setAvailableLocations(locationData);
+      console.log('[MemberPermissionsPage] Loaded available locations:', locationData);
+    } catch (error) {
+      console.error('[MemberPermissionsPage] Failed to load available locations:', error);
+    } finally {
+      setLocationsLoading(false);
+    }
+  };
+
+  // Load locations for all pools
+  const loadPoolLocations = async () => {
+    if (pools.length === 0) return;
+
+    try {
+      const clerkToken = await getToken();
+      const locMap: Record<string, Location[]> = {};
+
+      for (const pool of pools) {
+        const res = await fetch(`${API_BASE}/api/pools/${pool.id}/locations`, {
+          headers: {
+            'Authorization': `Bearer ${clerkToken}`,
+            'Content-Type': 'application/json',
+          },
+          cache: 'no-store'
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          locMap[pool.id] = data.locations || [];
+        }
+      }
+
+      setPoolLocations(locMap);
+      console.log('[MemberPermissionsPage] Loaded pool locations:', locMap);
+    } catch (error) {
+      console.error('[MemberPermissionsPage] Failed to load pool locations:', error);
+    }
+  };
 
   // Update loadData to use Clerk token directly for backend APIs
   useEffect(() => {
@@ -104,6 +199,14 @@ export default function MemberPermissionsPage() {
     }
     loadData();
   }, [isLoaded, orgId]);
+
+  // Load locations after pools are loaded
+  useEffect(() => {
+    if (pools.length > 0) {
+      loadAvailableLocations();
+      loadPoolLocations();
+    }
+  }, [pools]);
 
   // ✅ CORRECT: Direct backend calls with JWT token
   const loadData = async () => {
@@ -305,6 +408,48 @@ export default function MemberPermissionsPage() {
     }
   };
 
+  // NEW: Add/update locations for a pool
+  const updatePoolLocations = async (poolId: string, locationIds: string[]) => {
+    try {
+      const clerkToken = await getToken();
+      const res = await fetch(`${API_BASE}/api/pools/${poolId}`, {
+        method: 'PATCH',
+        headers: { 
+          'Authorization': `Bearer ${clerkToken}`,
+          'Content-Type': 'application/json' 
+        },
+        body: JSON.stringify({ locationIds }),
+      });
+
+      if (!res.ok) {
+        const errorText = await res.text();
+        throw new Error(`Failed to update pool locations: ${res.status} - ${errorText}`);
+      }
+
+      const updatedPool = await res.json();
+      setPools(prev => prev.map(p => p.id === poolId ? { ...p, locationIds: updatedPool.locationIds } : p));
+      
+      // Reload pool locations
+      const locRes = await fetch(`${API_BASE}/api/pools/${poolId}/locations`, {
+        headers: {
+          'Authorization': `Bearer ${clerkToken}`,
+          'Content-Type': 'application/json',
+        },
+        cache: 'no-store'
+      });
+
+      if (locRes.ok) {
+        const locData = await locRes.json();
+        setPoolLocations(prev => ({ ...prev, [poolId]: locData.locations || [] }));
+      }
+
+      showToast('Pool locations updated successfully', 'success');
+    } catch (error) {
+      console.error('[MemberPermissionsPage] Failed to update pool locations:', error);
+      showToast(error instanceof Error ? error.message : 'Failed to update pool locations', 'error');
+    }
+  };
+
   const updateMemberPermissions = async (memberId: string, updates: {
     role?: string;
     assignedPoolIds?: string[];
@@ -388,12 +533,18 @@ export default function MemberPermissionsPage() {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             Location Pools
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button onClick={() => setEditingPool({ id: 'new', name: '', description: '', sync_inventory: true, sync_pricing: true })}>
-                  Create Pool
-                </Button>
-              </DialogTrigger>
+            {!canManagePools && (
+              <span className="text-xs font-normal text-muted-foreground">
+                (Admin only)
+              </span>
+            )}
+            {canManagePools && (
+              <Dialog>
+                <DialogTrigger asChild>
+                  <Button onClick={() => setEditingPool({ id: 'new', name: '', description: '', syncInventory: true, syncPricing: true, locationIds: [] })}>
+                    Create Pool
+                  </Button>
+                </DialogTrigger>
               <DialogContent>
                 <DialogHeader>
                   <DialogTitle>{editingPool?.id === 'new' ? 'Create Pool' : 'Edit Pool'}</DialogTitle>
@@ -421,21 +572,59 @@ export default function MemberPermissionsPage() {
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="sync-inventory"
-                          checked={editingPool?.sync_inventory || false}
-                          onCheckedChange={(checked) => setEditingPool(prev => prev ? { ...prev, sync_inventory: !!checked } : null)}
+                          checked={editingPool?.syncInventory || false}
+                          onCheckedChange={(checked) => setEditingPool(prev => prev ? { ...prev, syncInventory: !!checked } : null)}
                         />
                         <Label htmlFor="sync-inventory" className="text-sm">Sync Inventory</Label>
                       </div>
                       <div className="flex items-center space-x-2">
                         <Checkbox
                           id="sync-pricing"
-                          checked={editingPool?.sync_pricing || false}
-                          onCheckedChange={(checked) => setEditingPool(prev => prev ? { ...prev, sync_pricing: !!checked } : null)}
+                          checked={editingPool?.syncPricing || false}
+                          onCheckedChange={(checked) => setEditingPool(prev => prev ? { ...prev, syncPricing: !!checked } : null)}
                         />
                         <Label htmlFor="sync-pricing" className="text-sm">Sync Pricing</Label>
                       </div>
                     </div>
                   </div>
+                  
+                  {/* Location Selection for New Pool */}
+                  {editingPool?.id === 'new' && (
+                    <div className="space-y-2">
+                      <Label>Select Locations</Label>
+                      <div className="space-y-3 max-h-48 overflow-y-auto border rounded-md p-2">
+                        {Object.entries(availableLocations).length === 0 ? (
+                          <div className="text-sm text-muted-foreground">
+                            {locationsLoading ? 'Loading locations...' : 'No locations available'}
+                          </div>
+                        ) : (
+                          Object.entries(availableLocations).map(([connId, conn]) => (
+                            <div key={connId} className="space-y-2">
+                              <div className="text-xs font-semibold text-muted-foreground">
+                                {conn.platformType} - {conn.connectionName}
+                              </div>
+                              {conn.locations.map((loc) => (
+                                <div key={loc.platformLocationId} className="flex items-center space-x-2 ml-2">
+                                  <Checkbox
+                                    checked={selectedPoolLocationIds.includes(loc.platformLocationId)}
+                                    onCheckedChange={(checked) => {
+                                      if (checked) {
+                                        setSelectedPoolLocationIds(prev => [...prev, loc.platformLocationId]);
+                                      } else {
+                                        setSelectedPoolLocationIds(prev => prev.filter(id => id !== loc.platformLocationId));
+                                      }
+                                    }}
+                                  />
+                                  <Label className="text-sm cursor-pointer">{loc.locationName}</Label>
+                                </div>
+                              ))}
+                            </div>
+                          ))
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <Button
                     onClick={async () => {
                       if (!editingPool || !orgId) return;
@@ -452,14 +641,16 @@ export default function MemberPermissionsPage() {
                             orgId,
                             name: editingPool.name,
                             description: editingPool.description,
-                            syncInventory: editingPool.sync_inventory,
-                            syncPricing: editingPool.sync_pricing,
+                            syncInventory: editingPool.syncInventory,
+                            syncPricing: editingPool.syncPricing,
+                            locationIds: selectedPoolLocationIds,
                           }),
                         });
                         if (res.ok) {
                           const newPool = await res.json();
                           setPools(prev => [...prev, newPool]);
                           showToast('Pool created successfully', 'success');
+                          setSelectedPoolLocationIds([]);
                         } else {
                           showToast('Failed to create pool', 'error');
                         }
@@ -475,7 +666,8 @@ export default function MemberPermissionsPage() {
                   </Button>
                 </div>
               </DialogContent>
-            </Dialog>
+              </Dialog>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -487,22 +679,25 @@ export default function MemberPermissionsPage() {
             </div>
           ) : (
             <div className="space-y-2">
-              {pools.map((pool) => (
+              {pools.map((pool) => {
+                const poolLocs = poolLocations[pool.id] || [];
+                return (
                 <div key={pool.id} className="flex items-center justify-between p-3 border rounded-md">
-                  <div className="flex items-center space-x-3">
+                  <div className="flex items-center space-x-3 flex-1">
                     <div className="w-2 h-2 bg-blue-500 rounded-full" />
-                    <div>
+                    <div className="flex-1">
                       <div className="font-medium">{pool.name}</div>
                       <div className="text-sm text-muted-foreground">{pool.description || 'No description'}</div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        {poolLocs.length} location{poolLocs.length !== 1 ? 's' : ''} • Inventory: {pool.syncInventory ? 'On' : 'Off'} | Pricing: {pool.syncPricing ? 'On' : 'Off'}
+                      </div>
                     </div>
                   </div>
                   <div className="flex items-center space-x-2">
-                    <span className="text-xs text-muted-foreground">
-                      Inventory: {pool.sync_inventory ? 'On' : 'Off'} | Pricing: {pool.sync_pricing ? 'On' : 'Off'}
-                    </span>
+                    {canManagePools && (
                     <Dialog>
                       <DialogTrigger asChild>
-                        <Button variant="ghost" size="sm" onClick={() => setEditingPool({ id: pool.id, name: pool.name, description: pool.description || '', sync_inventory: pool.sync_inventory, sync_pricing: pool.sync_pricing })}>
+                        <Button variant="ghost" size="sm" onClick={() => setEditingPool({ id: pool.id, name: pool.name, description: pool.description || '', syncInventory: pool.syncInventory, syncPricing: pool.syncPricing, locationIds: pool.locationIds || [] })}>
                           Edit
                         </Button>
                       </DialogTrigger>
@@ -533,27 +728,96 @@ export default function MemberPermissionsPage() {
                               <div className="space-y-2">
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
-                                    checked={editingPool.sync_inventory}
-                                    onCheckedChange={(checked) => setEditingPool({ ...editingPool, sync_inventory: !!checked })}
+                                    checked={editingPool.syncInventory}
+                                    onCheckedChange={(checked) => setEditingPool({ ...editingPool, syncInventory: !!checked })}
                                   />
                                   <Label className="text-sm">Sync Inventory</Label>
                                 </div>
                                 <div className="flex items-center space-x-2">
                                   <Checkbox
-                                    checked={editingPool.sync_pricing}
-                                    onCheckedChange={(checked) => setEditingPool({ ...editingPool, sync_pricing: !!checked })}
+                                    checked={editingPool.syncPricing}
+                                    onCheckedChange={(checked) => setEditingPool({ ...editingPool, syncPricing: !!checked })}
                                   />
                                   <Label className="text-sm">Sync Pricing</Label>
                                 </div>
                               </div>
                             </div>
+
+                            {/* Current Locations */}
+                            <div className="space-y-2">
+                              <Label>Current Locations ({poolLocs.length})</Label>
+                              {poolLocs.length === 0 ? (
+                                <div className="text-sm text-muted-foreground p-2 border rounded bg-muted/30">
+                                  No locations assigned to this pool yet
+                                </div>
+                              ) : (
+                                <div className="space-y-1 p-2 border rounded max-h-32 overflow-y-auto">
+                                  {poolLocs.map((loc) => (
+                                    <div key={loc.platformLocationId} className="flex items-center justify-between text-sm">
+                                      <span>{loc.locationName}</span>
+                                      <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-6 px-2 text-red-600"
+                                        onClick={() => {
+                                          const newLocationIds = (pool.locationIds || []).filter(
+                                            id => id !== loc.platformLocationId
+                                          );
+                                          updatePoolLocations(pool.id, newLocationIds);
+                                        }}
+                                      >
+                                        Remove
+                                      </Button>
+                                    </div>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+
+                            {/* Add More Locations */}
+                            <div className="space-y-2">
+                              <Label>Add More Locations</Label>
+                              <div className="space-y-2 max-h-32 overflow-y-auto border rounded-md p-2">
+                                {Object.entries(availableLocations).map(([connId, conn]) => (
+                                  <div key={connId} className="space-y-1">
+                                    <div className="text-xs font-semibold text-muted-foreground">
+                                      {conn.platformType}
+                                    </div>
+                                    {conn.locations.map((loc) => {
+                                      const isAlreadyAdded = poolLocs.some(
+                                        pl => pl.platformLocationId === loc.platformLocationId
+                                      );
+                                      return (
+                                        <div key={loc.platformLocationId} className="flex items-center space-x-2 ml-2">
+                                          <Checkbox
+                                            disabled={isAlreadyAdded}
+                                            onCheckedChange={(checked) => {
+                                              if (checked) {
+                                                const newLocationIds = [...(pool.locationIds || []), loc.platformLocationId];
+                                                updatePoolLocations(pool.id, newLocationIds);
+                                              }
+                                            }}
+                                          />
+                                          <Label className="text-sm cursor-pointer" style={{ opacity: isAlreadyAdded ? 0.5 : 1 }}>
+                                            {loc.locationName} {isAlreadyAdded && '(already added)'}
+                                          </Label>
+                                        </div>
+                                      );
+                                    })}
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+
                             <Button onClick={() => updatePool(pool.id, editingPool)} className="w-full">
-                              Update
+                              Update Settings
                             </Button>
                           </div>
                         )}
                       </DialogContent>
                     </Dialog>
+                    )}
+                    {canManagePools && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button variant="ghost" size="sm" className="text-red-600">
@@ -581,9 +845,11 @@ export default function MemberPermissionsPage() {
                         </AlertDialogFooter>
                       </AlertDialogContent>
                     </AlertDialog>
+                    )}
                   </div>
                 </div>
-              ))}
+              );
+              })}
             </div>
           )}
         </CardContent>

@@ -82,20 +82,19 @@ export default async function BillingPage() {
   
 
   return (
-    <>
-      <Header page="Billing">
-        <BillingActions 
-          paymentProvider={paymentProvider} 
-          hasActiveSubscription={hasActiveSubscription}
-        />
-      </Header>
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+    <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
+      <div className="bg-white rounded-lg border-2 p-4 md:p-6 lg:p-8 overflow-auto" style={{ borderColor: '#AFAFAF' }}>
+        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between mb-6">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Billing</h1>
             <p className="text-muted-foreground text-sm md:text-base">
               Manage your subscription, usage, and billing information
             </p>
           </div>
+          <BillingActions 
+            paymentProvider={paymentProvider} 
+            hasActiveSubscription={hasActiveSubscription}
+          />
         </div>
         <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
           <Card className="border-2 shadow-none">
@@ -301,7 +300,8 @@ export default async function BillingPage() {
           </div>
         </CardContent>
       </Card>
+        </div>
       </div>
-    </>
+    </div>
   );
 }
