@@ -119,7 +119,7 @@ export default async function InventoryPage() {
   return (
     <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
       <PageWrapper title="Inventory" description="Manage inventory across all your platforms">
-        <div className="flex items-center gap-2 mb-6">
+        <div className="flex items-center gap-2 mb-6 flex-wrap">
           <Button variant="outline" size="sm">
             <ScanIcon className="mr-2 size-4" />
             Scan Inventory

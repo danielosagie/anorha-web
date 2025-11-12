@@ -64,7 +64,7 @@ const App = async () => {
 
   return (
     <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
-      <PageWrapper>
+      <PageWrapper title="Dashboard" description="Your total sales from the last 12 months">
       <div className="">
         <Header page="Overview">
           {/* Liveblocks disabled intentionally 

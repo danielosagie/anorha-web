@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSupabase } from '@/lib/supabase';  // Your hook
 import { SignedIn } from '@clerk/nextjs';
+import { PageWrapper } from '../components/page-wrapper';
 
 interface UserData {
   Id: string;
@@ -64,8 +65,7 @@ function UserProfile() {
 
   return (
     <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
-      <div className="bg-white rounded-lg border-2 p-4 md:p-6 lg:p-8" style={{ borderColor: '#AFAFAF' }}>
-        <h1 className="text-2xl font-bold mb-4">Profile</h1>
+      <PageWrapper title="Profile">
         <div className="space-y-2">
           <p><strong>Name:</strong> {userData.FirstName} {userData.LastName}</p>
           <p><strong>Email:</strong> {userData.Email}</p>
@@ -74,7 +74,7 @@ function UserProfile() {
           <p><strong>Active Org ID:</strong> {userData.active_org_id}</p>
           <p><strong>Clerk ID:</strong> {userData.ClerkUserId}</p> {/* For debug—hide in prod */}
         </div>
-      </div>
+      </PageWrapper>
     </div>
   );
 }
