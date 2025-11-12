@@ -494,13 +494,13 @@ export default function MemberPermissionsPage() {
                       {Object.keys(allLocations).length === 0 ? (
                         <div className="text-sm text-muted-foreground">No locations available. Connect a platform first.</div>
                       ) : (
-                        Object.entries(allLocations).map(([connId, locs]) => (
+                        Object.entries(allLocations).map(([connId, group]) => (
                           <div key={connId}>
                             <div className="text-xs font-semibold text-muted-foreground mb-2">
-                              {locs[0]?.platformConnection?.platformType} • {locs[0]?.platformConnection?.displayName}
+                              {group.platformType} • {group.connectionName}
                             </div>
                             <div className="ml-2 space-y-2">
-                              {locs.map((loc) => (
+                              {group.locations.map((loc) => (
                                 <div key={loc.platformLocationId} className="flex items-center space-x-2">
                                   <Checkbox
                                     checked={selectedLocationIds.includes(loc.platformLocationId)}
@@ -633,12 +633,12 @@ export default function MemberPermissionsPage() {
                                 <div className="border-t pt-4">
                                   <Label className="font-semibold">Add More Locations</Label>
                                   <div className="mt-2 max-h-40 overflow-y-auto space-y-2 border rounded p-2">
-                                    {Object.entries(allLocations).map(([connId, locs]) => (
+                                    {Object.entries(allLocations).map(([connId, group]) => (
                                       <div key={connId}>
                                         <div className="text-xs font-semibold mb-1 text-muted-foreground">
-                                          {locs[0]?.platformConnection?.platformType}
+                                          {group.platformType} • {group.connectionName}
                                         </div>
-                                        {locs.map((loc) => {
+                                        {group.locations.map((loc) => {
                                           const alreadyAdded = selectedLocationIds.includes(loc.platformLocationId);
                                           return (
                                             <div key={loc.platformLocationId} className="flex items-center space-x-2 ml-2">
