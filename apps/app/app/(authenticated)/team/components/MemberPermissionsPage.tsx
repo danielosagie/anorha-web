@@ -23,6 +23,12 @@ interface Location {
   };
 }
 
+interface LocationGroup {
+  platformType: string;
+  connectionName: string;
+  locations: Location[];
+}
+
 interface Pool {
   id: string;
   orgId: string;
@@ -75,7 +81,7 @@ export default function MemberPermissionsPage() {
 
   // State: Core data
   const [pools, setPools] = useState<Pool[]>([]);
-  const [allLocations, setAllLocations] = useState<Record<string, Location[]>>({}); // grouped by connection
+  const [allLocations, setAllLocations] = useState<Record<string, LocationGroup>>({}); // grouped by connection
   const [members, setMembers] = useState<TeamMember[]>([]);
   const [schema, setSchema] = useState<OrgSchema | null>(null);
 
@@ -84,7 +90,7 @@ export default function MemberPermissionsPage() {
   const [error, setError] = useState<string | null>(null);
 
   // State: UI interactions
-  const [editingPool, setEditingPool] = useState<Pool | null>(null);
+  const [editingPool, setEditingPool] = useState<Partial<Pool> | null>(null);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [deletingPoolId, setDeletingPoolId] = useState<string | null>(null);
   const [updatingMemberPool, setUpdatingMemberPool] = useState<{ memberId: string; poolId: string } | null>(null);
@@ -100,8 +106,8 @@ export default function MemberPermissionsPage() {
     });
 
     const result: Record<string, Location[]> = {};
-    Object.entries(allLocations).forEach(([connId, locs]) => {
-      const unassigned = locs.filter(loc => !assignedSet.has(loc.platformLocationId));
+    Object.entries(allLocations).forEach(([connId, group]) => {
+      const unassigned = group.locations.filter(loc => !assignedSet.has(loc.platformLocationId));
       if (unassigned.length > 0) {
         result[connId] = unassigned;
       }
@@ -115,8 +121,8 @@ export default function MemberPermissionsPage() {
     if (!pool?.locationIds) return [];
 
     const result: Location[] = [];
-    Object.values(allLocations).forEach(locs => {
-      locs.forEach(loc => {
+    Object.values(allLocations).forEach(group => {
+      group.locations.forEach(loc => {
         if (pool.locationIds?.includes(loc.platformLocationId)) {
           result.push(loc);
         }

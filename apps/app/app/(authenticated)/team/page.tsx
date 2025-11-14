@@ -5,7 +5,8 @@ import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { Header } from '../components/header';
 import MemberPermissionsPage from './components/MemberPermissionsPage';
-import { Settings } from 'lucide-react';
+import ConnectionsPage from './components/ConnectionsPage';
+import { Settings, Link2 } from 'lucide-react';
 
 import { OrganizationProfile, OrganizationSwitcher } from '@clerk/nextjs';
 
@@ -110,6 +111,15 @@ export default function TeamPage() {
                   },
                 }}
               >
+                {/* @ts-ignore - OrganizationProfile.Page exists at runtime per Clerk docs */}
+                <OrganizationProfile.Page
+                  label="Connections"
+                  url="connections"
+                  labelIcon={<Link2 className="w-4 h-4" />}
+                >
+                  <ConnectionsPage />
+                </OrganizationProfile.Page>
+                
                 {/* @ts-ignore - OrganizationProfile.Page exists at runtime per Clerk docs */}
                 <OrganizationProfile.Page
                   label="Permissions"
