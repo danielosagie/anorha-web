@@ -8,7 +8,8 @@ export async function getSupabaseToken() {
       throw new Error('Auth not available');
     }
     
-    const clerkToken = await getToken();
+    // Request email claim in token - required by backend
+    const clerkToken = await getToken({ template: 'supabase' });
     if (!clerkToken) {
       console.error('[getSupabaseToken] Missing Clerk session token');
       throw new Error('Missing Clerk session token');
