@@ -55,8 +55,8 @@ async function getBillingData() {
 }
 
 export default async function BillingPage() {
-  const user = await currentUser();
-  if (!user) {
+  const currentUserData = await currentUser();
+  if (!currentUserData) {
     return <div>Please log in to view billing information.</div>;
   }
 
@@ -111,6 +111,18 @@ export default async function BillingPage() {
       
       <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
 
+      {/* Show error if data failed to load */}
+      {!summary && !invoices && !upcoming && (
+        <Card className="border-2 shadow-none border-red-200 bg-red-50">
+          <CardContent className="p-8">
+            <div className="text-center text-red-700">
+              <p className="font-semibold">Unable to load billing information</p>
+              <p className="text-sm mt-2">Please try refreshing the page. If the problem persists, contact support.</p>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Growth Plan Summary - Main Feature Card (Match provided image UI) */}
       <Card className="border-2 shadow-none">
         <CardHeader className="pb-2">
@@ -147,37 +159,33 @@ export default async function BillingPage() {
               </TableHeader>
               <TableBody>
                 <TableRow>
-                  <TableCell>Products</TableCell>
-                  <TableCell className="text-right">47 <span className="text-muted-foreground">unlimited</span></TableCell>
+                  <TableCell>AI Credits Used</TableCell>
+                  <TableCell className="text-right">${Number(summary?.ai_credits_used || 0).toFixed(2)} / ${Number(summary?.ai_credits_limit || 0).toFixed(2)}</TableCell>
+                  <TableCell className="text-right">${Number(summary?.ai_credits_used || 0).toFixed(2)}</TableCell>
+                </TableRow>
+                <TableRow>
+                  <TableCell>Import/Sync Operations</TableCell>
+                  <TableCell className="text-right">{summary?.on_demand_usage_this_month || 0} <span className="text-muted-foreground">/ {summary?.on_demand_limit || 'unlimited'}</span></TableCell>
                   <TableCell className="text-right text-green-700">Included</TableCell>
                 </TableRow>
-                <TableRow>
-                  <TableCell>Syncs/Edits Events</TableCell>
-                  <TableCell className="text-right">144 <span className="text-muted-foreground">events</span></TableCell>
-                  <TableCell className="text-right text-green-700">Included</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Platforms Connected</TableCell>
-                  <TableCell className="text-right">2 <span className="text-muted-foreground">(Shopify, Square)</span></TableCell>
-                  <TableCell className="text-right text-green-700">Included</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>Team Members</TableCell>
-                  <TableCell className="text-right">1 / <span className="text-muted-foreground">1</span></TableCell>
-                  <TableCell className="text-right text-green-700">Free</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>AI Credit Budget</TableCell>
-                  <TableCell className="text-right">{summary?.ai_credits_used || '5.8'} / {summary?.ai_credits_limit || '7.00'} <span className="text-muted-foreground">used</span></TableCell>
-                  <TableCell className="text-right">
-                    ${Number(summary?.ai_credits_used || 5.8).toFixed(2)}
-                  </TableCell>
-                </TableRow>
+                {summary?.usage && Object.entries(summary.usage).length > 0 ? (
+                  Object.entries(summary.usage).slice(0, 3).map(([key, value]: [string, any]) => (
+                    <TableRow key={key}>
+                      <TableCell className="text-sm">{key.replace(/_/g, ' ').charAt(0).toUpperCase() + key.replace(/_/g, ' ').slice(1)}</TableCell>
+                      <TableCell className="text-right text-sm">{value.totalQuantity || value.count || 0}</TableCell>
+                      <TableCell className="text-right text-sm">${(value.totalCost / 100).toFixed(2)}</TableCell>
+                    </TableRow>
+                  ))
+                ) : (
+                  <TableRow>
+                    <TableCell colSpan={3} className="text-center text-muted-foreground">No usage this month</TableCell>
+                  </TableRow>
+                )}
                 <TableRow className="border-t">
-                  <TableCell className="font-semibold">Total</TableCell>
+                  <TableCell className="font-semibold">Total This Month</TableCell>
                   <TableCell />
-                  <TableCell className="text-right font-semibold ">
-                    ${Number(summary?.total || 5.8).toFixed(2)}
+                  <TableCell className="text-right font-semibold">
+                    ${Number(summary?.total || 0).toFixed(2)}
                   </TableCell>
                 </TableRow>
               </TableBody>
@@ -267,32 +275,38 @@ export default async function BillingPage() {
           <CardDescription>Your billing history and payment records</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="space-y-4">
-            {(invoices?.invoices || []).map((inv: any) => (
-              <div key={inv.id} className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <div className="font-medium">{new Date(inv.created || Date.now()).toLocaleDateString()}</div>
-                  <div className="text-sm text-muted-foreground">{inv.number || 'Invoice'}</div>
-                </div>
-                <div className="flex items-center gap-3">
-                  <Badge className={inv.status === 'paid' ? 'bg-green-100 text-green-800' : undefined}>{inv.status || 'open'}</Badge>
-                  <div className="text-right">
-                    <div className="font-medium">{((inv.total || 0)/100).toLocaleString(undefined, { style: 'currency', currency: inv.currency?.toUpperCase() || 'USD' })}</div>
+          {invoices?.invoices && invoices.invoices.length > 0 ? (
+            <div className="space-y-4">
+              {invoices.invoices.map((inv: any) => (
+                <div key={inv.id} className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
+                  <div>
+                    <div className="font-medium">{new Date(inv.created || inv.created_at || Date.now()).toLocaleDateString()}</div>
+                    <div className="text-sm text-muted-foreground">{inv.number || 'Invoice'}</div>
                   </div>
-                  {inv.hosted_invoice_url && (
-                    <Button asChild variant="ghost" size="sm">
-                      <a href={inv.hosted_invoice_url} target="_blank" rel="noreferrer">
-                        <ExternalLinkIcon className="size-4" />
-                      </a>
-                    </Button>
-                  )}
+                  <div className="flex items-center gap-3">
+                    <Badge className={inv.status === 'paid' ? 'bg-green-100 text-green-800' : undefined}>{inv.status || 'open'}</Badge>
+                    <div className="text-right">
+                      <div className="font-medium">
+                        {((inv.total || 0) / (inv.total > 100 ? 100 : 1)).toLocaleString(undefined, { 
+                          style: 'currency', 
+                          currency: inv.currency?.toUpperCase() || 'USD' 
+                        })}
+                      </div>
+                    </div>
+                    {(inv.hosted_invoice_url || inv.hosted_url || inv.url) && (
+                      <Button asChild variant="ghost" size="sm">
+                        <a href={inv.hosted_invoice_url || inv.hosted_url || inv.url} target="_blank" rel="noreferrer">
+                          <ExternalLinkIcon className="size-4" />
+                        </a>
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
-            {(!invoices || (invoices?.invoices || []).length === 0) && (
-              <div className="text-muted-foreground">No invoices found.</div>
-            )}
-          </div>
+              ))}
+            </div>
+          ) : (
+            <div className="text-muted-foreground text-center py-6">No invoices found.</div>
+          )}
         </CardContent>
       </Card>
         </div>
