@@ -12,18 +12,19 @@ interface BillingActionsProps {
 export function BillingActions({ paymentProvider = 'stripe', hasActiveSubscription = false }: BillingActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const origin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
+  // Always talk to the app's Next.js API routes (relative URLs).
+  // Those routes handle Clerk auth + Supabase token exchange and proxy to the backend.
   const handleManageSubscription = async () => {
     setIsLoading(true);
     setError(null);
     try {
       if (paymentProvider === 'polar') {
-        // Use Polar customer portal
-        window.location.href = `${origin}/api/polar/portal`;
+        // Polar customer portal (Next API → Polar SDK)
+        window.location.href = `/api/polar/portal`;
       } else {
-        // Use Stripe billing portal via backend
-        window.location.href = `${origin}api/billing/portal`;
+        // Stripe billing portal (Next API → backend /billing/portal)
+        window.location.href = `/api/billing/portal`;
       }
     } catch (err) {
       console.error('Error opening portal:', err);
@@ -38,24 +39,24 @@ export function BillingActions({ paymentProvider = 'stripe', hasActiveSubscripti
     setError(null);
     try {
       if (paymentProvider === 'polar') {
-        // For Polar, redirect to Polar checkout
-        window.location.href = `${origin}api/polar/checkout?tier=Growth`;
+        // Polar checkout (Next API → Polar SDK)
+        window.location.href = `/api/polar/checkout?tier=Growth`;
       } else {
-        // For Stripe, use backend checkout endpoint
-        const res = await fetch(`${origin}api/billing/checkout`, { 
+        // Stripe checkout via Next API → backend /billing/checkout
+        const res = await fetch(`/api/billing/checkout`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
-          body: JSON.stringify({ 
+          body: JSON.stringify({
             tier: 'Growth',
-            paymentProvider: 'stripe'
+            paymentProvider: 'stripe',
           }),
         });
+
         if (res.redirected) {
           window.location.href = res.url;
         } else {
-          // Fallback if not redirected by the route
           const { url } = await res.json();
           if (url) window.location.href = url;
         }
