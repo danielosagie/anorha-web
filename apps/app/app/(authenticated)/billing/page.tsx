@@ -32,7 +32,7 @@ export const metadata: Metadata = {
 };
 
 async function getBillingData() {
-  const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+  const origin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
 
   try {
     // Use the proxy routes that handle JWT token exchange
