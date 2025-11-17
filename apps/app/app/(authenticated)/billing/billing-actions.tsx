@@ -23,7 +23,7 @@ export function BillingActions({ paymentProvider = 'stripe', hasActiveSubscripti
         window.location.href = `${origin}/api/polar/portal`;
       } else {
         // Use Stripe billing portal via backend
-        window.location.href = `${origin}/api/billing/portal`;
+        window.location.href = `${origin}api/billing/portal`;
       }
     } catch (err) {
       console.error('Error opening portal:', err);
@@ -39,10 +39,10 @@ export function BillingActions({ paymentProvider = 'stripe', hasActiveSubscripti
     try {
       if (paymentProvider === 'polar') {
         // For Polar, redirect to Polar checkout
-        window.location.href = `${origin}/api/polar/checkout?tier=Growth`;
+        window.location.href = `${origin}api/polar/checkout?tier=Growth`;
       } else {
         // For Stripe, use backend checkout endpoint
-        const res = await fetch(`${origin}/api/billing/checkout`, { 
+        const res = await fetch(`${origin}api/billing/checkout`, { 
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
