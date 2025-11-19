@@ -37,5 +37,5 @@ export const GET = CustomerPortal({
       throw new Error('Unable to access customer portal');
     }
   },
-  server: process.env.NODE_ENV === 'production' ? 'production' : 'sandbox',
+  server: (process.env.POLAR_API_SERVER as 'production' | 'sandbox') || 'sandbox',
 });
