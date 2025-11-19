@@ -1,6 +1,7 @@
 'use client';
 
 import React from 'react';
+import Image, { type StaticImageData } from 'next/image';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@repo/design-system/components/ui/card';
 import { Badge } from '@repo/design-system/components/ui/badge';
@@ -11,6 +12,48 @@ import { cn } from '@repo/design-system/lib/utils';
 import { NotificationSettings } from './components/NotificationSettings';
 import { SignOutControl } from './components/SignOutControl';
 import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from '@repo/design-system/components/ui/popover'
+import shopifyLogo from '../../assets/shopify.png';
+import squareLogo from '../../assets/square.png';
+import cloverLogo from '../../assets/clover.png';
+import amazonLogo from '../../assets/amazon.png';
+import ebayLogo from '../../assets/ebay.png';
+import facebookLogo from '../../assets/facebook.png';
+import whatnotLogo from '../../assets/whatnot.png';
+
+type Connection = {
+  Id: string;
+  PlatformType: string;
+  DisplayName: string;
+  Status?: string | null;
+  IsEnabled?: boolean | null;
+  LastSyncSuccessAt?: string | null;
+};
+
+type PlatformLogo = {
+  src: StaticImageData;
+  alt: string;
+};
+
+const PLATFORM_LOGOS: Record<string, PlatformLogo> = {
+  shopify: { src: shopifyLogo, alt: 'Shopify' },
+  square: { src: squareLogo, alt: 'Square' },
+  clover: { src: cloverLogo, alt: 'Clover' },
+  amazon: { src: amazonLogo, alt: 'Amazon' },
+  ebay: { src: ebayLogo, alt: 'eBay' },
+  facebook: { src: facebookLogo, alt: 'Facebook' },
+  whatnot: { src: whatnotLogo, alt: 'Whatnot' },
+};
+
+const STATUS_BADGE_CLASSES: Record<string, string> = {
+  active: 'bg-green-100 text-green-800',
+  inactive: 'bg-gray-100 text-gray-800',
+  error: 'bg-red-100 text-red-800',
+  syncing: 'bg-blue-100 text-blue-800',
+  reconciling: 'bg-yellow-100 text-yellow-800',
+  pending: 'bg-amber-100 text-amber-800',
+  review: 'bg-amber-100 text-amber-800',
+  ready_to_sync: 'bg-lime-100 text-lime-800',
+};
 
 type SettingsTab = 'profile' | 'integrations' | 'notifications';
 
@@ -29,9 +72,48 @@ export function SettingsClient({
   userId,
   subscription,
   nextDue,
-  pools,
+  pools: _pools,
 }: SettingsClientProps) {
   const [activeTab, setActiveTab] = React.useState<SettingsTab>('profile');
+  const [connections, setConnections] = React.useState<Connection[]>([]);
+  const [isLoadingConnections, setIsLoadingConnections] = React.useState(false);
+  const [connectionsError, setConnectionsError] = React.useState<string | null>(null);
+
+  React.useEffect(() => {
+    let isMounted = true;
+
+    const loadConnections = async () => {
+      try {
+        setIsLoadingConnections(true);
+        setConnectionsError(null);
+
+        const res = await fetch('/api/connections', { cache: 'no-store' });
+        if (!res.ok) {
+          throw new Error(`Failed to load connections (${res.status})`);
+        }
+
+        const data = await res.json();
+        if (!isMounted) return;
+
+        setConnections(Array.isArray(data) ? data : []);
+      } catch (error) {
+        if (!isMounted) return;
+        console.error('[SettingsClient] Error loading connections:', error);
+        setConnectionsError('Unable to load integrations right now.');
+        setConnections([]);
+      } finally {
+        if (isMounted) {
+          setIsLoadingConnections(false);
+        }
+      }
+    };
+
+    loadConnections();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
 
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'profile', label: 'Profile' },
@@ -138,22 +220,96 @@ export function SettingsClient({
                   <CardTitle>Connected Platforms</CardTitle>
                   <CardDescription>Your active integrations</CardDescription>
                 </div>
-                <Button className="bg-[#647653] hover:bg-[#556145] text-white">+ Connect New Platform</Button>
+                <Button
+                  className="bg-[#647653] hover:bg-[#556145] text-white opacity-70 cursor-not-allowed"
+                  disabled
+                >
+                  + Connect New Platform
+                </Button>
               </CardHeader>
               <CardContent>
                 <div className="space-y-3">
-                  {pools.map((pool) => (
-                    <div key={pool.id} className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div>
-                        <div className="font-medium">{pool.name}</div>
-                        <div className="text-sm text-gray-500">Account ID</div>
-                      </div>
-                      <Badge className="bg-[#647653] text-white">Active</Badge>
-                    </div>
-                  ))}
-                  {pools.length === 0 && (
+                  {isLoadingConnections && (
+                    <p className="text-sm text-gray-500">Loading your integrations...</p>
+                  )}
+
+                  {!isLoadingConnections && connectionsError && (
+                    <p className="text-sm text-red-500">{connectionsError}</p>
+                  )}
+
+                  {!isLoadingConnections && !connectionsError && connections.length === 0 && (
                     <p className="text-sm text-gray-500">No integrations connected yet.</p>
                   )}
+
+                  {!isLoadingConnections &&
+                    !connectionsError &&
+                    connections.map((connection) => {
+                      const platformKey = connection.PlatformType?.toLowerCase() || 'unknown';
+                      const logo = PLATFORM_LOGOS[platformKey];
+                      const statusKey = (connection.Status || 'inactive').toLowerCase();
+                      const statusClasses =
+                        STATUS_BADGE_CLASSES[statusKey] || 'bg-gray-100 text-gray-800';
+                      const displayName =
+                        connection.DisplayName || connection.PlatformType || 'Unknown connection';
+
+                      return (
+                        <div
+                          key={connection.Id}
+                          className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="relative h-10 w-10 rounded-md overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
+                              {logo ? (
+                                <Image
+                                  src={logo.src}
+                                  alt={logo.alt}
+                                  fill
+                                  className="object-contain p-1"
+                                />
+                              ) : (
+                                <span className="text-xs font-medium text-gray-500">
+                                  {platformKey.charAt(0).toUpperCase() || '?'}
+                                </span>
+                              )}
+                            </div>
+                            <div>
+                              <div className="font-medium">{displayName}</div>
+                              <div className="text-xs text-gray-500">
+                                {platformKey.charAt(0).toUpperCase() + platformKey.slice(1)}{' '}
+                                Account
+                              </div>
+                              {connection.LastSyncSuccessAt && (
+                                <div className="text-xs text-gray-400 mt-1">
+                                  Last synced:{' '}
+                                  {new Date(connection.LastSyncSuccessAt).toLocaleString()}
+                                </div>
+                              )}
+                            </div>
+                          </div>
+
+                          <div className="flex flex-col items-end gap-1">
+                            <Badge className={statusClasses}>
+                              {connection.Status
+                                ? connection.Status.charAt(0).toUpperCase() +
+                                  connection.Status.slice(1).replace('_', ' ')
+                                : 'Inactive'}
+                            </Badge>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled
+                              className={
+                                connection.IsEnabled
+                                  ? 'bg-[#647653] text-white opacity-80 cursor-not-allowed'
+                                  : 'bg-gray-100 text-gray-600 opacity-80 cursor-not-allowed'
+                              }
+                            >
+                              {connection.IsEnabled ? 'Enabled' : 'Disabled'}
+                            </Button>
+                          </div>
+                        </div>
+                      );
+                    })}
                 </div>
               </CardContent>
             </Card>

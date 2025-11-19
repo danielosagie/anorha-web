@@ -8,11 +8,12 @@ export const POST = Webhooks({
     console.log('Polar webhook received:', payload.type);
     
     try {
-      const apiBase = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333';
+      // Use backend API base URL (e.g., https://api.sssync.app or http://localhost:3001)
+      const apiBase = process.env.BACKEND_API_URL || process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3001';
       const rawBody = JSON.stringify(payload);
       
       // Forward webhook to backend for processing
-      const response = await fetch(`${apiBase}/api/billing/polar-webhook`, {
+      const response = await fetch(`${apiBase}/billing/polar-webhook`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

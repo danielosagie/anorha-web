@@ -5,27 +5,24 @@ import { ExternalLinkIcon } from 'lucide-react';
 import { useState } from 'react';
 
 interface BillingActionsProps {
-  paymentProvider?: 'stripe' | 'polar';
   hasActiveSubscription?: boolean;
+  onSubscribeClick?: () => void; // Callback to show tier selector
 }
 
-export function BillingActions({ paymentProvider = 'stripe', hasActiveSubscription = false }: BillingActionsProps) {
+export function BillingActions({ 
+  hasActiveSubscription = false,
+  onSubscribeClick 
+}: BillingActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Always talk to the app's Next.js API routes (relative URLs).
-  // Those routes handle Clerk auth + Supabase token exchange and proxy to the backend.
+  // Navigate to customer portal to manage existing subscription
   const handleManageSubscription = async () => {
     setIsLoading(true);
     setError(null);
     try {
-      if (paymentProvider === 'polar') {
-        // Polar customer portal (Next API → Polar SDK)
-        window.location.href = `/api/polar/portal`;
-      } else {
-        // Stripe billing portal (Next API → backend /billing/portal)
-        window.location.href = `/api/billing/portal`;
-      }
+      // Open Polar customer portal where they can view subscriptions, invoices, change payment method, etc.
+      window.location.href = '/api/polar/portal';
     } catch (err) {
       console.error('Error opening portal:', err);
       setError('Failed to open portal. Please try again.');
@@ -34,38 +31,10 @@ export function BillingActions({ paymentProvider = 'stripe', hasActiveSubscripti
     }
   };
 
-  const handleSubscribe = async () => {
-    setIsLoading(true);
-    setError(null);
-    try {
-      if (paymentProvider === 'polar') {
-        // Polar checkout (Next API → Polar SDK)
-        window.location.href = `/api/polar/checkout?tier=Growth`;
-      } else {
-        // Stripe checkout via Next API → backend /billing/checkout
-        const res = await fetch(`/api/billing/checkout`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            tier: 'Growth',
-            paymentProvider: 'stripe',
-          }),
-        });
-
-        if (res.redirected) {
-          window.location.href = res.url;
-        } else {
-          const { url } = await res.json();
-          if (url) window.location.href = url;
-        }
-      }
-    } catch (err) {
-      console.error('Error opening checkout:', err);
-      setError('Failed to open checkout. Please try again.');
-    } finally {
-      setIsLoading(false);
+  const handleSubscribe = () => {
+    // Show tier selector (parent handles opening the modal/section)
+    if (onSubscribeClick) {
+      onSubscribeClick();
     }
   };
 
