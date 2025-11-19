@@ -15,7 +15,7 @@ export default function TeamPage() {
   const [borderColor, setBorderColor] = useState('rgba(0, 0, 0, 0)');
 
   return (
-    <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
+    <div className="flex flex-1 flex-col p-2 min-h-[98vh]" style={{ backgroundColor: '#FEF4DD' }}>
       <div className="bg-[#FFFCF5] rounded-lg border-2 p-4 flex flex-col flex-1 overflow-hidden" style={{ borderColor: '#AFAFAF' }}>
         <Header page="Team"></Header>
         <div className="flex flex-1 min-h-0 flex-col rounded-lg border-2 border-[#E4E4E7]">

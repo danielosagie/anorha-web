@@ -5,11 +5,12 @@ import { Progress } from '@repo/design-system/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/design-system/components/ui/table';
 import { Badge } from '@repo/design-system/components/ui/badge';
 import { Button } from '@repo/design-system/components/ui/button';
-import { TrendingUpIcon, CalendarIcon, ExternalLinkIcon } from 'lucide-react';
+import { TrendingUpIcon, CalendarIcon, ExternalLinkIcon, RefreshCwIcon } from 'lucide-react';
 import { BillingActions } from './billing-actions';
 import { TierSelector } from './tier-selector';
 import { PageWrapper } from '../components/page-wrapper';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 interface BillingClientProps {
   summary: any;
@@ -19,12 +20,65 @@ interface BillingClientProps {
 }
 
 export function BillingClient({
-  summary,
-  invoices,
-  upcoming,
-  hasActiveSubscription,
+  summary: initialSummary,
+  invoices: initialInvoices,
+  upcoming: initialUpcoming,
+  hasActiveSubscription: initialHasActiveSubscription,
 }: BillingClientProps) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
   const [showTierSelector, setShowTierSelector] = useState(false);
+  const [summary, setSummary] = useState(initialSummary);
+  const [invoices, setInvoices] = useState(initialInvoices);
+  const [upcoming, setUpcoming] = useState(initialUpcoming);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(initialHasActiveSubscription);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  // Auto-refresh when returning from checkout (wait 2s for webhooks to process)
+  useEffect(() => {
+    const checkoutId = searchParams.get('checkout_id');
+    if (checkoutId) {
+      // Wait for Polar webhooks to process subscription
+      const timer = setTimeout(() => {
+        refreshBillingData();
+      }, 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [searchParams]);
+
+  // Refresh billing data from API
+  const refreshBillingData = async () => {
+    setIsRefreshing(true);
+    try {
+      const origin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
+        fetch(`${origin}/api/billing/summary`, { cache: 'no-store' }),
+        fetch(`${origin}/api/billing/invoices?limit=12`, { cache: 'no-store' }),
+        fetch(`${origin}/api/billing/upcoming`, { cache: 'no-store' }),
+      ]);
+
+      if (summaryRes.ok) {
+        const newSummary = await summaryRes.json();
+        setSummary(newSummary);
+        const newHasActiveSub = newSummary?.subscription?.Status === 'active';
+        setHasActiveSubscription(newHasActiveSub);
+      }
+
+      if (invoicesRes.ok) {
+        const newInvoices = await invoicesRes.json();
+        setInvoices(newInvoices);
+      }
+
+      if (upcomingRes.ok) {
+        const newUpcoming = await upcomingRes.json();
+        setUpcoming(newUpcoming);
+      }
+    } catch (error) {
+      console.error('Failed to refresh billing data:', error);
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
 
   const planName = (summary?.subscription?.CurrentPlan as 'Growth' | 'Teams' | undefined) || undefined;
 
@@ -85,12 +139,25 @@ export function BillingClient({
   return (
     <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
       <PageWrapper title="Billing" description="Manage your subscription, usage, and billing information">
-        {/* Actions */}
-        <div className="mb-6">
-          <BillingActions
-            hasActiveSubscription={hasActiveSubscription}
-            onSubscribeClick={() => setShowTierSelector(true)}
-          />
+        {/* Actions & Refresh Button */}
+        <div className="mb-6 flex items-center justify-between gap-3">
+          <div className="flex-1">
+            <BillingActions
+              hasActiveSubscription={hasActiveSubscription}
+              onSubscribeClick={() => setShowTierSelector(true)}
+            />
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={refreshBillingData}
+            disabled={isRefreshing}
+            className="gap-2"
+            title="Refresh billing data"
+          >
+            <RefreshCwIcon className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
+            {isRefreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
         </div>
 
         <div className="flex flex-1 flex-col gap-6">

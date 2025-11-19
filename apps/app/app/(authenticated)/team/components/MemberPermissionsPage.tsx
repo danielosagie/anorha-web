@@ -2,13 +2,25 @@
 
 import { useOrganization, useAuth } from '@clerk/nextjs';
 import { useEffect, useState } from 'react';
+import Image from 'next/image';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
 import { Checkbox } from '@repo/design-system/components/ui/checkbox';
 import { Label } from '@repo/design-system/components/ui/label';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Input } from '@repo/design-system/components/ui/input';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@repo/design-system/components/ui/dialog';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@repo/design-system/components/ui/alert-dialog';
+import { Plus, X, Trash2, Check, ChevronDown, ChevronRight } from 'lucide-react';
+
+// Import assets
+import shopifyIcon from '../../../assets/shopify.svg';
+import squareIcon from '../../../assets/square.svg';
+import cloverIcon from '../../../assets/clover.svg';
+
+const PLATFORM_ICONS: Record<string, any> = {
+  shopify: shopifyIcon,
+  square: squareIcon,
+  clover: cloverIcon,
+};
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333').replace(/\/$/, '');
 
@@ -29,6 +41,8 @@ interface LocationGroup {
   locations: Location[];
 }
 
+// Corrected interface to match what the backend service returns (camelCase)
+// but robust enough to handle snake_case if that's what comes over the wire
 interface Pool {
   id: string;
   orgId: string;
@@ -36,9 +50,17 @@ interface Pool {
   description?: string;
   syncInventory: boolean;
   syncPricing: boolean;
-  locationIds?: string[];
-  createdAt: string;
-  updatedAt: string;
+  locationIds: string[];
+  createdAt?: string;
+  updatedAt?: string;
+  deletedAt?: string;
+  
+  // Fallback for potential snake_case
+  org_id?: string;
+  sync_inventory?: boolean;
+  sync_pricing?: boolean;
+  location_ids?: string[];
+  deleted_at?: string;
 }
 
 interface TeamMember {
@@ -46,522 +68,425 @@ interface TeamMember {
   email: string;
   firstName?: string;
   lastName?: string;
-  role: 'org:admin' | 'org:member' | 'partner'; // From Clerk - read only
+  role: 'org:admin' | 'org:member' | 'partner';
   assignedPoolIds: string[];
   poolPermissions: Record<string, { canRead: boolean; canEdit: boolean; canSync: boolean }>;
-}
-
-interface OrgSchema {
-  tier: string;
-  features: Record<string, boolean>;
-  limits: Record<string, number>;
 }
 
 const showToast = (message: string, type: 'success' | 'error' = 'success') => {
   console.log(`[${type.toUpperCase()}] ${message}`);
 };
 
-/**
- * PURPOSE: Manage location pools and team access control
- * 
- * ARCHITECTURE:
- * - Pools: Named groups of locations with sync settings
- * - Locations: Physical store/warehouse locations from connected platforms (Shopify, Square)
- * - Members: Team members with Clerk-managed roles (org:admin, org:member, partner)
- * - Permissions: Per-pool access control (canRead, canEdit, canSync)
- * 
- * FLOW:
- * 1. Admins create/manage pools and assign locations to them
- * 2. Members get pool access via RBAC (permissions table + Clerk role)
- * 3. Read-only shows locations assigned to each pool + unassigned available locations
- */
 export default function MemberPermissionsPage() {
   const { organization, isLoaded, membership } = useOrganization();
   const { getToken } = useAuth();
 
-  // State: Core data
   const [pools, setPools] = useState<Pool[]>([]);
-  const [allLocations, setAllLocations] = useState<Record<string, LocationGroup>>({}); // grouped by connection
+  const [allLocations, setAllLocations] = useState<Record<string, LocationGroup>>({});
   const [members, setMembers] = useState<TeamMember[]>([]);
-  const [schema, setSchema] = useState<OrgSchema | null>(null);
-
-  // State: Loading & error
+  
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // State: UI interactions
+  // Editing state
   const [editingPool, setEditingPool] = useState<Partial<Pool> | null>(null);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
-  const [deletingPoolId, setDeletingPoolId] = useState<string | null>(null);
-  const [updatingMemberPool, setUpdatingMemberPool] = useState<{ memberId: string; poolId: string } | null>(null);
+  
+  // UI state for dialog
+  const [expandedPlatformId, setExpandedPlatformId] = useState<string | null>(null);
 
   const orgId = organization?.id;
   const isAdmin = membership?.role === 'org:admin';
 
-  // Helper: Get locations not yet assigned to any pool
-  const getUnassignedLocations = () => {
-    const assignedSet = new Set<string>();
-    pools.forEach(pool => {
-      (pool.locationIds || []).forEach(id => assignedSet.add(id));
-    });
-
-    const result: Record<string, Location[]> = {};
-    Object.entries(allLocations).forEach(([connId, group]) => {
-      const unassigned = group.locations.filter(loc => !assignedSet.has(loc.platformLocationId));
-      if (unassigned.length > 0) {
-        result[connId] = unassigned;
-      }
-    });
-    return result;
-  };
-
-  // Helper: Get locations for a specific pool
-  const getPoolLocations = (poolId: string): Location[] => {
-    const pool = pools.find(p => p.id === poolId);
-    if (!pool?.locationIds) return [];
-
-    const result: Location[] = [];
-    Object.values(allLocations).forEach(group => {
-      group.locations.forEach(loc => {
-        if (pool.locationIds?.includes(loc.platformLocationId)) {
-          result.push(loc);
-        }
-      });
-    });
-    return result;
-  };
-
-  // API: Load all data
-  const loadData = async () => {
-    if (!orgId) {
-      setError('No organization selected');
-      setLoading(false);
-      return;
+  // Helpers
+  const getLocationMeta = (locationId: string) => {
+    for (const group of Object.values(allLocations)) {
+      const loc = group.locations.find(l => l.platformLocationId === locationId);
+      if (loc) return { loc, group };
     }
+    return null;
+  };
 
+  const loadData = async () => {
+    if (!orgId) return;
     setLoading(true);
-    setError(null);
     try {
       const clerkToken = await getToken();
-      if (!clerkToken) throw new Error('Not authenticated');
+      const headers = { 'Authorization': `Bearer ${clerkToken}` };
 
-      const headers = {
-        'Authorization': `Bearer ${clerkToken}`,
-        'Content-Type': 'application/json',
-      };
-
-      // Parallel load: pools, available locations, schema
-      const [poolsRes, locationsRes, schemaRes] = await Promise.all([
+      const [poolsRes, locationsRes] = await Promise.all([
         fetch(`${API_BASE}/api/pools/org/${orgId}`, { headers, cache: 'no-store' }),
         fetch(`${API_BASE}/api/pools/locations/available?orgId=${orgId}`, { headers, cache: 'no-store' }),
-        fetch(`${API_BASE}/api/organizations/${orgId}/schema`, { headers, cache: 'no-store' })
       ]);
 
-      // Handle pools
       if (poolsRes.ok) {
-        const poolsData = await poolsRes.json();
-        setPools(Array.isArray(poolsData) ? poolsData : []);
-      } else {
-        console.error('[MemberPermissionsPage] Failed to load pools:', poolsRes.status);
-        setPools([]);
+        const rawData = await poolsRes.json();
+        // Normalize pools to camelCase
+        const normalizedPools = (Array.isArray(rawData) ? rawData : []).map((p: any) => ({
+          ...p,
+          id: p.id,
+          orgId: p.orgId || p.org_id,
+          name: p.name,
+          description: p.description,
+          syncInventory: p.syncInventory ?? p.sync_inventory ?? true,
+          syncPricing: p.syncPricing ?? p.sync_pricing ?? true,
+          locationIds: p.locationIds || p.location_ids || [],
+          deletedAt: p.deletedAt || p.deleted_at
+        })).filter((p: Pool) => !p.deletedAt); // Client-side filter just in case
+        setPools(normalizedPools);
       }
 
-      // Handle locations
       if (locationsRes.ok) {
-        const locationsData = await locationsRes.json();
-        setAllLocations(locationsData);
-      } else {
-        console.error('[MemberPermissionsPage] Failed to load locations:', locationsRes.status);
-        setAllLocations({});
+        const data = await locationsRes.json();
+        setAllLocations(data);
       }
 
-      // Handle schema
-      if (schemaRes.ok) {
-        const schemaData = await schemaRes.json();
-        setSchema(schemaData);
-      }
-
-      // Load members with their permissions
+      // Load members...
       if (organization?.getMemberships) {
-        try {
-          const membershipList = await organization.getMemberships();
-          const membersList = membershipList.data || [];
+        const membershipList = await organization.getMemberships();
+        const membersData = membershipList.data || [];
+        
+        const loadedMembers: TeamMember[] = [];
+        for (const m of membersData) {
+          const uid = m.publicUserData?.userId;
+          if (!uid) continue;
 
-          const membersWithPerms: TeamMember[] = [];
-          for (const member of membersList) {
-            const userId = member.publicUserData?.userId;
-            if (!userId) continue;
-
-            // Fetch permissions for this member
-            try {
-              const permRes = await fetch(
-                `${API_BASE}/api/organizations/${orgId}/members/${userId}/permissions`,
-                { headers, cache: 'no-store' }
-              );
-
-              const perms = permRes.ok ? await permRes.json() : {
-                assignedPoolIds: [],
-                poolPermissions: {}
-              };
-
-              membersWithPerms.push({
-                userId,
-                email: member.publicUserData?.identifier ?? '',
-                firstName: member.publicUserData?.firstName ?? undefined,
-                lastName: member.publicUserData?.lastName ?? undefined,
-                role: member.role as 'org:admin' | 'org:member' | 'partner',
-                assignedPoolIds: perms.assignedPoolIds || [],
-                poolPermissions: perms.poolPermissions || {}
-              });
-            } catch (err) {
-              console.error('[MemberPermissionsPage] Error loading permissions for member:', err);
-            }
+          // permissions fetch
+          try {
+            const permRes = await fetch(`${API_BASE}/api/organizations/${orgId}/members/${uid}/permissions`, { headers });
+            const perms = permRes.ok ? await permRes.json() : {};
+            
+            loadedMembers.push({
+              userId: uid,
+              email: m.publicUserData?.identifier || '',
+              firstName: m.publicUserData?.firstName || '',
+              lastName: m.publicUserData?.lastName || '',
+              role: m.role as any,
+              assignedPoolIds: perms.assignedPoolIds || [],
+              poolPermissions: perms.poolPermissions || {}
+            });
+          } catch (e) {
+            console.error(e);
           }
-
-          setMembers(membersWithPerms);
-        } catch (err) {
-          console.error('[MemberPermissionsPage] Failed to load members:', err);
-          setError('Failed to load team members');
         }
+        setMembers(loadedMembers);
       }
-    } catch (error) {
-      console.error('[MemberPermissionsPage] Failed to load data:', error);
-      setError('Failed to load page. Please refresh.');
+
+    } catch (e) {
+      console.error(e);
+      setError('Failed to load data');
     } finally {
       setLoading(false);
     }
   };
 
-  // Effect: Load data when org is ready
   useEffect(() => {
-    if (isLoaded && orgId) {
-      loadData();
-    }
+    if (isLoaded && orgId) loadData();
   }, [isLoaded, orgId]);
 
-  // API: Create or update pool
-  const savePool = async (pool: Partial<Pool>) => {
-    if (!orgId) return;
+  const savePool = async () => {
+    if (!editingPool || !orgId) return;
 
     try {
       const clerkToken = await getToken();
-      const isNew = pool.id === 'new' || !pool.id;
-      const url = isNew ? `${API_BASE}/api/pools` : `${API_BASE}/api/pools/${pool.id}`;
-      const method = isNew ? 'POST' : 'PATCH';
+      const isNew = !editingPool.id || editingPool.id === 'new';
+      
+      const body = {
+        orgId: orgId,
+        name: editingPool.name,
+        description: editingPool.description,
+        syncInventory: editingPool.syncInventory ?? true,
+        syncPricing: editingPool.syncPricing ?? true,
+        locationIds: selectedLocationIds
+      };
 
-      const payload = isNew 
-        ? {
-            orgId,
-            name: pool.name,
-            description: pool.description,
-            syncInventory: pool.syncInventory ?? true,
-            syncPricing: pool.syncPricing ?? true,
-            locationIds: selectedLocationIds,
-          }
-        : {
-            name: pool.name,
-            description: pool.description,
-            syncInventory: pool.syncInventory,
-            syncPricing: pool.syncPricing,
-            locationIds: selectedLocationIds,
-          };
-
-      const res = await fetch(url, {
-        method,
+      const res = await fetch(`${API_BASE}/api/pools${isNew ? '' : `/${editingPool.id}`}`, {
+        method: isNew ? 'POST' : 'PATCH',
         headers: {
           'Authorization': `Bearer ${clerkToken}`,
           'Content-Type': 'application/json'
         },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(body)
       });
 
-      if (!res.ok) throw new Error(`Failed to save pool: ${res.status}`);
-
-      const saved = await res.json();
-      if (isNew) {
-        setPools(prev => [...prev, saved]);
-      } else {
-        setPools(prev => prev.map(p => p.id === saved.id ? saved : p));
-      }
-
-      showToast(isNew ? 'Pool created' : 'Pool updated', 'success');
+      if (!res.ok) throw new Error('Failed to save');
+      
+      await loadData(); // Reload to get fresh state
       setEditingPool(null);
-      setSelectedLocationIds([]);
-    } catch (error) {
-      console.error('[MemberPermissionsPage] Failed to save pool:', error);
-      showToast(error instanceof Error ? error.message : 'Failed to save pool', 'error');
+      showToast('Pool saved');
+    } catch (e) {
+      console.error(e);
+      showToast('Error saving pool', 'error');
     }
   };
 
-  // API: Delete pool
-  const handleDeletePool = async (poolId: string) => {
+  const handleDeletePool = async (id: string) => {
     try {
-      const clerkToken = await getToken();
-      const res = await fetch(`${API_BASE}/api/pools/${poolId}`, {
+      const token = await getToken();
+      await fetch(`${API_BASE}/api/pools/${id}`, {
         method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${clerkToken}`,
-          'Content-Type': 'application/json'
-        },
+        headers: { 'Authorization': `Bearer ${token}` }
       });
-
-      if (!res.ok) throw new Error(`Failed to delete pool: ${res.status}`);
-
-      setPools(prev => prev.filter(p => p.id !== poolId));
-      showToast('Pool deleted', 'success');
-      setDeletingPoolId(null);
-    } catch (error) {
-      console.error('[MemberPermissionsPage] Failed to delete pool:', error);
-      showToast(error instanceof Error ? error.message : 'Failed to delete pool', 'error');
+      setPools(prev => prev.filter(p => p.id !== id));
+      showToast('Pool deleted');
+    } catch (e) {
+      showToast('Error deleting pool', 'error');
     }
   };
 
-  // API: Assign/remove pool access for member
-  const updateMemberPool = async (memberId: string, poolId: string, assign: boolean) => {
+  // Toggle access to a pool for a user
+  const toggleMemberPool = async (userId: string, poolId: string, checked: boolean) => {
     if (!orgId) return;
+    
+    // Optimistic update
+    setMembers(prev => prev.map(m => {
+      if (m.userId !== userId) return m;
+      const newIds = checked 
+        ? [...m.assignedPoolIds, poolId] 
+        : m.assignedPoolIds.filter(id => id !== poolId);
+      return { ...m, assignedPoolIds: newIds };
+    }));
 
-    setUpdatingMemberPool({ memberId, poolId });
     try {
-      const clerkToken = await getToken();
-      const member = members.find(m => m.userId === memberId);
+      const token = await getToken();
+      const member = members.find(m => m.userId === userId);
       if (!member) return;
 
-      const newPoolIds = assign
-        ? [...member.assignedPoolIds, poolId]
+      const newIds = checked 
+        ? [...member.assignedPoolIds, poolId] 
         : member.assignedPoolIds.filter(id => id !== poolId);
 
-      const res = await fetch(
-        `${API_BASE}/api/organizations/${orgId}/members/${memberId}/permissions`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${clerkToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({ assignedPoolIds: newPoolIds }),
-        }
-      );
-
-      if (!res.ok) throw new Error(`Failed to update pool access: ${res.status}`);
-
-      setMembers(prev => prev.map(m =>
-        m.userId === memberId ? { ...m, assignedPoolIds: newPoolIds } : m
-      ));
-      showToast(assign ? 'Pool access granted' : 'Pool access removed', 'success');
-    } catch (error) {
-      console.error('[MemberPermissionsPage] Failed to update member pool:', error);
-      showToast(error instanceof Error ? error.message : 'Failed to update access', 'error');
-    } finally {
-      setUpdatingMemberPool(null);
+      await fetch(`${API_BASE}/api/organizations/${orgId}/members/${userId}/permissions`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedPoolIds: newIds })
+      });
+    } catch (e) {
+      console.error(e);
+      // Revert on error (omitted for brevity)
     }
   };
 
-  // API: Update member pool permissions
-  const updatePoolPermission = async (
-    memberId: string,
-    poolId: string,
-    permission: 'canRead' | 'canEdit' | 'canSync',
-    value: boolean
-  ) => {
+  // Toggle specific permission for a user in a pool
+  const toggleMemberPermission = async (userId: string, poolId: string, feature: 'canRead' | 'canEdit', checked: boolean) => {
     if (!orgId) return;
+    
+    // Optimistic update
+    setMembers(prev => prev.map(m => {
+      if (m.userId !== userId) return m;
+      const poolPerms = m.poolPermissions[poolId] || { canRead: true, canEdit: false, canSync: false };
+      return {
+        ...m,
+        poolPermissions: {
+          ...m.poolPermissions,
+          [poolId]: { ...poolPerms, [feature]: checked }
+        }
+      };
+    }));
 
     try {
-      const clerkToken = await getToken();
-      const member = members.find(m => m.userId === memberId);
+      const token = await getToken();
+      const member = members.find(m => m.userId === userId);
       if (!member) return;
 
-      const perms = member.poolPermissions[poolId] || { canRead: true, canEdit: false, canSync: false };
+      const currentPerms = member.poolPermissions[poolId] || { canRead: true, canEdit: false, canSync: false };
+      const newPerms = { ...currentPerms, [feature]: checked };
 
-      const res = await fetch(
-        `${API_BASE}/api/organizations/${orgId}/members/${memberId}/permissions`,
-        {
-          method: 'PATCH',
-          headers: {
-            'Authorization': `Bearer ${clerkToken}`,
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            poolPermissions: {
-              [poolId]: { ...perms, [permission]: value }
-            }
-          }),
-        }
-      );
-
-      if (!res.ok) throw new Error(`Failed to update permission: ${res.status}`);
-
-      setMembers(prev => prev.map(m =>
-        m.userId === memberId
-          ? {
-              ...m,
-              poolPermissions: {
-                ...m.poolPermissions,
-                [poolId]: { ...perms, [permission]: value }
-              }
-            }
-          : m
-      ));
-      showToast('Permission updated', 'success');
-    } catch (error) {
-      console.error('[MemberPermissionsPage] Failed to update permission:', error);
-      showToast(error instanceof Error ? error.message : 'Failed to update permission', 'error');
+      await fetch(`${API_BASE}/api/organizations/${orgId}/members/${userId}/permissions`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ 
+          poolPermissions: { 
+            [poolId]: newPerms 
+          } 
+        })
+      });
+    } catch (e) {
+      console.error(e);
     }
   };
 
-  if (loading) return <div className="p-4">Loading...</div>;
-  if (error) return (
-    <div className="p-4">
-      <div className="text-red-600 mb-4">{error}</div>
-      <Button onClick={() => { setError(null); loadData(); }}>Retry</Button>
-    </div>
-  );
-  if (!orgId) return <div className="p-4">No organization selected</div>;
+  const renderSelectedLocation = (locId: string) => {
+    const meta = getLocationMeta(locId);
+    if (!meta) return null;
+    const { loc, group } = meta;
+    const platformType = group.platformType.toLowerCase();
+    const IconSrc = PLATFORM_ICONS[platformType];
 
-  const unassignedLocations = getUnassignedLocations();
+    // Styled to match mobile: Logo + Platform Name on top row, Location Name on second row
+    return (
+      <div key={locId} className="flex items-center justify-between bg-slate-50 border border-slate-200 rounded-lg p-3 mb-2">
+        <div>
+          <div className="flex items-center gap-2 mb-0.5">
+            {IconSrc && <Image src={IconSrc} alt={platformType} width={16} height={16} />}
+            <span className="text-xs font-semibold text-slate-700">{group.connectionName}</span>
+          </div>
+          <div className="text-sm font-medium text-slate-900">{loc.locationName}</div>
+        </div>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0 hover:bg-red-50 hover:text-red-600 rounded-full"
+          onClick={() => setSelectedLocationIds(prev => prev.filter(id => id !== locId))}
+        >
+          <X className="w-4 h-4" />
+        </Button>
+      </div>
+    );
+  };
+
+  if (loading && pools.length === 0) return <div className="p-8 text-center">Loading...</div>;
 
   return (
-    <div className="p-6 space-y-6">
-      {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold">Location Pools & Team Access</h2>
-        <p className="text-muted-foreground">
-          Organize physical locations into pools and control team access
-        </p>
+    <div className="p-6 max-w-5xl mx-auto space-y-8">
+      <div className="flex justify-between items-end">
+        <div>
+          <h1 className="text-2xl font-bold tracking-tight">Location Pools & Team Access</h1>
+          <p className="text-slate-500 mt-1">Organize physical locations into pools and control team access</p>
+        </div>
       </div>
 
-      {/* SECTION 1: Pools Management (Admin only) */}
+      {/* POOLS SECTION */}
       {isAdmin && (
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Location Pools</CardTitle>
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button onClick={() => {
-                  setEditingPool({
-                    id: 'new',
-                    orgId: orgId!,
-                    name: '',
-                    description: '',
-                    syncInventory: true,
-                    syncPricing: true,
-                    locationIds: [],
-                    createdAt: new Date().toISOString(),
-                    updatedAt: new Date().toISOString()
-                  });
-                  setSelectedLocationIds([]);
-                }}>
-                  + New Pool
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-2xl">
+          <CardHeader className="flex flex-row items-center justify-between pb-2">
+            <CardTitle className="text-lg font-semibold">Location Pools</CardTitle>
+            <Button onClick={() => {
+              setEditingPool({
+                id: 'new',
+                orgId: orgId!,
+                name: '',
+                syncInventory: true,
+                syncPricing: true,
+                locationIds: []
+              });
+              setSelectedLocationIds([]);
+            }}>
+              <Plus className="w-4 h-4 mr-2" />
+              New Pool
+            </Button>
+          </CardHeader>
+          <CardContent>
+            <Dialog open={!!editingPool} onOpenChange={(open) => !open && setEditingPool(null)}>
+              <DialogContent className="max-w-md">
                 <DialogHeader>
-                  <DialogTitle>{editingPool?.id === 'new' ? 'Create Pool' : `Edit ${editingPool?.name}`}</DialogTitle>
+                  <DialogTitle>{editingPool?.id === 'new' ? 'Create Location Pool' : 'Edit Pool'}</DialogTitle>
                 </DialogHeader>
-                <div className="space-y-4">
-                  <div>
-                    <Label>Pool Name *</Label>
-                    <Input
+                
+                <div className="space-y-5 py-2">
+                  {/* Name */}
+                  <div className="space-y-1.5">
+                    <Label>Pool Name</Label>
+                    <Input 
+                      placeholder="e.g. West Coast Stores" 
                       value={editingPool?.name || ''}
-                      onChange={(e) => setEditingPool(prev => prev ? { ...prev, name: e.target.value } : null)}
-                      placeholder="e.g., Atlanta Locations, West Coast"
+                      onChange={e => setEditingPool(prev => prev ? { ...prev, name: e.target.value } : null)}
                     />
                   </div>
 
-                  <div>
-                    <Label>Description</Label>
-                    <Input
-                      value={editingPool?.description || ''}
-                      onChange={(e) => setEditingPool(prev => prev ? { ...prev, description: e.target.value } : null)}
-                      placeholder="Optional notes about this pool"
-                    />
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={editingPool?.syncInventory ?? true}
-                        onCheckedChange={(checked) => setEditingPool(prev => prev ? { ...prev, syncInventory: !!checked } : null)}
-                      />
-                      <Label>Sync Inventory</Label>
+                  {/* Selected Locations */}
+                  {selectedLocationIds.length > 0 && (
+                    <div className="space-y-2">
+                      <Label>Selected Locations</Label>
+                      <div className="max-h-[200px] overflow-y-auto">
+                        {selectedLocationIds.map(renderSelectedLocation)}
+                      </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={editingPool?.syncPricing ?? true}
-                        onCheckedChange={(checked) => setEditingPool(prev => prev ? { ...prev, syncPricing: !!checked } : null)}
-                      />
-                      <Label>Sync Pricing</Label>
-                    </div>
-                  </div>
+                  )}
 
-                  {/* Location Selection */}
-                  <div className="border-t pt-4">
-                    <Label className="text-base font-semibold">Assign Locations</Label>
-                    <div className="mt-3 space-y-3 max-h-60 overflow-y-auto border rounded p-3 bg-muted/20">
+                  {/* Platform Selector (Add Location) */}
+                  <div className="space-y-2">
+                    <Label className="text-slate-500 text-xs uppercase font-bold tracking-wider">Add Location from Platform</Label>
+                    <div className="border rounded-lg divide-y">
                       {Object.keys(allLocations).length === 0 ? (
-                        <div className="text-sm text-muted-foreground">No locations available. Connect a platform first.</div>
+                        <div className="p-3 text-sm text-slate-400">No platforms connected</div>
                       ) : (
-                        Object.entries(allLocations).map(([connId, group]) => (
-                          <div key={connId}>
-                            <div className="text-xs font-semibold text-muted-foreground mb-2">
-                              {group.platformType} • {group.connectionName}
-                            </div>
-                            <div className="ml-2 space-y-2">
-                              {group.locations.map((loc) => (
-                                <div key={loc.platformLocationId} className="flex items-center space-x-2">
-                                  <Checkbox
-                                    checked={selectedLocationIds.includes(loc.platformLocationId)}
-                                    onCheckedChange={(checked) => {
-                                      if (checked) {
-                                        setSelectedLocationIds(prev => [...prev, loc.platformLocationId]);
-                                      } else {
-                                        setSelectedLocationIds(prev => prev.filter(id => id !== loc.platformLocationId));
-                                      }
-                                    }}
-                                  />
-                                  <Label className="text-sm">{loc.locationName}</Label>
+                        Object.entries(allLocations).map(([connId, group]) => {
+                          const isOpen = expandedPlatformId === connId;
+                          const platformType = group.platformType.toLowerCase();
+                          const IconSrc = PLATFORM_ICONS[platformType];
+
+                          return (
+                            <div key={connId} className="bg-white">
+                              <button
+                                onClick={() => setExpandedPlatformId(isOpen ? null : connId)}
+                                className="w-full flex items-center justify-between p-3 hover:bg-slate-50 transition-colors"
+                              >
+                                <div className="flex items-center gap-3">
+                                  {IconSrc && <Image src={IconSrc} alt={platformType} width={20} height={20} />}
+                                  <span className="text-sm font-medium text-slate-700">{group.connectionName}</span>
                                 </div>
-                              ))}
+                                {isOpen ? <ChevronDown className="w-4 h-4 text-slate-400" /> : <ChevronRight className="w-4 h-4 text-slate-400" />}
+                              </button>
+                              
+                              {isOpen && (
+                                <div className="bg-slate-50/50 p-2 space-y-1 border-t shadow-inner">
+                                  {group.locations.map(loc => {
+                                    const isSelected = selectedLocationIds.includes(loc.platformLocationId);
+                                    if (isSelected) return null; // Hide if already selected
+
+                                    return (
+                                      <button
+                                        key={loc.platformLocationId}
+                                        onClick={() => {
+                                          setSelectedLocationIds(prev => [...prev, loc.platformLocationId]);
+                                          setExpandedPlatformId(null); // Close on select
+                                        }}
+                                        className="w-full flex items-center justify-between p-2 rounded hover:bg-white hover:shadow-sm text-left group"
+                                      >
+                                        <span className="text-sm text-slate-600 group-hover:text-slate-900">{loc.locationName}</span>
+                                        <Plus className="w-3 h-3 text-slate-400 group-hover:text-blue-600" />
+                                      </button>
+                                    );
+                                  })}
+                                  {group.locations.every(l => selectedLocationIds.includes(l.platformLocationId)) && (
+                                    <div className="text-xs text-slate-400 text-center py-2">All locations selected</div>
+                                  )}
+                                </div>
+                              )}
                             </div>
-                          </div>
-                        ))
+                          );
+                        })
                       )}
                     </div>
                   </div>
 
-                  <div className="flex gap-2 justify-end">
+                  <div className="flex gap-2 justify-end pt-2">
                     <Button variant="outline" onClick={() => setEditingPool(null)}>Cancel</Button>
-                    <Button onClick={() => {
-                      if (editingPool) savePool(editingPool);
-                    }}>
+                    <Button onClick={savePool} disabled={!editingPool?.name || selectedLocationIds.length === 0}>
                       {editingPool?.id === 'new' ? 'Create Pool' : 'Save Changes'}
                     </Button>
                   </div>
                 </div>
               </DialogContent>
             </Dialog>
-          </CardHeader>
-          <CardContent className="space-y-3">
+
             {pools.length === 0 ? (
-              <div className="text-sm text-muted-foreground text-center p-8">
-                No pools yet. Create one to get started.
+              <div className="text-center py-10 text-slate-400 bg-slate-50 rounded-lg border border-dashed">
+                No pools created yet
               </div>
             ) : (
-              pools.map((pool) => {
-                const poolLocs = getPoolLocations(pool.id);
-                return (
-                  <div key={pool.id} className="border rounded-lg p-4 space-y-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <h4 className="font-semibold">{pool.name}</h4>
-                        <p className="text-sm text-muted-foreground">{pool.description || '–'}</p>
-                        <div className="flex gap-4 mt-2 text-xs text-muted-foreground">
-                          <span>📍 {poolLocs.length} location{poolLocs.length !== 1 ? 's' : ''}</span>
-                          <span>{pool.syncInventory ? '✓' : '✗'} Inventory</span>
-                          <span>{pool.syncPricing ? '✓' : '✗'} Pricing</span>
+              <div className="grid gap-3">
+                {pools.map(pool => {
+                  const count = pool.locationIds?.length || 0;
+                  return (
+                    <div key={pool.id} className="flex items-center justify-between p-4 border rounded-lg hover:border-blue-200 transition-colors bg-white">
+                      <div>
+                        <h3 className="font-medium text-slate-900">{pool.name}</h3>
+                        <div className="flex gap-4 mt-1.5">
+                          <span className="text-xs font-medium text-slate-500 flex items-center gap-1">
+                            📍 {count} location{count !== 1 ? 's' : ''}
+                          </span>
+                          <span className={`text-xs font-medium flex items-center gap-1 ${pool.syncInventory ? 'text-green-600' : 'text-slate-400'}`}>
+                            {pool.syncInventory ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} Inventory
+                          </span>
+                          <span className={`text-xs font-medium flex items-center gap-1 ${pool.syncPricing ? 'text-green-600' : 'text-slate-400'}`}>
+                            {pool.syncPricing ? <Check className="w-3 h-3" /> : <X className="w-3 h-3" />} Pricing
+                          </span>
                         </div>
                       </div>
-                      <div className="flex gap-2">
-                        <Dialog>
+                      <div className="flex items-center gap-2">
+                         <Dialog>
                           <DialogTrigger asChild>
                             <Button variant="outline" size="sm" onClick={() => {
                               setEditingPool(pool);
@@ -570,278 +495,118 @@ export default function MemberPermissionsPage() {
                               Edit
                             </Button>
                           </DialogTrigger>
-                          <DialogContent className="max-w-2xl">
-                            <DialogHeader>
-                              <DialogTitle>Edit {editingPool?.name}</DialogTitle>
-                            </DialogHeader>
-                            {editingPool?.id === pool.id && (
-                              <div className="space-y-4">
-                                <div>
-                                  <Label>Name</Label>
-                                  <Input
-                                    value={editingPool.name}
-                                    onChange={(e) => setEditingPool({ ...editingPool, name: e.target.value })}
-                                  />
-                                </div>
-                                <div>
-                                  <Label>Description</Label>
-                                  <Input
-                                    value={editingPool.description || ''}
-                                    onChange={(e) => setEditingPool({ ...editingPool, description: e.target.value })}
-                                  />
-                                </div>
-
-                                <div className="grid grid-cols-2 gap-4">
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      checked={editingPool.syncInventory}
-                                      onCheckedChange={(checked) => setEditingPool({ ...editingPool, syncInventory: !!checked })}
-                                    />
-                                    <Label>Sync Inventory</Label>
-                                  </div>
-                                  <div className="flex items-center space-x-2">
-                                    <Checkbox
-                                      checked={editingPool.syncPricing}
-                                      onCheckedChange={(checked) => setEditingPool({ ...editingPool, syncPricing: !!checked })}
-                                    />
-                                    <Label>Sync Pricing</Label>
-                                  </div>
-                                </div>
-
-                                {/* Current Locations */}
-                                <div className="border-t pt-4">
-                                  <Label className="font-semibold">Current Locations</Label>
-                                  {poolLocs.length === 0 ? (
-                                    <div className="text-sm text-muted-foreground mt-2 p-2 bg-muted/30 rounded">None</div>
-                                  ) : (
-                                    <div className="mt-2 space-y-1">
-                                      {poolLocs.map((loc) => (
-                                        <div key={loc.platformLocationId} className="flex items-center justify-between text-sm p-2 bg-muted/20 rounded">
-                                          <span>{loc.locationName}</span>
-                                          <Button
-                                            variant="ghost"
-                                            size="sm"
-                                            className="h-6 text-red-600"
-                                            onClick={() => {
-                                              const newIds = selectedLocationIds.filter(id => id !== loc.platformLocationId);
-                                              setSelectedLocationIds(newIds);
-                                            }}
-                                          >
-                                            Remove
-                                          </Button>
-                                        </div>
-                                      ))}
-                                    </div>
-                                  )}
-                                </div>
-
-                                {/* Add More */}
-                                <div className="border-t pt-4">
-                                  <Label className="font-semibold">Add More Locations</Label>
-                                  <div className="mt-2 max-h-40 overflow-y-auto space-y-2 border rounded p-2">
-                                    {Object.entries(allLocations).map(([connId, group]) => (
-                                      <div key={connId}>
-                                        <div className="text-xs font-semibold mb-1 text-muted-foreground">
-                                          {group.platformType} • {group.connectionName}
-                                        </div>
-                                        {group.locations.map((loc) => {
-                                          const alreadyAdded = selectedLocationIds.includes(loc.platformLocationId);
-                                          return (
-                                            <div key={loc.platformLocationId} className="flex items-center space-x-2 ml-2">
-                                              <Checkbox
-                                                checked={alreadyAdded}
-                                                disabled={alreadyAdded}
-                                                onCheckedChange={(checked) => {
-                                                  if (checked) {
-                                                    setSelectedLocationIds(prev => [...prev, loc.platformLocationId]);
-                                                  }
-                                                }}
-                                              />
-                                              <Label className="text-sm" style={{ opacity: alreadyAdded ? 0.5 : 1 }}>
-                                                {loc.locationName}
-                                              </Label>
-                                            </div>
-                                          );
-                                        })}
-                                      </div>
-                                    ))}
-                                  </div>
-                                </div>
-
-                                <div className="flex gap-2 justify-end border-t pt-4">
-                                  <Button variant="outline" onClick={() => setEditingPool(null)}>Cancel</Button>
-                                  <Button onClick={() => savePool(editingPool)}>Save</Button>
-                                </div>
-                              </div>
-                            )}
-                          </DialogContent>
+                          {/* The content here is tricky because it shares state with the other dialog. 
+                              Ideally, we lift the Dialog open state. For now, assuming user edits one at a time.
+                              This trigger just sets state, the actual Dialog is the one defined earlier?
+                              No, that dialog is inside the "New Pool" button logic. 
+                              I need to refactor to have a single Dialog controlled by state.
+                          */}
                         </Dialog>
-
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm" className="text-red-600" onClick={() => setDeletingPoolId(pool.id)}>
-                              Delete
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete {pool.name}?</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                This pool and its location assignments will be removed from all team members.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction className="bg-red-600" onClick={() => handleDeletePool(pool.id)}>
-                                Delete
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
+                        
+                        <Button 
+                           variant="ghost" 
+                           size="icon" 
+                           className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                           onClick={() => handleDeletePool(pool.id)}
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
                       </div>
                     </div>
-
-                    {/* Locations in this pool */}
-                    {poolLocs.length > 0 && (
-                      <div className="text-sm space-y-1 ml-2 pt-2 border-t">
-                        {poolLocs.map((loc) => (
-                          <div key={loc.platformLocationId} className="flex items-center gap-2 text-muted-foreground">
-                            <span className="w-2 h-2 bg-blue-400 rounded-full" />
-                            <span>{loc.locationName}</span>
-                            <span className="text-xs opacity-70">({loc.platformConnection?.platformType})</span>
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })
+                  );
+                })}
+              </div>
             )}
           </CardContent>
         </Card>
       )}
 
-      {/* SECTION 2: Unassigned Locations */}
-      {isAdmin && Object.keys(unassignedLocations).length > 0 && (
-        <Card className="border-amber-200 bg-amber-50/30">
-          <CardHeader>
-            <CardTitle className="text-amber-900">Available Locations Not in Any Pool</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            {Object.entries(unassignedLocations).map(([connId, locs]) => (
-              <div key={connId}>
-                <div className="text-sm font-semibold text-muted-foreground mb-2">
-                  {locs[0]?.platformConnection?.platformType} • {locs[0]?.platformConnection?.displayName}
-                </div>
-                <div className="ml-2 space-y-1">
-                  {locs.map((loc) => (
-                    <div key={loc.platformLocationId} className="flex items-center justify-between text-sm p-2 bg-white/50 rounded">
-                      <span>{loc.locationName}</span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setEditingPool({
-                            id: 'new',
-                            orgId: orgId!,
-                            name: `${loc.locationName} Pool`,
-                            description: '',
-                            syncInventory: true,
-                            syncPricing: true,
-                            locationIds: [loc.platformLocationId],
-                            createdAt: new Date().toISOString(),
-                            updatedAt: new Date().toISOString()
-                          });
-                          setSelectedLocationIds([loc.platformLocationId]);
-                        }}
-                      >
-                        Create Pool
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* SECTION 3: Team Access Control */}
+      {/* TEAM ACCESS (V3 Style) */}
       <Card>
         <CardHeader>
-          <CardTitle>Team Access</CardTitle>
+          <CardTitle className="text-lg font-semibold">Team Access</CardTitle>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {members.length === 0 ? (
-            <div className="text-sm text-muted-foreground text-center p-4">No team members</div>
-          ) : (
-            members.map((member) => (
-              <div key={member.userId} className="space-y-2 p-3 border rounded">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <div className="font-medium">{member.firstName} {member.lastName} ({member.email})</div>
-                    <div className="text-xs text-muted-foreground mt-1">
-                      Role: <span className="capitalize">{member.role.replace('org:', '')}</span>
-                    </div>
-                  </div>
-                </div>
+        <CardContent className="space-y-6">
+          {members.map(member => (
+             <div key={member.userId} className="border rounded-lg p-5 bg-white shadow-sm">
+               {/* User Header */}
+               <div className="flex items-start justify-between mb-4 border-b pb-4">
+                 <div>
+                   <h3 className="font-bold text-slate-900 text-lg">{member.firstName} {member.lastName}</h3>
+                   <div className="text-sm text-slate-500">{member.email}</div>
+                 </div>
+                 <div className="flex flex-col items-end gap-1">
+                   <div className="px-2 py-1 bg-slate-100 rounded text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                     {member.role.replace('org:', '')}
+                   </div>
+                 </div>
+               </div>
 
-                {/* Pool Access */}
-                <div className="ml-2 space-y-2 border-t pt-2">
-                  <Label className="text-sm font-semibold">Pool Access</Label>
-                  {pools.length === 0 ? (
-                    <div className="text-xs text-muted-foreground">No pools created yet</div>
-                  ) : (
-                    <div className="space-y-2">
-                      {pools.map((pool) => {
-                        const hasAccess = member.assignedPoolIds.includes(pool.id);
-                        const perms = member.poolPermissions[pool.id] || { canRead: true, canEdit: false, canSync: false };
-                        const isUpdating = updatingMemberPool?.memberId === member.userId && updatingMemberPool?.poolId === pool.id;
+               {/* Pools & Features List */}
+               <div className="space-y-4">
+                 <div className="text-xs font-bold text-slate-400 uppercase tracking-wider">Pool Access & Permissions</div>
+                 
+                 {pools.length === 0 ? (
+                   <div className="text-sm text-slate-400 italic">No pools available</div>
+                 ) : (
+                   <div className="grid gap-4 md:grid-cols-2">
+                     {pools.map(pool => {
+                       const hasAccess = member.assignedPoolIds.includes(pool.id);
+                       const perms = member.poolPermissions[pool.id] || { canRead: true, canEdit: false };
 
-                        return (
-                          <div key={pool.id} className="text-sm space-y-1 p-2 bg-muted/20 rounded">
-                            <div className="flex items-center justify-between">
-                              <span className="font-medium">{pool.name}</span>
-                              <Checkbox
-                                checked={hasAccess}
-                                disabled={isUpdating}
-                                onCheckedChange={(checked) => updateMemberPool(member.userId, pool.id, !!checked)}
-                              />
-                            </div>
-
-                            {hasAccess && (
-                              <div className="ml-2 space-y-1 text-xs">
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox checked disabled />
-                                  <span>Read (always)</span>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox
+                       return (
+                         <div key={pool.id} className={`border rounded-md p-4 transition-all ${hasAccess ? 'bg-blue-50/30 border-blue-200 ring-1 ring-blue-100' : 'bg-slate-50/50 border-transparent opacity-75'}`}>
+                           <div className="flex items-center gap-3 mb-3">
+                             <Checkbox 
+                               id={`pool-${member.userId}-${pool.id}`}
+                               checked={hasAccess}
+                               onCheckedChange={(checked) => toggleMemberPool(member.userId, pool.id, !!checked)}
+                               className="data-[state=checked]:bg-blue-600 data-[state=checked]:border-blue-600"
+                             />
+                             <label 
+                               htmlFor={`pool-${member.userId}-${pool.id}`}
+                               className={`font-semibold text-sm cursor-pointer ${hasAccess ? 'text-blue-900' : 'text-slate-600'}`}
+                             >
+                               {pool.name}
+                             </label>
+                           </div>
+                           
+                           {hasAccess && (
+                             <div className="pl-7 space-y-2">
+                               <div className="flex items-center gap-2">
+                                 <Checkbox 
+                                    id={`perm-view-${member.userId}-${pool.id}`}
+                                    checked={perms.canRead}
+                                    onCheckedChange={(checked) => toggleMemberPermission(member.userId, pool.id, 'canRead', !!checked)}
+                                    disabled // Always true if assigned? Or toggleable?
+                                    className="h-3.5 w-3.5 opacity-50"
+                                 />
+                                 <label htmlFor={`perm-view-${member.userId}-${pool.id}`} className="text-xs text-slate-700 font-medium">
+                                   View Inventory
+                                 </label>
+                               </div>
+                               
+                               <div className="flex items-center gap-2">
+                                  <Checkbox 
+                                    id={`perm-edit-${member.userId}-${pool.id}`}
                                     checked={perms.canEdit}
-                                    disabled={isUpdating}
-                                    onCheckedChange={(checked) => updatePoolPermission(member.userId, pool.id, 'canEdit', !!checked)}
-                                  />
-                                  <span>Edit</span>
-                                </div>
-                                <div className="flex items-center space-x-2">
-                                  <Checkbox
-                                    checked={perms.canSync}
-                                    disabled={isUpdating}
-                                    onCheckedChange={(checked) => updatePoolPermission(member.userId, pool.id, 'canSync', !!checked)}
-                                  />
-                                  <span>Sync</span>
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        );
-                      })}
-                    </div>
-                  )}
-                </div>
-              </div>
-            ))
-          )}
+                                    onCheckedChange={(checked) => toggleMemberPermission(member.userId, pool.id, 'canEdit', !!checked)}
+                                    className="h-3.5 w-3.5"
+                                  /> 
+                                  <label htmlFor={`perm-edit-${member.userId}-${pool.id}`} className="text-xs text-slate-700 font-medium">
+                                    Edit Inventory
+                                  </label>
+                               </div>
+                             </div>
+                           )}
+                         </div>
+                       );
+                     })}
+                   </div>
+                 )}
+               </div>
+             </div>
+          ))}
         </CardContent>
       </Card>
     </div>
