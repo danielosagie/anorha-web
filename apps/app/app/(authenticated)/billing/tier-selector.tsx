@@ -32,12 +32,19 @@ function getTiers(): Tier[] {
   const growthId = POLAR_CONFIG.GROWTH_PRODUCT_ID;
   const teamsId = POLAR_CONFIG.TEAMS_PRODUCT_ID;
 
+  console.log('[TierSelector] Polar Config:', {
+    GROWTH_PRODUCT_ID: growthId,
+    TEAMS_PRODUCT_ID: teamsId,
+  });
+
   if (!growthId || !teamsId) {
-    console.warn(
-      'Missing Polar product IDs. Growth:',
+    console.error(
+      '[TierSelector] Missing Polar product IDs!',
+      'Growth:',
       growthId,
       'Teams:',
-      teamsId
+      teamsId,
+      'Environment vars may not be set properly.'
     );
   }
 
@@ -50,7 +57,7 @@ function getTiers(): Tier[] {
       billingPeriod: 'per month',
       users: 2,
       additionalUserPrice: 10,
-      productId: growthId || '',
+      productId: growthId || 'missing-growth-id',
       highlighted: true,
       features: [
         'Unlimited syncs',
@@ -67,7 +74,7 @@ function getTiers(): Tier[] {
       billingPeriod: 'per month',
       users: 5,
       additionalUserPrice: 8,
-      productId: teamsId || '',
+      productId: teamsId || 'missing-teams-id',
       features: [
         'Everything in Growth',
         'Pay $0.15 per scan (120 included)',
@@ -88,10 +95,22 @@ export function TierSelector({ onSelectTier, isLoading, onClose }: TierSelectorP
 
   const handleCheckout = () => {
     const tier = TIERS.find((t) => t.id === selectedTierId);
-    if (tier) {
-      console.log('Checking out with tier:', tier.id, 'Product ID:', tier.productId);
-      onSelectTier(tier);
+    if (!tier) {
+      console.error('[TierSelector] No tier selected');
+      return;
     }
+
+    if (!tier.productId || tier.productId.startsWith('missing-')) {
+      console.error('[TierSelector] Invalid product ID for tier:', tier.id, tier.productId);
+      alert(
+        'Configuration error: Product ID not set. Please contact support.\n\nMissing: ' +
+        tier.productId
+      );
+      return;
+    }
+
+    console.log('[TierSelector] Checking out with tier:', tier.id, 'Product ID:', tier.productId);
+    onSelectTier(tier);
   };
 
   return (
@@ -117,54 +136,57 @@ export function TierSelector({ onSelectTier, isLoading, onClose }: TierSelectorP
                 
 
                   <Card
-                  className={`relative cursor-pointer pb-0 w-full transition-all h-full border-2 bg-background/95 backdrop-blur-sm flex flex-col ${
+                  className={`relative cursor-pointer content-between pb-0 w-full transition-all h-full border-2 bg-background/95 backdrop-blur-sm flex flex-col ${
                     selectedTierId === tier.id
                       ? 'ring-2 ring-[#647653] shadow-lg border-[#647653]'
                       : 'hover:shadow-md border-gray-200'
                   }`}
                   onClick={() => handleSelectTier(tier)}
                 >
-                  <CardHeader className="pb-4">
-                    <CardTitle className="text-2xl">{tier.name}</CardTitle>
-                    <CardDescription className="text-base">{tier.description}</CardDescription>
-                  </CardHeader>
+                    <div className="content-start">
+                        <CardHeader className="pb-4">
+                            <CardTitle className="text-2xl">{tier.name}</CardTitle>
+                            <CardDescription className="text-base">{tier.description}</CardDescription>
+                        </CardHeader>
 
-                  <CardContent className="space-y-6 flex-1">
-                    {/* Pricing */}
-                    <div>
-                      <div className="flex items-baseline gap-2">
-                        <span className="text-4xl font-bold">${tier.price}</span>
-                        <span className="text-sm text-muted-foreground">/ {tier.billingPeriod}</span>
-                      </div>
+                        
+                        <CardContent className="space-y-6 flex-1">
+                            {/* Pricing */}
+                            <div>
+                            <div className="flex items-baseline gap-2">
+                                <span className="text-4xl font-bold">${tier.price}</span>
+                                <span className="text-sm text-muted-foreground">/ {tier.billingPeriod}</span>
+                            </div>
+                            </div>
+
+                            {/* Team Size */}
+                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                            <Users className="w-4 h-4" />
+                            <span>
+                                {tier.users} included users (+${tier.additionalUserPrice} per additional)
+                            </span>
+                            </div>
+
+                            {/* Features List */}
+                            <ul className="space-y-3">
+                            {tier.features.map((feature, idx) => (
+                                <li key={idx} className="flex items-start gap-3 text-sm">
+                                <CheckCircle2Icon className="w-5 h-5 text-[#647653] mt-0.5 flex-shrink-0" />
+                                <span className="text-foreground">{feature}</span>
+                                </li>
+                            ))}
+                            </ul>
+                        </CardContent>
                     </div>
 
-                    {/* Team Size */}
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <Users className="w-4 h-4" />
-                      <span>
-                        {tier.users} included users (+${tier.additionalUserPrice} per additional)
-                      </span>
+                    {/* Selection Indicator - Always at bottom */}
+                    <div className="w-full rounded-b-lg text-center content-end h-full min-h-14">
+                        {selectedTierId === tier.id && (
+                        <div className="bg-[#647653]/5 min-h-14">
+                            <p className="text-sm text-[#647653] justify-center content-center font-semibold min-h-14">✓ Selected</p>
+                        </div>
+                        )}
                     </div>
-
-                    {/* Features List */}
-                    <ul className="space-y-3">
-                      {tier.features.map((feature, idx) => (
-                        <li key={idx} className="flex items-start gap-3 text-sm">
-                          <CheckCircle2Icon className="w-5 h-5 text-[#647653] mt-0.5 flex-shrink-0" />
-                          <span className="text-foreground">{feature}</span>
-                        </li>
-                      ))}
-                    </ul>
-                  </CardContent>
-
-                  {/* Selection Indicator - Always at bottom */}
-                  <div className="w-full rounded-b-lg text-center h-full min-h-14">
-                    {selectedTierId === tier.id && (
-                      <div className="bg-[#647653]/5 min-h-14">
-                        <p className="text-sm text-[#647653] justify-center content-center font-semibold min-h-14">✓ Selected</p>
-                      </div>
-                    )}
-                  </div>
                   </Card>
               </div>
             ))}
