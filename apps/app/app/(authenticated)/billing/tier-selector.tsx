@@ -29,24 +29,16 @@ interface TierSelectorProps {
 }
 
 function getTiers(): Tier[] {
-  const growthId = POLAR_CONFIG.GROWTH_PRODUCT_ID;
-  const teamsId = POLAR_CONFIG.TEAMS_PRODUCT_ID;
+  // Try to get from env vars, fallback to hardcoded IDs from Vercel screenshot
+  const growthId = process.env.NEXT_PUBLIC_POLAR_GROWTH_PRODUCT_ID || '116402ad-3ea6-4fae-904d-483afdfee9a6';
+  const teamsId = process.env.NEXT_PUBLIC_POLAR_TEAMS_PRODUCT_ID || 'ecf2d388-f89c-4a6c-b6af-ad441bd75e17';
 
-  console.log('[TierSelector] Polar Config:', {
-    GROWTH_PRODUCT_ID: growthId,
-    TEAMS_PRODUCT_ID: teamsId,
+  console.log('[TierSelector] Product IDs:', {
+    growth: growthId,
+    teams: teamsId,
+    env_growth: process.env.NEXT_PUBLIC_POLAR_GROWTH_PRODUCT_ID,
+    env_teams: process.env.NEXT_PUBLIC_POLAR_TEAMS_PRODUCT_ID
   });
-
-  if (!growthId || !teamsId) {
-    console.error(
-      '[TierSelector] Missing Polar product IDs!',
-      'Growth:',
-      growthId,
-      'Teams:',
-      teamsId,
-      'Environment vars may not be set properly.'
-    );
-  }
 
   return [
     {
@@ -57,7 +49,7 @@ function getTiers(): Tier[] {
       billingPeriod: 'per month',
       users: 2,
       additionalUserPrice: 10,
-      productId: growthId || 'missing-growth-id',
+      productId: growthId,
       highlighted: true,
       features: [
         'Unlimited syncs',
@@ -74,7 +66,7 @@ function getTiers(): Tier[] {
       billingPeriod: 'per month',
       users: 5,
       additionalUserPrice: 8,
-      productId: teamsId || 'missing-teams-id',
+      productId: teamsId,
       features: [
         'Everything in Growth',
         'Pay $0.15 per scan (120 included)',
