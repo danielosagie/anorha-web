@@ -274,10 +274,18 @@ export function SettingsClient({
                             </div>
                             <div>
                               <div className="font-medium">{displayName}</div>
-                              <div className="text-xs text-gray-500">
-                                {platformKey.charAt(0).toUpperCase() + platformKey.slice(1)}{' '}
-                                Account
-                              </div>
+
+
+                    
+                              <Badge className={statusClasses}>
+                              {connection.Status
+                                ? connection.Status.charAt(0).toUpperCase() +
+                                  connection.Status.slice(1).replace('_', ' ')
+                                : 'Inactive'}
+                              </Badge>
+
+
+
                               {connection.LastSyncSuccessAt && (
                                 <div className="text-xs text-gray-400 mt-1">
                                   Last synced:{' '}
@@ -288,12 +296,7 @@ export function SettingsClient({
                           </div>
 
                           <div className="flex flex-col items-end gap-1">
-                            <Badge className={statusClasses}>
-                              {connection.Status
-                                ? connection.Status.charAt(0).toUpperCase() +
-                                  connection.Status.slice(1).replace('_', ' ')
-                                : 'Inactive'}
-                            </Badge>
+                          
                             <Button
                               variant="outline"
                               size="sm"

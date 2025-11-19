@@ -285,7 +285,7 @@ export function BillingClient({
           <Card className="shadow-none mt-4">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <TrendingUpIcon className="size-5" />
+                {/*<TrendingUpIcon className="size-5" />*/}
                 Current Usage
               </CardTitle>
               <CardDescription>Usage for the current billing period</CardDescription>
@@ -328,7 +328,7 @@ export function BillingClient({
                 {/* Edit usage limit button */}
                 <div>
                   <Button
-                    variant="default"
+                    variant="secondary"
                     size="sm"
                     className="rounded-md bg-gray-50 border font-normal text-xs py-1 hover:bg-gray-100"
                     disabled
@@ -344,7 +344,7 @@ export function BillingClient({
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <CalendarIcon className="size-5" />
+                {/*<CalendarIcon className="size-5" />*/}
                 {upcoming?.upcoming ? 'Upcoming Invoice' : 'No Upcoming Invoice'}
               </CardTitle>
             </CardHeader>

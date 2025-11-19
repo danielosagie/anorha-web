@@ -486,22 +486,16 @@ export default function MemberPermissionsPage() {
                         </div>
                       </div>
                       <div className="flex items-center gap-2">
-                         <Dialog>
-                          <DialogTrigger asChild>
-                            <Button variant="outline" size="sm" onClick={() => {
-                              setEditingPool(pool);
-                              setSelectedLocationIds(pool.locationIds || []);
-                            }}>
-                              Edit
-                            </Button>
-                          </DialogTrigger>
-                          {/* The content here is tricky because it shares state with the other dialog. 
-                              Ideally, we lift the Dialog open state. For now, assuming user edits one at a time.
-                              This trigger just sets state, the actual Dialog is the one defined earlier?
-                              No, that dialog is inside the "New Pool" button logic. 
-                              I need to refactor to have a single Dialog controlled by state.
-                          */}
-                        </Dialog>
+                        <Button 
+                          variant="outline" 
+                          size="sm" 
+                          onClick={() => {
+                            setEditingPool(pool);
+                            setSelectedLocationIds(pool.locationIds || []);
+                          }}
+                        >
+                          Edit
+                        </Button>
                         
                         <Button 
                            variant="ghost" 
@@ -553,10 +547,12 @@ export default function MemberPermissionsPage() {
                      {pools.map(pool => {
                        const hasAccess = member.assignedPoolIds.includes(pool.id);
                        const perms = member.poolPermissions[pool.id] || { canRead: true, canEdit: false };
+                       const poolLocIds = pool.locationIds || [];
+                       const locationCount = poolLocIds.length;
 
                        return (
                          <div key={pool.id} className={`border rounded-md p-4 transition-all ${hasAccess ? 'bg-blue-50/30 border-blue-200 ring-1 ring-blue-100' : 'bg-slate-50/50 border-transparent opacity-75'}`}>
-                           <div className="flex items-center gap-3 mb-3">
+                           <div className="flex items-center gap-3 mb-2">
                              <Checkbox 
                                id={`pool-${member.userId}-${pool.id}`}
                                checked={hasAccess}
@@ -570,9 +566,21 @@ export default function MemberPermissionsPage() {
                                {pool.name}
                              </label>
                            </div>
+
+                           {/* Location summary */}
+                           <div className="ml-7 mb-3 text-xs text-slate-500">
+                             {locationCount === 0 ? (
+                               <span className="italic">No locations</span>
+                             ) : (
+                               <span>
+                                 Includes {locationCount} location{locationCount !== 1 ? 's' : ''}:{' '}
+                                 {poolLocIds.map(id => getLocationMeta(id)?.loc.locationName).filter(Boolean).join(', ')}
+                               </span>
+                             )}
+                           </div>
                            
                            {hasAccess && (
-                             <div className="pl-7 space-y-2">
+                             <div className="pl-7 space-y-2 pt-2 border-t border-blue-100/50">
                                <div className="flex items-center gap-2">
                                  <Checkbox 
                                     id={`perm-view-${member.userId}-${pool.id}`}

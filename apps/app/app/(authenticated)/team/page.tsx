@@ -111,7 +111,7 @@ export default function TeamPage() {
                   },
                 }}
               >
-                {/* @ts-ignore - OrganizationProfile.Page exists at runtime per Clerk docs */}
+                {/* @ts-ignore - OrganizationProfile.Page exists at runtime per Clerk docs
                 <OrganizationProfile.Page
                   label="Connections"
                   url="connections"
@@ -119,6 +119,7 @@ export default function TeamPage() {
                 >
                   <ConnectionsPage />
                 </OrganizationProfile.Page>
+                */}
                 
                 {/* @ts-ignore - OrganizationProfile.Page exists at runtime per Clerk docs */}
                 <OrganizationProfile.Page
