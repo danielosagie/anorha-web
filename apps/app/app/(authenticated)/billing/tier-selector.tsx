@@ -4,9 +4,10 @@ import { Button } from '@repo/design-system/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
 import { Badge } from '@repo/design-system/components/ui/badge';
 import { CheckCircle2Icon, TrendingUpIcon, Users, XIcon } from 'lucide-react';
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { ShaderGradientCanvas, ShaderGradient } from '@shadergradient/react';
 import { PageWrapper } from '../components/page-wrapper';
+import { POLAR_CONFIG } from '@/lib/polar-config';
 
 interface Tier {
   id: 'growth' | 'teams';
@@ -27,51 +28,70 @@ interface TierSelectorProps {
   onClose?: () => void;
 }
 
-const TIERS: Tier[] = [
-  {
-    id: 'growth',
-    name: 'Growth',
-    description: 'Best for small teams',
-    price: 20,
-    billingPeriod: 'per month',
-    users: 2,
-    additionalUserPrice: 10,
-    productId: process.env.NEXT_PUBLIC_POLAR_GROWTH_PRODUCT_ID || 'prod_growth',
-    highlighted: true,
-    features: [
-      'Unlimited syncs',
-      'Unlimited integrations',
-      'Pay $0.20 per scan (40 included)',
-      'Email support',
-    ],
-  },
-  {
-    id: 'teams',
-    name: 'Teams',
-    description: 'Best for growing teams',
-    price: 60,
-    billingPeriod: 'per month',
-    users: 5,
-    additionalUserPrice: 8,
-    productId: process.env.NEXT_PUBLIC_POLAR_TEAMS_PRODUCT_ID || 'prod_teams',
-    features: [
-      'Everything in Growth',
-      'Pay $0.15 per scan (120 included)',
-      'Priority support',
-    ],
-  },
-];
+function getTiers(): Tier[] {
+  const growthId = POLAR_CONFIG.GROWTH_PRODUCT_ID;
+  const teamsId = POLAR_CONFIG.TEAMS_PRODUCT_ID;
+
+  if (!growthId || !teamsId) {
+    console.warn(
+      'Missing Polar product IDs. Growth:',
+      growthId,
+      'Teams:',
+      teamsId
+    );
+  }
+
+  return [
+    {
+      id: 'growth',
+      name: 'Growth',
+      description: 'Best for small teams',
+      price: 20,
+      billingPeriod: 'per month',
+      users: 2,
+      additionalUserPrice: 10,
+      productId: growthId || '',
+      highlighted: true,
+      features: [
+        'Unlimited syncs',
+        'Unlimited integrations',
+        'Pay $0.20 per scan (40 included)',
+        'Email support',
+      ],
+    },
+    {
+      id: 'teams',
+      name: 'Teams',
+      description: 'Best for growing teams',
+      price: 60,
+      billingPeriod: 'per month',
+      users: 5,
+      additionalUserPrice: 8,
+      productId: teamsId || '',
+      features: [
+        'Everything in Growth',
+        'Pay $0.15 per scan (120 included)',
+        'Priority support',
+      ],
+    },
+  ];
+}
 
 export function TierSelector({ onSelectTier, isLoading, onClose }: TierSelectorProps) {
   const [selectedTierId, setSelectedTierId] = useState<'growth' | 'teams' | null>(null);
+  const TIERS = useMemo(() => getTiers(), []);
 
   const handleSelectTier = (tier: Tier) => {
+    console.log('Selected tier:', tier.id, 'Product ID:', tier.productId);
     setSelectedTierId(tier.id);
   };
 
   const handleCheckout = () => {
     const tier = TIERS.find((t) => t.id === selectedTierId);
-    if (tier) onSelectTier(tier);
+    if (tier) {
+      console.log('Checking out with tier:', tier.id, 'Product ID:', tier.productId);
+      onSelectTier(tier);
+    }
   };
 
   return (
@@ -140,8 +160,8 @@ export function TierSelector({ onSelectTier, isLoading, onClose }: TierSelectorP
                   {/* Selection Indicator - Always at bottom */}
                   <div className="w-full rounded-b-lg text-center h-full min-h-14">
                     {selectedTierId === tier.id && (
-                      <div className="bg-[#647653]/5 ">
-                        <p className="text-sm text-[#647653] font-semibold">✓ Selected</p>
+                      <div className="bg-[#647653]/5 min-h-14">
+                        <p className="text-sm text-[#647653] justify-center content-center font-semibold min-h-14">✓ Selected</p>
                       </div>
                     )}
                   </div>
