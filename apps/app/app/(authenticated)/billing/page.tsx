@@ -1,6 +1,7 @@
 import { currentUser } from '@repo/auth/server';
 import { BillingClient } from './billing-client';
 import { Header } from '../components/header';
+import { getAuthenticatedBackendHeaders } from '../../api/billing/_utils';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
@@ -15,13 +16,19 @@ export const metadata: Metadata = {
 
 async function getBillingData() {
   const origin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+  
+  // Normalize base URL to always end with /api
+  let baseUrl = origin.endsWith('/') ? origin.slice(0, -1) : origin;
+  if (!baseUrl.endsWith('/api')) baseUrl = `${baseUrl}/api`;
 
   try {
+    const headers = await getAuthenticatedBackendHeaders();
+
     // Use the proxy routes that handle JWT token exchange
     const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
-      fetch(`${origin}/api/billing/summary`, { cache: 'no-store' }).catch(() => null),
-      fetch(`${origin}/api/billing/invoices?limit=12`, { cache: 'no-store' }).catch(() => null),
-      fetch(`${origin}/api/billing/upcoming`, { cache: 'no-store' }).catch(() => null),
+      fetch(`${baseUrl}/billing/summary`, { headers, cache: 'no-store' }).catch(() => null),
+      fetch(`${baseUrl}/billing/invoices?limit=12`, { headers, cache: 'no-store' }).catch(() => null),
+      fetch(`${baseUrl}/billing/upcoming`, { headers, cache: 'no-store' }).catch(() => null),
     ]);
 
     const summary = summaryRes?.ok ? await summaryRes.json() : null;

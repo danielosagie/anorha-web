@@ -51,7 +51,13 @@ export async function getSupabaseToken() {
     }
     
     console.log('[getSupabaseToken] Successfully obtained Supabase token');
-    return { token: data.supabase_token, apiBase } as const;
+    
+    // Normalize API URL to ensure it points to the API root (e.g. ending in /api)
+    let finalApiBase = apiBase;
+    if (finalApiBase.endsWith('/')) finalApiBase = finalApiBase.slice(0, -1);
+    if (!finalApiBase.endsWith('/api')) finalApiBase = `${finalApiBase}/api`;
+    
+    return { token: data.supabase_token, apiBase: finalApiBase } as const;
   } catch (error) {
     console.error('[getSupabaseToken] Error:', error);
     throw error;

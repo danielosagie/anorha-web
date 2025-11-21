@@ -50,11 +50,11 @@ export function BillingClient({
   const refreshBillingData = async () => {
     setIsRefreshing(true);
     try {
-      const origin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
+      // Use relative paths to hit the Next.js proxy which handles auth
       const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
-        fetch(`${origin}api/billing/summary`, { cache: 'no-store' }),
-        fetch(`${origin}api/billing/invoices?limit=12`, { cache: 'no-store' }),
-        fetch(`${origin}api/billing/upcoming`, { cache: 'no-store' }),
+        fetch(`/api/billing/summary`, { cache: 'no-store' }),
+        fetch(`/api/billing/invoices?limit=12`, { cache: 'no-store' }),
+        fetch(`/api/billing/upcoming`, { cache: 'no-store' }),
       ]);
 
       if (summaryRes.ok) {
