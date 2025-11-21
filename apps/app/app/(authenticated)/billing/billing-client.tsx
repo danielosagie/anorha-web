@@ -52,9 +52,9 @@ export function BillingClient({
     try {
       const origin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
       const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
-        fetch(`${origin}/api/billing/summary`, { cache: 'no-store' }),
-        fetch(`${origin}/api/billing/invoices?limit=12`, { cache: 'no-store' }),
-        fetch(`${origin}/api/billing/upcoming`, { cache: 'no-store' }),
+        fetch(`${origin}api/billing/summary`, { cache: 'no-store' }),
+        fetch(`${origin}api/billing/invoices?limit=12`, { cache: 'no-store' }),
+        fetch(`${origin}api/billing/upcoming`, { cache: 'no-store' }),
       ]);
 
       if (summaryRes.ok) {
