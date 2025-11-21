@@ -7,57 +7,28 @@ export async function getSupabaseToken() {
       console.error('[getSupabaseToken] Auth not available');
       throw new Error('Auth not available');
     }
-    
-    // Request email claim in token - required by backend
+
+    // Get Clerk JWT directly (backend SupabaseAuthGuard handles Clerk JWTs)
     const clerkToken = await getToken({ template: 'supabase' });
     if (!clerkToken) {
       console.error('[getSupabaseToken] Missing Clerk session token');
       throw new Error('Missing Clerk session token');
     }
-    
+
     const apiBase = process.env.NEXT_PUBLIC_API_URL;
     if (!apiBase) {
       console.error('[getSupabaseToken] NEXT_PUBLIC_API_URL is not set');
       throw new Error('NEXT_PUBLIC_API_URL is not set');
     }
-    
-    console.log('[getSupabaseToken] Exchanging Clerk token for Supabase token...');
-    // Ensure /api prefix is in the URL
-    const exchangeUrl = apiBase.endsWith('/api') 
-      ? `${apiBase}auth/exchange`
-      : `${apiBase}api/auth/exchange`;
-    
-    console.log('[getSupabaseToken] Exchange URL:', exchangeUrl);
-    const res = await fetch(exchangeUrl, {
-      method: 'POST',
-      headers: { 
-        'Authorization': `Bearer ${clerkToken}`,
-        'Content-Type': 'application/json',
-      },
-      // Do not cache token exchanges
-      cache: 'no-store',
-    });
-    
-    if (!res.ok) {
-      const text = await res.text();
-      console.error(`[getSupabaseToken] Auth exchange failed: ${res.status} ${text}`);
-      throw new Error(`Auth exchange failed: ${res.status} ${text}`);
-    }
-    
-    const data = (await res.json()) as { supabase_token: string };
-    if (!data?.supabase_token) {
-      console.error('[getSupabaseToken] No supabase_token in exchange response');
-      throw new Error('No supabase_token in exchange response');
-    }
-    
-    console.log('[getSupabaseToken] Successfully obtained Supabase token');
-    
+
+    console.log('[getSupabaseToken] Using Clerk JWT directly (no exchange needed)');
+
     // Normalize API URL to ensure it points to the API root (e.g. ending in /api)
     let finalApiBase = apiBase;
     if (finalApiBase.endsWith('/')) finalApiBase = finalApiBase.slice(0, -1);
     if (!finalApiBase.endsWith('/api')) finalApiBase = `${finalApiBase}/api`;
-    
-    return { token: data.supabase_token, apiBase: finalApiBase } as const;
+
+    return { token: clerkToken, apiBase: finalApiBase } as const;
   } catch (error) {
     console.error('[getSupabaseToken] Error:', error);
     throw error;
