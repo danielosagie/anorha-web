@@ -11,6 +11,7 @@ import { TierSelector } from './tier-selector';
 import { PageWrapper } from '../components/page-wrapper';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
 interface BillingClientProps {
   summary: any;
@@ -27,6 +28,7 @@ export function BillingClient({
 }: BillingClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { getToken } = useAuth();
   const [showTierSelector, setShowTierSelector] = useState(false);
   const [summary, setSummary] = useState(initialSummary);
   const [invoices, setInvoices] = useState(initialInvoices);
@@ -50,11 +52,32 @@ export function BillingClient({
   const refreshBillingData = async () => {
     setIsRefreshing(true);
     try {
-      // Use relative paths to hit the Next.js proxy which handles auth
+      const token = await getToken({ template: 'supabase' });
+      if (!token) {
+        console.error('No auth token available');
+        return;
+      }
+
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!baseUrl) {
+        console.error('NEXT_PUBLIC_API_URL not set');
+        return;
+      }
+
+      // Normalize URL
+      let apiBase = baseUrl;
+      if (apiBase.endsWith('/')) apiBase = apiBase.slice(0, -1);
+      if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
+
+      const headers = {
+        'Authorization': `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      };
+
       const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
-        fetch(`/api/billing/summary`, { cache: 'no-store' }),
-        fetch(`/api/billing/invoices?limit=12`, { cache: 'no-store' }),
-        fetch(`/api/billing/upcoming`, { cache: 'no-store' }),
+        fetch(`${apiBase}billing/summary`, { headers, cache: 'no-store' }),
+        fetch(`${apiBase}billing/invoices?limit=12`, { headers, cache: 'no-store' }),
+        fetch(`${apiBase}billing/upcoming`, { headers, cache: 'no-store' }),
       ]);
 
       if (summaryRes.ok) {
