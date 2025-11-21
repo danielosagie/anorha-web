@@ -91,7 +91,7 @@ export default function MemberPermissionsPage() {
   // Editing state
   const [editingPool, setEditingPool] = useState<Partial<Pool> | null>(null);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
-  
+
   // UI state for dialog
   const [expandedPlatformId, setExpandedPlatformId] = useState<string | null>(null);
 
@@ -298,7 +298,7 @@ export default function MemberPermissionsPage() {
         body: JSON.stringify({ 
           poolPermissions: { 
             [poolId]: newPerms 
-          } 
+    }
         })
       });
     } catch (e) {
@@ -351,20 +351,20 @@ export default function MemberPermissionsPage() {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-lg font-semibold">Location Pools</CardTitle>
-            <Button onClick={() => {
-              setEditingPool({
-                id: 'new',
+                <Button onClick={() => {
+                  setEditingPool({
+                    id: 'new',
                 orgId: orgId!,
-                name: '',
+                    name: '',
                 syncInventory: true,
                 syncPricing: true,
                 locationIds: []
-              });
-              setSelectedLocationIds([]);
-            }}>
-              <Plus className="w-4 h-4 mr-2" />
-              New Pool
-            </Button>
+                  });
+                  setSelectedLocationIds([]);
+                }}>
+                  <Plus className="w-4 h-4 mr-2" />
+                  New Pool
+                </Button>
           </CardHeader>
           <CardContent>
             <Dialog open={!!editingPool} onOpenChange={(open) => !open && setEditingPool(null)}>
@@ -490,12 +490,12 @@ export default function MemberPermissionsPage() {
                           variant="outline" 
                           size="sm" 
                           onClick={() => {
-                            setEditingPool(pool);
+                              setEditingPool(pool);
                             setSelectedLocationIds(pool.locationIds || []);
                           }}
                         >
-                          Edit
-                        </Button>
+                              Edit
+                            </Button>
                         
                         <Button 
                            variant="ghost" 
@@ -530,8 +530,8 @@ export default function MemberPermissionsPage() {
                    <div className="text-sm text-slate-500">{member.email}</div>
                  </div>
                  <div className="flex flex-col items-end gap-1">
-                   <div className="px-2 py-1 bg-slate-100 rounded text-xs font-semibold text-slate-600 uppercase tracking-wider">
-                     {member.role.replace('org:', '')}
+                 <div className="px-2 py-1 bg-slate-100 rounded text-xs font-semibold text-slate-600 uppercase tracking-wider">
+                   {member.role.replace('org:', '')}
                    </div>
                  </div>
                </div>

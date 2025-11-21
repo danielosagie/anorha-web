@@ -35,10 +35,10 @@ export function PageWrapper({
         {title && (
           <div className="mb-4 md:mb-6 flex-shrink-0">
             <div>
-              <h1 className="text-2xl md:text-3xl font-bold">{title}</h1>
-              {description && (
-                <p className="text-gray-600 text-sm md:text-base mt-1 md:mt-2">{description}</p>
-              )}
+            <h1 className="text-2xl md:text-3xl font-bold">{title}</h1>
+            {description && (
+              <p className="text-gray-600 text-sm md:text-base mt-1 md:mt-2">{description}</p>
+            )}
             </div>
           </div>
         )}

@@ -33,7 +33,7 @@ export const Header = ({ page, children, onBack, backButtonText = 'Back' }: Head
           </Button>
         </>
       )}
-      {children}
+    {children}
     </div>
   </header>
 );
