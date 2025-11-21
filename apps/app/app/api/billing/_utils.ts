@@ -9,7 +9,9 @@ export async function getSupabaseToken() {
     }
 
     // Get Clerk JWT directly (backend SupabaseAuthGuard handles Clerk JWTs)
-    const clerkToken = await getToken({ template: 'supabase' });
+    // Use standard Clerk token to avoid "No JWT template exists" errors
+    const clerkToken = await getToken();
+    
     if (!clerkToken) {
       console.error('[getSupabaseToken] Missing Clerk session token');
       throw new Error('Missing Clerk session token');

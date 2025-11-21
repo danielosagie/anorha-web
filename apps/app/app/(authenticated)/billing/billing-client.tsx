@@ -52,7 +52,9 @@ export function BillingClient({
   const refreshBillingData = async () => {
     setIsRefreshing(true);
     try {
-      const token = await getToken({ template: 'supabase' });
+      // Use standard Clerk token (backend accepts it via ClerkTokenService)
+      const token = await getToken();
+      
       if (!token) {
         console.error('No auth token available');
         return;
@@ -75,9 +77,9 @@ export function BillingClient({
       };
 
       const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
-        fetch(`${apiBase}billing/summary`, { headers, cache: 'no-store' }),
-        fetch(`${apiBase}billing/invoices?limit=12`, { headers, cache: 'no-store' }),
-        fetch(`${apiBase}billing/upcoming`, { headers, cache: 'no-store' }),
+        fetch(`${apiBase}/billing/summary`, { headers, cache: 'no-store' }),
+        fetch(`${apiBase}/billing/invoices?limit=12`, { headers, cache: 'no-store' }),
+        fetch(`${apiBase}/billing/upcoming`, { headers, cache: 'no-store' }),
       ]);
 
       if (summaryRes.ok) {
