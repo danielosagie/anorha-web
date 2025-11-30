@@ -5,7 +5,7 @@ import { Progress } from '@repo/design-system/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/design-system/components/ui/table';
 import { Badge } from '@repo/design-system/components/ui/badge';
 import { Button } from '@repo/design-system/components/ui/button';
-import { TrendingUpIcon, CalendarIcon, ExternalLinkIcon, RefreshCwIcon } from 'lucide-react';
+import { TrendingUpIcon, CalendarIcon, ExternalLinkIcon, RefreshCwIcon, CreditCardIcon, AlertCircleIcon } from 'lucide-react';
 import { BillingActions } from './billing-actions';
 import { TierSelector } from './tier-selector';
 import { PageWrapper } from '../components/page-wrapper';
@@ -18,6 +18,13 @@ interface BillingClientProps {
   invoices: any;
   upcoming: any;
   hasActiveSubscription: boolean;
+  userRole?: 'owner' | 'employee' | 'partner' | 'org:admin';
+  partnerPaymentMethod?: {
+    hasPaymentMethod: boolean;
+    lastFour?: string;
+    brand?: string;
+    expiresAt?: string;
+  } | null;
 }
 
 export function BillingClient({
@@ -25,6 +32,8 @@ export function BillingClient({
   invoices: initialInvoices,
   upcoming: initialUpcoming,
   hasActiveSubscription: initialHasActiveSubscription,
+  userRole,
+  partnerPaymentMethod: initialPartnerPaymentMethod,
 }: BillingClientProps) {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -35,6 +44,11 @@ export function BillingClient({
   const [upcoming, setUpcoming] = useState(initialUpcoming);
   const [hasActiveSubscription, setHasActiveSubscription] = useState(initialHasActiveSubscription);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [partnerPaymentMethod, setPartnerPaymentMethod] = useState(initialPartnerPaymentMethod);
+  const [isAddingPaymentMethod, setIsAddingPaymentMethod] = useState(false);
+  
+  // Check if user is a partner (needs their own payment method for AI scans)
+  const isPartner = userRole === 'partner';
 
   // Auto-refresh when returning from checkout (wait 2s for webhooks to process)
   useEffect(() => {
@@ -146,6 +160,51 @@ export function BillingClient({
   const handleTierSelected = (tier: any) => {
     // Redirect to Polar checkout with the selected product
     window.location.href = `/api/polar/checkout?products=${encodeURIComponent(tier.productId)}`;
+  };
+
+  // Handle partner adding their payment method for per-usage AI scans
+  const handleAddPartnerPaymentMethod = async () => {
+    setIsAddingPaymentMethod(true);
+    try {
+      const token = await getToken();
+      if (!token) {
+        console.error('No auth token available');
+        return;
+      }
+
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL;
+      if (!baseUrl) {
+        console.error('NEXT_PUBLIC_API_URL not set');
+        return;
+      }
+
+      let apiBase = baseUrl;
+      if (apiBase.endsWith('/')) apiBase = apiBase.slice(0, -1);
+      if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
+
+      // Create a Polar customer session for partner to add payment method
+      const response = await fetch(`${apiBase}/billing/partner/payment-method`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        if (data.checkoutUrl) {
+          // Redirect to Polar to add payment method
+          window.location.href = data.checkoutUrl;
+        }
+      } else {
+        console.error('Failed to create payment method session');
+      }
+    } catch (error) {
+      console.error('Failed to add payment method:', error);
+    } finally {
+      setIsAddingPaymentMethod(false);
+    }
   };
 
   if (showTierSelector) {
@@ -364,6 +423,71 @@ export function BillingClient({
               </div>
             </CardContent>
           </Card>
+
+          {/* Partner Payment Method Card - Only shown for partners */}
+          {isPartner && (
+            <Card className="shadow-none border-2 border-yellow-200 bg-yellow-50">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <CreditCardIcon className="size-5 text-yellow-600" />
+                  Partner Payment Method
+                </CardTitle>
+                <CardDescription>
+                  Add a payment method to enable per-usage AI scanning
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {partnerPaymentMethod?.hasPaymentMethod ? (
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2 bg-white rounded-lg border">
+                        <CreditCardIcon className="size-5 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {partnerPaymentMethod.brand || 'Card'} •••• {partnerPaymentMethod.lastFour || '****'}
+                        </p>
+                        {partnerPaymentMethod.expiresAt && (
+                          <p className="text-xs text-muted-foreground">
+                            Expires {partnerPaymentMethod.expiresAt}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddPartnerPaymentMethod}
+                      disabled={isAddingPaymentMethod}
+                    >
+                      {isAddingPaymentMethod ? 'Loading...' : 'Update'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-yellow-200">
+                      <AlertCircleIcon className="size-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                      <div className="text-sm">
+                        <p className="font-medium text-yellow-800">No payment method on file</p>
+                        <p className="text-muted-foreground">
+                          As a partner, you can use the owner&apos;s AI credits for free. 
+                          To use AI scanning beyond their limits, add your own payment method 
+                          and you&apos;ll be charged $0.20 per scan.
+                        </p>
+                      </div>
+                    </div>
+                    <Button
+                      onClick={handleAddPartnerPaymentMethod}
+                      disabled={isAddingPaymentMethod}
+                      className="w-full bg-yellow-600 hover:bg-yellow-700"
+                    >
+                      {isAddingPaymentMethod ? 'Loading...' : 'Add Payment Method for AI Scans'}
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Upcoming Invoice */}
           <Card>
