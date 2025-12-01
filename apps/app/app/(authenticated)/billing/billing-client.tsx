@@ -501,7 +501,14 @@ export function BillingClient({
               {upcoming?.upcoming ? (
                 <div className="flex items-center justify-between">
                   <div className="text-2xl font-bold">
-                    {(upcoming.upcoming.total || 0).toLocaleString(undefined, { style: 'currency', currency: 'USD' })}
+                    {(() => {
+                      // Handle both number and price object formats
+                      const total = upcoming.upcoming.total;
+                      const amount = typeof total === 'object' 
+                        ? (total?.price_amount || total?.amount || 0) / 100 
+                        : (total || 0) / 100;
+                      return amount.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
+                    })()}
                   </div>
                   <div className="text-muted-foreground">
                     Due {new Date(upcoming.upcoming.due_date || Date.now()).toLocaleDateString()}
@@ -525,17 +532,31 @@ export function BillingClient({
                   {invoices.invoices.map((inv: any) => (
                     <div key={inv.id} className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
                       <div>
-                        <div className="font-medium">{new Date(inv.created || inv.created_at || Date.now()).toLocaleDateString()}</div>
+                        <div className="font-medium">{(() => {
+                          // Handle both Unix timestamp (seconds) and ISO date string
+                          const created = inv.created_at || inv.created;
+                          if (!created) return 'N/A';
+                          // If it's a small number, it's Unix seconds - convert to ms
+                          const timestamp = typeof created === 'number' && created < 10000000000 
+                            ? created * 1000 
+                            : created;
+                          return new Date(timestamp).toLocaleDateString();
+                        })()}</div>
                         <div className="text-sm text-muted-foreground">{inv.number || 'Invoice'}</div>
                       </div>
                       <div className="flex items-center gap-3">
                         <Badge className={inv.status === 'paid' ? 'bg-green-100 text-green-800' : undefined}>{inv.status || 'open'}</Badge>
                         <div className="text-right">
                           <div className="font-medium">
-                            {((inv.total || 0) / (inv.total > 100 ? 100 : 1)).toLocaleString(undefined, { 
-                              style: 'currency', 
-                              currency: inv.currency?.toUpperCase() || 'USD' 
-                            })}
+                            {(() => {
+                              // Use total_amount (cents) if available, else total
+                              const amount = inv.total_amount ?? inv.total ?? 0;
+                              // Convert cents to dollars
+                              return (amount / 100).toLocaleString(undefined, { 
+                                style: 'currency', 
+                                currency: inv.currency?.toUpperCase() || 'USD' 
+                              });
+                            })()}
                           </div>
                         </div>
                         {(inv.hosted_invoice_url || inv.hosted_url || inv.url) && (
