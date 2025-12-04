@@ -21,24 +21,55 @@ const polarPortal = CustomerPortal({
       process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
     );
 
-    // Fetch user's Polar customer ID from Supabase
-    const { data, error } = await supabase
+    // First, get the user's internal ID and PolarCustomerId from Users table
+    const { data: userData, error: userError } = await supabase
       .from('Users')
-      .select('PolarCustomerId')
+      .select('Id, PolarCustomerId')
       .eq('ClerkUserId', userId)
       .maybeSingle();
 
-    if (error) {
-      console.error('Supabase error fetching Polar customer ID:', error);
+    if (userError) {
+      console.error('Supabase error fetching user:', userError);
       throw new Error('Database error');
     }
-    
-    if (!data?.PolarCustomerId) {
-      console.error(`User ${userId} does not have a Polar customer ID`);
-      throw new Error('No Polar subscription found. Please subscribe first.');
+
+    if (!userData?.Id) {
+      console.error(`User ${userId} not found in database`);
+      throw new Error('User not found. Please contact support.');
     }
 
-    return data.PolarCustomerId;
+    // Check if PolarCustomerId exists on Users table
+    if (userData.PolarCustomerId) {
+      console.log(`[Portal] Found PolarCustomerId on Users: ${userData.PolarCustomerId}`);
+      return userData.PolarCustomerId;
+    }
+
+    // Fallback: Check Subscriptions table for PolarCustomerId
+    const { data: subData, error: subError } = await supabase
+      .from('Subscriptions')
+      .select('PolarCustomerId, PolarSubscriptionId, Status')
+      .eq('UserId', userData.Id)
+      .maybeSingle();
+
+    if (subError) {
+      console.error('Supabase error fetching subscription:', subError);
+      throw new Error('Database error');
+    }
+
+    if (subData?.PolarCustomerId) {
+      console.log(`[Portal] Found PolarCustomerId on Subscriptions: ${subData.PolarCustomerId}`);
+      
+      // Sync the PolarCustomerId back to Users table for future lookups
+      await supabase
+        .from('Users')
+        .update({ PolarCustomerId: subData.PolarCustomerId })
+        .eq('Id', userData.Id);
+      
+      return subData.PolarCustomerId;
+    }
+    
+    console.error(`User ${userId} (internal: ${userData.Id}) does not have a Polar customer ID in Users or Subscriptions`);
+    throw new Error('No Polar subscription found. Please subscribe first.');
   },
   server: (process.env.POLAR_API_SERVER as 'production' | 'sandbox') || 'production',
 });

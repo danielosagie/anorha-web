@@ -136,8 +136,11 @@ export function BillingClient({
       '5 users/partners (+$10/spot after), unlimited platforms & inventory, AI: 80 scans included then $0.15 per scan.';
   }
 
-  const aiUsed = summary?.ai_credits_used ?? 0;
-  const aiLimit = summary?.ai_credits_limit ?? 0;
+  // AI usage - prefer scan counts, fallback to dollar amounts
+  const aiScansUsed = summary?.ai_scans_used ?? 0;
+  const aiScansLimit = summary?.ai_scans_limit ?? (planName === 'Teams' ? 80 : 40);
+  const aiUsed = summary?.ai_credits_used ?? 0; // Dollar value
+  const aiLimit = summary?.ai_credits_limit ?? (planName === 'Teams' ? 12 : 8); // Dollar value
   const onDemandUsed = summary?.on_demand_usage_this_month ?? 0;
   const onDemandLimit = summary?.on_demand_limit ?? 0;
 
@@ -153,7 +156,7 @@ export function BillingClient({
       (value.totalQuantity || value.count || 0) > 0 || (value.totalCost || 0) > 0,
   );
 
-  const hasAiUsage = aiUsed > 0;
+  const hasAiUsage = aiUsed > 0 || aiScansUsed > 0;
   const hasOnDemandUsage = onDemandUsed > 0;
   const hasAnyUsage = hasAiUsage || hasOnDemandUsage || hasFeatureUsage;
 
@@ -302,11 +305,11 @@ export function BillingClient({
                     {/* AI credits row (only if there was any AI usage or configured limit) */}
                     {hasAiUsage && (
                       <TableRow>
-                        <TableCell>AI Credits Used</TableCell>
+                        <TableCell>AI Scans Used</TableCell>
                         <TableCell className="text-right">
-                          ${aiUsed.toFixed(2)}{' '}
-                          {aiLimit ? (
-                            <span className="text-muted-foreground">/ ${aiLimit.toFixed(2)}</span>
+                          {aiScansUsed} scans{' '}
+                          {aiScansLimit ? (
+                            <span className="text-muted-foreground">/ {aiScansLimit} included</span>
                           ) : null}
                         </TableCell>
                         <TableCell className="text-right">${aiUsed.toFixed(2)}</TableCell>
@@ -376,17 +379,17 @@ export function BillingClient({
             </CardHeader>
             <CardContent>
               <div className="flex flex-col gap-4">
-                {/* "AI Credits" progress bar */}
+                {/* "AI Scans" progress bar */}
                 <div>
                   <div className="flex justify-between items-baseline mb-1 text-xs">
-                    <span className="font-semibold">AI Credits</span>
+                    <span className="font-semibold">AI Scans</span>
                     <span className="font-mono">
-                      ${aiUsed.toFixed(2)}
-                      {aiLimit ? ` / $${aiLimit.toFixed(2)}` : ''}
+                      {aiScansUsed} / {aiScansLimit} scans
+                      <span className="text-muted-foreground ml-2">(${aiUsed.toFixed(2)})</span>
                     </span>
                   </div>
                   <Progress
-                    value={aiLimit > 0 ? (aiUsed / aiLimit) * 100 : 0}
+                    value={aiScansLimit > 0 ? (aiScansUsed / aiScansLimit) * 100 : 0}
                     className="h-3 bg-yellow-500 bg-gray-200"
                     indicatorClassName="bg-yellow-500"
                   />
