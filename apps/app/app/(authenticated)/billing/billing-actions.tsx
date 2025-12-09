@@ -7,11 +7,13 @@ import { useState } from 'react';
 interface BillingActionsProps {
   hasActiveSubscription?: boolean;
   onSubscribeClick?: () => void; // Callback to show tier selector
+  onManageSubscription?: () => Promise<void> | void; // Parent can override portal navigation
 }
 
 export function BillingActions({ 
   hasActiveSubscription = false,
-  onSubscribeClick 
+  onSubscribeClick,
+  onManageSubscription,
 }: BillingActionsProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -21,8 +23,13 @@ export function BillingActions({
     setIsLoading(true);
     setError(null);
     try {
-      // Open Polar customer portal where they can view subscriptions, invoices, change payment method, etc.
-      window.location.href = '/api/polar/portal';
+      // Allow parent to control portal flow (needed for Supabase + Polar routing)
+      if (onManageSubscription) {
+        await onManageSubscription();
+        return;
+      }
+      // Default: hit backend portal route which decides Polar vs Stripe and redirects
+      window.location.href = '/api/billing/portal';
     } catch (err) {
       console.error('Error opening portal:', err);
       setError('Failed to open portal. Please try again.');

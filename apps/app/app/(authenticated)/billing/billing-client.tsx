@@ -46,9 +46,27 @@ export function BillingClient({
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [partnerPaymentMethod, setPartnerPaymentMethod] = useState(initialPartnerPaymentMethod);
   const [isAddingPaymentMethod, setIsAddingPaymentMethod] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
   
   // Check if user is a partner (needs their own payment method for AI scans)
   const isPartner = userRole === 'partner';
+
+  // Normalizes any numeric-ish value to a finite number or a fallback
+  const safeNumber = (value: any, fallback = 0) => {
+    const num = typeof value === 'string' ? Number(value) : value;
+    return Number.isFinite(num) ? num : fallback;
+  };
+
+  const formatCurrency = (value: number) =>
+    value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+  const planFromSummary =
+    summary?.subscription?.CurrentPlan ||
+    summary?.tier_name ||
+    summary?.subscription?.current_plan;
+  const subscriptionStatus =
+    summary?.subscription?.Status || summary?.subscription?.status;
+  const hasSummaryData = !!summary && typeof summary === 'object';
 
   // Auto-refresh when returning from checkout (wait 2s for webhooks to process)
   useEffect(() => {
@@ -62,9 +80,22 @@ export function BillingClient({
     }
   }, [searchParams]);
 
+  // Surface portal error passed via query string from the API route
+  useEffect(() => {
+    const errorParam = searchParams.get('error');
+    if (errorParam) {
+      try {
+        setActionError(decodeURIComponent(errorParam));
+      } catch {
+        setActionError(errorParam);
+      }
+    }
+  }, [searchParams]);
+
   // Refresh billing data from API
   const refreshBillingData = async () => {
     setIsRefreshing(true);
+    setActionError(null);
     try {
       // Use standard Clerk token (backend accepts it via ClerkTokenService)
       const token = await getToken();
@@ -119,7 +150,37 @@ export function BillingClient({
     }
   };
 
-  const planName = (summary?.subscription?.CurrentPlan as 'Growth' | 'Teams' | undefined) || undefined;
+  const planName = (planFromSummary as 'Growth' | 'Teams' | undefined) || undefined;
+
+  // AI usage - prefer credit counts with overage cost
+  const aiScansUsed = safeNumber(summary?.ai_scans_used);
+  const aiScansLimit = safeNumber(
+    summary?.ai_scans_limit,
+    planName === 'Teams' ? 80 : 40,
+  );
+  const aiCreditsUsed = safeNumber(summary?.ai_credits_used, aiScansUsed);
+  const aiCreditsLimit = safeNumber(summary?.ai_credits_limit, aiScansLimit);
+  const aiOverageCents = safeNumber(summary?.ai_credits_overage_cents, 0);
+  const aiOverageDollars = aiOverageCents / 100;
+  const aiUnitCents = safeNumber(
+    summary?.ai_credit_unit_cents,
+    planName === 'Teams' ? 15 : 20,
+  );
+  const onDemandUsed = safeNumber(summary?.on_demand_usage_this_month);
+  const onDemandLimit = safeNumber(summary?.on_demand_limit, 0);
+
+  const teamMembersCount = safeNumber(summary?.team_members_count);
+  const teamMembersIncluded = safeNumber(summary?.team_members_included);
+  const teamMembersExtra = Math.max(0, safeNumber(summary?.team_members_extra));
+  const teamMembersCost = safeNumber(summary?.team_members_cost);
+  const totalThisMonth = safeNumber(summary?.total);
+
+  // Totals come straight from backend; on-demand hidden per request
+  const displayedTeamMembersCost = teamMembersCost;
+  const displayedTotal = totalThisMonth;
+  const showOnDemandUsage = false; // Hide on-demand usage/limit per request
+
+  const pricePerScan = aiUnitCents / 100;
 
   // Plan copy based on current tier
   let planTitle = 'No active plan';
@@ -128,26 +189,11 @@ export function BillingClient({
 
   if (planName === 'Growth') {
     planTitle = 'Growth · $20/month';
-    planDescription =
-      '2 users/partners, unlimited platforms & inventory, AI: 40 scans included then $0.20 per scan.';
+    planDescription = `${teamMembersIncluded || 2} users/partners included, unlimited platforms & inventory, AI: ${aiScansLimit || 40} scans included then ${formatCurrency(pricePerScan)}/scan.`;
   } else if (planName === 'Teams') {
     planTitle = 'Teams · $60/month';
-    planDescription =
-      '5 users/partners (+$10/spot after), unlimited platforms & inventory, AI: 80 scans included then $0.15 per scan.';
+    planDescription = `${teamMembersIncluded || 5} users/partners (+$10/spot after), unlimited platforms & inventory, AI: ${aiScansLimit || 80} scans included then ${formatCurrency(pricePerScan)}/scan.`;
   }
-
-  // AI usage - prefer scan counts, fallback to dollar amounts
-  const aiScansUsed = summary?.ai_scans_used ?? 0;
-  const aiScansLimit = summary?.ai_scans_limit ?? (planName === 'Teams' ? 80 : 40);
-  const aiUsed = summary?.ai_credits_used ?? 0; // Dollar value
-  const aiLimit = summary?.ai_credits_limit ?? (planName === 'Teams' ? 12 : 8); // Dollar value
-  const onDemandUsed = summary?.on_demand_usage_this_month ?? 0;
-  const onDemandLimit = summary?.on_demand_limit ?? 0;
-
-  const teamMembersCount = summary?.team_members_count ?? 0;
-  const teamMembersIncluded = summary?.team_members_included ?? 0;
-  const teamMembersExtra = summary?.team_members_extra ?? 0;
-  const teamMembersCost = summary?.team_members_cost ?? 0;
 
   const featureUsage = summary?.usage || {};
   const featureEntries = Object.entries(featureUsage || {});
@@ -156,13 +202,49 @@ export function BillingClient({
       (value.totalQuantity || value.count || 0) > 0 || (value.totalCost || 0) > 0,
   );
 
-  const hasAiUsage = aiUsed > 0 || aiScansUsed > 0;
-  const hasOnDemandUsage = onDemandUsed > 0;
+  const hasAiUsage = aiCreditsUsed > 0 || aiScansUsed > 0;
+  const hasOnDemandUsage = showOnDemandUsage && onDemandUsed > 0;
   const hasAnyUsage = hasAiUsage || hasOnDemandUsage || hasFeatureUsage;
 
   const handleTierSelected = (tier: any) => {
     // Redirect to Polar checkout with the selected product
     window.location.href = `/api/polar/checkout?products=${encodeURIComponent(tier.productId)}`;
+  };
+
+  // Open the managed subscription portal (Stripe or Polar) via backend route
+  const handleManageSubscription = async () => {
+    setActionError(null);
+    try {
+      const res = await fetch('/api/billing/portal', {
+        method: 'GET',
+        redirect: 'manual',
+        credentials: 'include',
+      });
+
+      // If backend returned a redirect, follow it client-side
+      if (res.status >= 300 && res.status < 400) {
+        const location = res.headers.get('Location');
+        if (location) {
+          window.location.href = location;
+          return;
+        }
+      }
+
+      // Some deployments may return JSON with { url }
+      if (res.ok) {
+        const data = await res.json().catch(() => null);
+        if (data?.url) {
+          window.location.href = data.url;
+          return;
+        }
+      }
+
+      const text = await res.text();
+      setActionError(text || 'Unable to open subscription portal.');
+    } catch (error) {
+      console.error('Failed to open portal:', error);
+      setActionError('Unable to open subscription portal.');
+    }
   };
 
   // Handle partner adding their payment method for per-usage AI scans
@@ -232,6 +314,7 @@ export function BillingClient({
             <BillingActions
               hasActiveSubscription={hasActiveSubscription}
               onSubscribeClick={() => setShowTierSelector(true)}
+              onManageSubscription={handleManageSubscription}
             />
           </div>
           <Button
@@ -246,6 +329,18 @@ export function BillingClient({
             {isRefreshing ? 'Refreshing...' : 'Refresh'}
           </Button>
         </div>
+
+        {actionError && (
+          <div className="mb-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
+            <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+            <span>{actionError}</span>
+          </div>
+        )}
+        {!hasSummaryData && (
+          <div className="mb-4 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+            Billing data is temporarily unavailable. Use Refresh to retry.
+          </div>
+        )}
 
         <div className="flex flex-1 flex-col gap-6">
           {/* Main Plan Summary Card */}
@@ -266,8 +361,8 @@ export function BillingClient({
                       ? new Date(summary.subscription.CurrentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
                       : 'No active subscription'}
                   </span>
-                  <Badge variant={summary?.subscription?.Status === 'active' ? 'default' : 'secondary'}>
-                    {summary?.subscription?.Status === 'active' ? 'Active' : 'Inactive'}
+                  <Badge variant={subscriptionStatus === 'active' ? 'default' : 'secondary'}>
+                    {subscriptionStatus === 'active' ? 'Active' : 'Inactive'}
                   </Badge>
                 </div>
               </div>
@@ -298,21 +393,20 @@ export function BillingClient({
                           : null}
                       </TableCell>
                       <TableCell className="text-right">
-                        {teamMembersCost > 0 ? `$${teamMembersCost.toFixed(2)}` : 'Included'}
+                        {displayedTeamMembersCost > 0 ? `$${displayedTeamMembersCost.toFixed(2)}` : 'Included'}
                       </TableCell>
                     </TableRow>
 
                     {/* AI credits row (only if there was any AI usage or configured limit) */}
                     {hasAiUsage && (
                       <TableRow>
-                        <TableCell>AI Scans Used</TableCell>
+                        <TableCell>AI Credits Used</TableCell>
                         <TableCell className="text-right">
-                          {aiScansUsed} scans{' '}
-                          {aiScansLimit ? (
-                            <span className="text-muted-foreground">/ {aiScansLimit} included</span>
-                          ) : null}
+                          {aiCreditsUsed} / {aiCreditsLimit} credits
                         </TableCell>
-                        <TableCell className="text-right">${aiUsed.toFixed(2)}</TableCell>
+                        <TableCell className="text-right">
+                          {aiOverageDollars > 0 ? `$${aiOverageDollars.toFixed(2)}` : 'Included'}
+                        </TableCell>
                       </TableRow>
                     )}
 
@@ -359,7 +453,7 @@ export function BillingClient({
                       <TableCell className="font-semibold">Total This Month</TableCell>
                       <TableCell />
                       <TableCell className="text-right font-semibold">
-                        ${Number(summary?.total || 0).toFixed(2)}
+                        ${displayedTotal.toFixed(2)}
                       </TableCell>
                     </TableRow>
                   </TableBody>
@@ -382,36 +476,40 @@ export function BillingClient({
                 {/* "AI Scans" progress bar */}
                 <div>
                   <div className="flex justify-between items-baseline mb-1 text-xs">
-                    <span className="font-semibold">AI Scans</span>
+                    <span className="font-semibold">AI Credits</span>
                     <span className="font-mono">
-                      {aiScansUsed} / {aiScansLimit} scans
-                      <span className="text-muted-foreground ml-2">(${aiUsed.toFixed(2)})</span>
+                      {aiCreditsUsed} / {aiCreditsLimit} credits
+                      {aiOverageDollars > 0 && (
+                        <span className="text-muted-foreground ml-2">(${aiOverageDollars.toFixed(2)} overage)</span>
+                      )}
                     </span>
                   </div>
                   <Progress
-                    value={aiScansLimit > 0 ? (aiScansUsed / aiScansLimit) * 100 : 0}
+                    value={aiCreditsLimit > 0 ? (aiCreditsUsed / aiCreditsLimit) * 100 : 0}
                     className="h-3 bg-yellow-500 bg-gray-200"
                     indicatorClassName="bg-yellow-500"
                   />
                 </div>
-                {/* On-Demand Usage progress bar */}
-                <div>
-                  <div className="flex justify-between items-baseline mb-1 text-xs">
-                    <span className="font-semibold">On-Demand Usage This Month</span>
-                    <span className="font-mono">
-                      {onDemandUsed} / {onDemandLimit || 'unlimited'}
-                    </span>
+                {/* On-Demand Usage progress bar (hidden per request) */}
+                {showOnDemandUsage && (
+                  <div>
+                    <div className="flex justify-between items-baseline mb-1 text-xs">
+                      <span className="font-semibold">On-Demand Usage This Month</span>
+                      <span className="font-mono">
+                        {onDemandUsed} / {onDemandLimit || 'unlimited'}
+                      </span>
+                    </div>
+                    <Progress
+                      value={
+                        onDemandLimit && onDemandLimit > 0
+                          ? (onDemandUsed / onDemandLimit) * 100
+                          : 0
+                      }
+                      className="h-3 bg-gray-200"
+                      indicatorClassName="bg-gray-400"
+                    />
                   </div>
-                  <Progress
-                    value={
-                      onDemandLimit && onDemandLimit > 0
-                        ? (onDemandUsed / onDemandLimit) * 100
-                        : 0
-                    }
-                    className="h-3 bg-gray-200"
-                    indicatorClassName="bg-gray-400"
-                  />
-                </div>
+                )}
                 {/* Edit usage limit button */}
                 <div>
                   <Button
