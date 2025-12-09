@@ -1,6 +1,6 @@
 import { CustomerPortal } from "@polar-sh/nextjs";
 import { keys } from '@repo/payments/keys';
-import { auth } from '@clerk/nextjs/server';
+import { auth, currentUser } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
@@ -10,6 +10,7 @@ const polarPortal = CustomerPortal({
   getCustomerId: async (req) => {
     // Get the current authenticated user from Clerk
     const { userId } = await auth();
+    const clerkUser = await currentUser();
     
     if (!userId) {
       throw new Error('User not authenticated');
@@ -36,7 +37,7 @@ const polarPortal = CustomerPortal({
     let internalUserId = userData?.Id as string | undefined;
     let polarCustomerId = userData?.PolarCustomerId as string | undefined;
 
-    // Fallback: try to resolve internal user via OrgMemberships by clerk_user_id
+    // Fallback 1: try to resolve internal user via OrgMemberships by clerk_user_id
     if (!internalUserId) {
       const { data: membership, error: membershipError } = await supabase
         .from('OrgMemberships')
@@ -52,13 +53,48 @@ const polarPortal = CustomerPortal({
       internalUserId = membership?.UserId || undefined;
     }
 
+    // Fallback 2: try to resolve by email from Clerk
+    if (!internalUserId && clerkUser?.emailAddresses?.length) {
+      const primaryEmail = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
+        || clerkUser.emailAddresses[0]?.emailAddress;
+      if (primaryEmail) {
+        const { data: emailMatch, error: emailError } = await supabase
+          .from('Users')
+          .select('Id, PolarCustomerId, ClerkUserId')
+          .ilike('Email', primaryEmail)
+          .maybeSingle();
+
+        if (emailError) {
+          console.error('Supabase error fetching user by email:', emailError);
+          throw new Error('Database error');
+        }
+
+        if (emailMatch?.Id) {
+          internalUserId = emailMatch.Id;
+          polarCustomerId = emailMatch.PolarCustomerId as string | undefined;
+
+          // Backfill ClerkUserId to keep mappings tight
+          await supabase
+            .from('Users')
+            .update({ ClerkUserId: userId })
+            .eq('Id', internalUserId);
+
+          // Backfill membership linkage if missing
+          await supabase
+            .from('OrgMemberships')
+            .update({ clerk_user_id: userId })
+            .eq('UserId', internalUserId);
+        }
+      }
+    }
+
     if (polarCustomerId) {
       console.log(`[Portal] Found PolarCustomerId on Users: ${polarCustomerId}`);
       return polarCustomerId;
     }
 
     if (!internalUserId) {
-      console.error(`User ${userId} not found in Users or OrgMemberships`);
+      console.error(`User ${userId} not found in Users, OrgMemberships, or by email fallback`);
       throw new Error('User not found. Please contact support.');
     }
 
