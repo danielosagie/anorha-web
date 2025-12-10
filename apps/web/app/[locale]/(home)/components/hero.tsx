@@ -43,7 +43,6 @@ export const Hero = async ({ dictionary }: HeroProps) => {
                         className="absolute inset-0 h-full w-full object-cover rounded-4xl border-4 border-zinc-900"
                         autoPlay
                         muted
-                        loop
                         playsInline
                         preload="metadata"
                         controls
@@ -60,7 +59,6 @@ export const Hero = async ({ dictionary }: HeroProps) => {
                         className="absolute inset-0 h-full w-full object-cover rounded-4xl border-4 border-zinc-900"
                         autoPlay
                         muted
-                        loop
                         playsInline
                         preload="metadata"
                         controls
