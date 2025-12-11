@@ -9,6 +9,7 @@ import ConnectionsPage from './components/ConnectionsPage';
 import { Settings, Link2 } from 'lucide-react';
 
 import { OrganizationProfile, OrganizationSwitcher } from '@clerk/nextjs';
+import { PoolsAndPartnersClient } from './components/PoolsAndPartnersClient';
 
 
 export default function TeamPage() {
@@ -128,6 +129,14 @@ export default function TeamPage() {
                   labelIcon={<Settings className="w-4 h-4" />}
                 >
                   <MemberPermissionsPage />
+                </OrganizationProfile.Page>
+
+                <OrganizationProfile.Page
+                  label="Pools/Permissions"
+                  url="pp"
+                  labelIcon={<Settings className="w-4 h-4" />}
+                >
+                  <PoolsAndPartnersClient/>
                 </OrganizationProfile.Page>
               </OrganizationProfile>
         </div>

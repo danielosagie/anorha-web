@@ -27,7 +27,7 @@ const AppLayout = async ({ children }: AppLayoutProperties) => {
 
   return (
     <NotificationsProvider userId={user.id}>
-      <SidebarProvider className="bg-[#FEF4DD]">
+       <SidebarProvider className="bg-[#FEF4DD]">
         <GlobalSidebar>
           {betaFeature && (
             <div className="m-4 rounded-full bg-blue-500  text-center text-sm text-white">

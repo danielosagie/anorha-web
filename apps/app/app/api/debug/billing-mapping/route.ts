@@ -38,3 +38,4 @@ export async function GET() {
     return Response.json({ error: error?.message || 'Failed to fetch mapping' }, { status: 500 });
   }
 }
+
