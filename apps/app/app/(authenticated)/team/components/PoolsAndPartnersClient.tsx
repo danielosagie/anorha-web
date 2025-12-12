@@ -1,7 +1,7 @@
 'use client';
 
-import React from 'react';
-import Image, { type StaticImageData } from 'next/image';
+import React, { useEffect, useState, useCallback } from 'react';
+import Image from 'next/image';
 import { useOrganization, useAuth } from '@clerk/nextjs';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@repo/design-system/components/ui/card';
@@ -9,45 +9,45 @@ import { Badge } from '@repo/design-system/components/ui/badge';
 import { Input } from '@repo/design-system/components/ui/input';
 import { Switch } from '@repo/design-system/components/ui/switch';
 import { cn } from '@repo/design-system/lib/utils';
-import { 
-  MapPinIcon, UsersIcon, Link2Icon, PlusIcon, Trash2Icon, 
-  Loader2Icon, CheckIcon, XIcon, SendIcon, CopyIcon,
-  RefreshCwIcon, SettingsIcon, ChevronRightIcon
+import {
+  MapPinIcon, UsersIcon, Link2Icon, PlusIcon, Trash2Icon,
+  Loader2Icon, CheckIcon, SendIcon, CopyIcon,
+  SettingsIcon, ChevronRightIcon, ShieldIcon
 } from 'lucide-react';
 
-// Platform logos
-import shopifyLogo from '../../../assets/shopify.png';
-import squareLogo from '../../../assets/square.png';
-import cloverLogo from '../../../assets/clover.png';
+// --- Interfaces ---
 
-// ============================================================================
-// TYPES
-// ============================================================================
+interface TeamMember {
+  userId: string;
+  email: string;
+  firstName?: string;
+  lastName?: string;
+  imageUrl?: string;
+  role: 'org:admin' | 'org:member' | 'partner';
+  assignedPoolIds: string[];
+}
 
 interface Pool {
   id: string;
   name: string;
-  description?: string;
+  locationIds: string[];
   syncInventory: boolean;
   syncPricing: boolean;
-  locationIds: string[];
 }
 
 interface Location {
   platformLocationId: string;
   locationName: string;
-  platformType: string;
   connectionName: string;
+  platformType: string;
 }
 
 interface Partnership {
   id: string;
-  partnerOrgName: string;
+  partnerOrgName?: string;
   partnerEmail: string;
   poolName: string;
   productCount: number;
-  status: 'active' | 'pending';
-  createdAt: string;
 }
 
 interface PendingInvite {
@@ -58,61 +58,50 @@ interface PendingInvite {
   inviteLink: string;
 }
 
-type Tab = 'pools' | 'partners';
+type Tab = 'pools' | 'partners' | 'team';
 
-const PLATFORM_LOGOS: Record<string, StaticImageData> = {
-  shopify: shopifyLogo,
-  square: squareLogo,
-  clover: cloverLogo,
+const PLATFORM_LOGOS: Record<string, string> = {
+  shopify: '/icons/shopify.svg', // adjustments may be needed for actual paths
+  square: '/icons/square.svg',
+  clover: '/icons/clover.svg',
 };
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333').replace(/\/$/, '');
 
-// ============================================================================
-// MAIN COMPONENT
-// ============================================================================
-
-export function PoolsAndPartnersClient() {
-  const { organization, isLoaded } = useOrganization();
-  const { getToken } = useAuth();
+export default function PoolsAndPartnersClient() {
+  const { organization, isLoaded: isOrgLoaded } = useOrganization();
+  const { getToken, isLoaded: isAuthLoaded } = useAuth();
   const orgId = organization?.id;
 
-  // Tab state
-  const [activeTab, setActiveTab] = React.useState<Tab>('pools');
+  // View State
+  const [activeTab, setActiveTab] = useState<Tab>('pools');
+  const [isLoading, setIsLoading] = useState(true);
 
-  // Data state
-  const [pools, setPools] = React.useState<Pool[]>([]);
-  const [locations, setLocations] = React.useState<Location[]>([]);
-  const [partnerships, setPartnerships] = React.useState<Partnership[]>([]);
-  const [pendingInvites, setPendingInvites] = React.useState<PendingInvite[]>([]);
-  const [isLoading, setIsLoading] = React.useState(true);
+  // Data State
+  const [pools, setPools] = useState<Pool[]>([]);
+  const [locations, setLocations] = useState<Location[]>([]);
+  const [partnerships, setPartnerships] = useState<Partnership[]>([]);
+  const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [members, setMembers] = useState<TeamMember[]>([]);
 
-  // Pool editing state
-  const [editingPool, setEditingPool] = React.useState<Partial<Pool> | null>(null);
-  const [selectedLocations, setSelectedLocations] = React.useState<string[]>([]);
+  // Editing State
+  const [editingPool, setEditingPool] = useState<Partial<Pool> | null>(null);
+  const [selectedLocations, setSelectedLocations] = useState<string[]>([]);
 
-  // Partner invite state
-  const [inviteEmail, setInviteEmail] = React.useState('');
-  const [invitePoolId, setInvitePoolId] = React.useState('');
-  const [isInviting, setIsInviting] = React.useState(false);
+  // Invite State
+  const [inviteEmail, setInviteEmail] = useState('');
+  const [invitePoolId, setInvitePoolId] = useState('');
+  const [isInviting, setIsInviting] = useState(false);
 
-  const tabs: { id: Tab; label: string; icon: React.ReactNode }[] = [
-    { id: 'pools', label: 'Pools', icon: <MapPinIcon className="w-4 h-4" /> },
-    { id: 'partners', label: 'Partners', icon: <Link2Icon className="w-4 h-4" /> },
-  ];
-
-  // ============================================================================
-  // DATA LOADING
-  // ============================================================================
-
-  const loadData = React.useCallback(async () => {
+  const loadData = useCallback(async () => {
     if (!orgId) return;
-    setIsLoading(true);
 
+    setIsLoading(true);
     try {
       const token = await getToken();
       const headers = { Authorization: `Bearer ${token}` };
 
+      // Parallel Fetching
       const [poolsRes, locsRes, partnersRes, invitesRes] = await Promise.all([
         fetch(`${API_BASE}/api/pools/org/${orgId}`, { headers }),
         fetch(`${API_BASE}/api/pools/locations/available?orgId=${orgId}`, { headers }),
@@ -120,119 +109,134 @@ export function PoolsAndPartnersClient() {
         fetch(`${API_BASE}/api/cross-org/invites/pending`, { headers }).catch(() => null),
       ]);
 
-      // Process pools
-      if (poolsRes.ok) {
-        const data = await poolsRes.json();
-        setPools(
-          (Array.isArray(data) ? data : [])
-            .filter((p: any) => !p.deletedAt && !p.deleted_at)
-            .map((p: any) => ({
-              id: p.id,
-              name: p.name,
-              description: p.description,
-              syncInventory: p.syncInventory ?? p.sync_inventory ?? true,
-              syncPricing: p.syncPricing ?? p.sync_pricing ?? true,
-              locationIds: p.locationIds || p.location_ids || [],
-            }))
-        );
-      }
-
-      // Process locations (flatten from grouped format)
+      if (poolsRes.ok) setPools(await poolsRes.json());
       if (locsRes.ok) {
-        const data = await locsRes.json();
-        const flat: Location[] = [];
-        for (const [, group] of Object.entries(data as Record<string, any>)) {
-          for (const loc of group.locations || []) {
-            flat.push({
-              platformLocationId: loc.platformLocationId,
-              locationName: loc.locationName,
-              platformType: group.platformType?.toLowerCase() || 'unknown',
-              connectionName: group.connectionName || '',
+        // Transform the nested structure from available locations endpoint to flat list
+        const rawLocs: Record<string, any> = await locsRes.json();
+        const flatLocs: Location[] = [];
+
+        // The endpoint returns { connectionId: { platformType, connectionName, locations: [...] } }
+        Object.values(rawLocs).forEach((conn: any) => {
+          if (conn.locations) {
+            conn.locations.forEach((l: any) => {
+              flatLocs.push({
+                platformLocationId: l.platformLocationId,
+                locationName: l.locationName,
+                connectionName: conn.connectionName,
+                platformType: conn.platformType || 'unknown'
+              });
             });
           }
-        }
-        setLocations(flat);
+        });
+        setLocations(flatLocs);
       }
 
-      // Process partnerships
       if (partnersRes?.ok) {
-        const data = await partnersRes.json();
-        setPartnerships(data.partnerships || []);
+        const pData = await partnersRes.json();
+        setPartnerships(pData.partnerships || []);
       }
 
-      // Process pending invites
       if (invitesRes?.ok) {
-        const data = await invitesRes.json();
-        setPendingInvites(data.sent || []);
+        const iData = await invitesRes.json();
+        setPendingInvites(iData.sent || []);
       }
-    } catch (e) {
-      console.error('[PoolsAndPartnersClient] Error loading data:', e);
+
+      // Load Team Members
+      if (organization?.getMemberships) {
+        const membershipList = await organization.getMemberships();
+        const membersData = membershipList.data || [];
+
+        const loadedMembers: TeamMember[] = [];
+        // Fetch permissions for each member
+        await Promise.all(membersData.map(async (m) => {
+          const uid = m.publicUserData?.userId;
+          if (!uid) return;
+
+          try {
+            const permRes = await fetch(`${API_BASE}/api/organizations/${orgId}/members/${uid}/permissions`, { headers });
+            const perms = permRes.ok ? await permRes.json() : {};
+
+            loadedMembers.push({
+              userId: uid,
+              email: m.publicUserData?.identifier || '',
+              firstName: m.publicUserData?.firstName || '',
+              lastName: m.publicUserData?.lastName || '',
+              imageUrl: m.publicUserData?.imageUrl,
+              role: m.role as any,
+              assignedPoolIds: perms.assignedPoolIds || [],
+            });
+          } catch (e) {
+            console.error('Error fetching perms', e);
+          }
+        }));
+        setMembers(loadedMembers);
+      }
+
+    } catch (error) {
+      console.error('Failed to load data:', error);
     } finally {
       setIsLoading(false);
     }
-  }, [orgId, getToken]);
+  }, [orgId, getToken, organization]);
 
-  React.useEffect(() => {
-    if (isLoaded && orgId) loadData();
-  }, [isLoaded, orgId, loadData]);
+  useEffect(() => {
+    if (isOrgLoaded && isAuthLoaded && orgId) {
+      loadData();
+    }
+  }, [isOrgLoaded, isAuthLoaded, orgId, loadData]);
 
-  // ============================================================================
-  // POOL OPERATIONS
-  // ============================================================================
+  // --- Actions ---
 
   const savePool = async () => {
-    if (!editingPool?.name || !orgId) return;
+    if (!editingPool || !orgId) return;
 
     try {
       const token = await getToken();
-      const isNew = !editingPool.id || editingPool.id === 'new';
+      const headers = { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' };
 
-      const res = await fetch(`${API_BASE}/api/pools${isNew ? '' : `/${editingPool.id}`}`, {
-        method: isNew ? 'POST' : 'PATCH',
-        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          orgId,
-          name: editingPool.name,
-          description: editingPool.description,
-          syncInventory: editingPool.syncInventory ?? true,
-          syncPricing: editingPool.syncPricing ?? true,
-          locationIds: selectedLocations,
-        }),
-      });
+      const body = {
+        orgId,
+        name: editingPool.name,
+        syncInventory: editingPool.syncInventory ?? true,
+        syncPricing: editingPool.syncPricing ?? true,
+        location_ids: selectedLocations
+      };
 
-      if (!res.ok) throw new Error('Failed to save pool');
+      let res;
+      if (editingPool.id === 'new') {
+        res = await fetch(`${API_BASE}/api/pools`, { method: 'POST', headers, body: JSON.stringify(body) });
+      } else {
+        res = await fetch(`${API_BASE}/api/pools/${editingPool.id}`, { method: 'PATCH', headers, body: JSON.stringify(body) });
+      }
 
-      setEditingPool(null);
-      setSelectedLocations([]);
-      await loadData();
-    } catch (e) {
-      console.error('Error saving pool:', e);
+      if (res.ok) {
+        setEditingPool(null);
+        setSelectedLocations([]);
+        loadData();
+      }
+    } catch (error) {
+      console.error('Failed to save pool:', error);
     }
   };
 
-  const deletePool = async (id: string) => {
-    if (!confirm('Delete this pool? Locations will be unassigned but not deleted.')) return;
-
+  const deletePool = async (poolId: string) => {
+    if (!confirm('Are you sure you want to delete this pool?')) return;
     try {
       const token = await getToken();
-      await fetch(`${API_BASE}/api/pools/${id}`, {
+      await fetch(`${API_BASE}/api/pools/${poolId}`, {
         method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` },
+        headers: { Authorization: `Bearer ${token}` }
       });
-      await loadData();
-    } catch (e) {
-      console.error('Error deleting pool:', e);
+      loadData();
+    } catch (error) {
+      console.error('Failed to delete pool:', error);
     }
   };
-
-  // ============================================================================
-  // PARTNER INVITE
-  // ============================================================================
 
   const sendPartnerInvite = async () => {
     if (!inviteEmail || !invitePoolId || !orgId) return;
-    setIsInviting(true);
 
+    setIsInviting(true);
     try {
       const token = await getToken();
       const res = await fetch(`${API_BASE}/api/cross-org/invites`, {
@@ -242,430 +246,523 @@ export function PoolsAndPartnersClient() {
           inviteeEmail: inviteEmail,
           poolId: invitePoolId,
           shareType: 'sync',
-          syncDirection: 'bidirectional',
-        }),
+          syncDirection: 'bidirectional'
+        })
       });
 
-      if (!res.ok) throw new Error('Failed to send invite');
-
-      const { inviteLink } = await res.json();
-      await navigator.clipboard.writeText(inviteLink);
-      alert('Invite link copied to clipboard!');
-
-      setInviteEmail('');
-      setInvitePoolId('');
-      await loadData();
+      if (res.ok) {
+        const { inviteLink } = await res.json();
+        await navigator.clipboard.writeText(inviteLink);
+        alert('Invite sent! Link copied to clipboard.');
+        setInviteEmail('');
+        setInvitePoolId('');
+        loadData();
+      }
     } catch (e) {
-      console.error('Error sending invite:', e);
+      console.error('Failed to send invite:', e);
+      alert('Failed to send invite');
     } finally {
       setIsInviting(false);
     }
   };
 
-  // ============================================================================
-  // HELPERS
-  // ============================================================================
+  const toggleMemberPool = async (userId: string, poolId: string, checked: boolean) => {
+    if (!orgId) return;
 
-  const getLocationById = (id: string) => locations.find((l) => l.platformLocationId === id);
+    // Optimistic update
+    setMembers(prev => prev.map(m => {
+      if (m.userId !== userId) return m;
+      const newIds = checked
+        ? [...m.assignedPoolIds, poolId]
+        : m.assignedPoolIds.filter(id => id !== poolId);
+      return { ...m, assignedPoolIds: newIds };
+    }));
 
-  const formatDate = (date: string) => {
-    return new Date(date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+    try {
+      const token = await getToken();
+      const member = members.find(m => m.userId === userId);
+      if (!member) return;
+
+      const newIds = checked
+        ? [...member.assignedPoolIds, poolId]
+        : member.assignedPoolIds.filter(id => id !== poolId);
+
+      await fetch(`${API_BASE}/api/organizations/${orgId}/members/${userId}/permissions`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ assignedPoolIds: newIds })
+      });
+    } catch (e) {
+      console.error(e);
+      loadData(); // Revert
+    }
   };
 
-  // ============================================================================
-  // RENDER
-  // ============================================================================
+  const formatDate = (d: string) => new Date(d).toLocaleDateString();
 
-  if (!isLoaded) {
-    return (
-      <div className="flex items-center justify-center p-12">
-        <Loader2Icon className="w-8 h-8 animate-spin text-gray-400" />
-      </div>
-    );
+  if (!isOrgLoaded || !isAuthLoaded) {
+    return <div className="p-8 flex justify-center"><Loader2Icon className="animate-spin" /></div>;
   }
 
   return (
-    <div className="flex flex-col lg:flex-row border-t-2 border-gray-100 gap-6 w-full">
-      {/* Sidebar Navigation */}
-      <div className="w-full lg:w-48 flex-shrink-0 h-full">
-        <div className="rounded-lg p-4">
-          <nav className="space-y-2 flex flex-row lg:flex-col flex-wrap lg:flex-nowrap gap-2">
-            {tabs.map((tab) => (
-              <button
-                key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
-                className={cn(
-                  'flex-1 lg:flex-none lg:w-full text-left px-4 py-2 rounded-md transition-colors font-medium text-sm flex items-center gap-2',
-                  activeTab === tab.id
-                    ? 'bg-gray-200 text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-100'
-                )}
-              >
-                {tab.icon}
-                {tab.label}
-                {tab.id === 'pools' && pools.length > 0 && (
-                  <Badge className="ml-auto bg-[#647653] text-white text-xs">{pools.length}</Badge>
-                )}
-              </button>
-            ))}
-          </nav>
-        </div>
+    <div className="max-w-6xl mx-auto p-6 space-y-6">
+
+      {/* Navigation Tabs */}
+      <div className="flex items-center gap-2 border-b border-gray-200 pb-1">
+        <Button
+          variant={activeTab === 'pools' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('pools')}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'pools' ? "border-[#647653] bg-white text-[#647653] hover:bg-gray-50 hover:text-[#647653]" : "border-transparent text-gray-500")}
+        >
+          <MapPinIcon className="w-4 h-4" />
+          Pools
+        </Button>
+        <Button
+          variant={activeTab === 'team' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('team')}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'team' ? "border-[#647653] bg-white text-[#647653] hover:bg-gray-50 hover:text-[#647653]" : "border-transparent text-gray-500")}
+        >
+          <UsersIcon className="w-4 h-4" />
+          Team Access
+        </Button>
+        <Button
+          variant={activeTab === 'partners' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('partners')}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'partners' ? "border-[#647653] bg-white text-[#647653] hover:bg-gray-50 hover:text-[#647653]" : "border-transparent text-gray-500")}
+        >
+          <Link2Icon className="w-4 h-4" />
+          Partners
+        </Button>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-1 space-y-6 h-full pt-4">
-        {/* ================================================================ */}
-        {/* POOLS TAB */}
-        {/* ================================================================ */}
-        {activeTab === 'pools' && (
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <h2 className="text-2xl font-bold">Pools</h2>
-                <p className="text-gray-600">Group locations that share inventory and pricing.</p>
+      {isLoading ? (
+        <div className="p-12 flex justify-center">
+          <Loader2Icon className="w-8 h-8 animate-spin text-gray-300" />
+        </div>
+      ) : (
+        <>
+          {/* === POOLS TAB === */}
+          {activeTab === 'pools' && (
+            <div className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div>
+                  <h2 className="text-2xl font-bold">Pools</h2>
+                  <p className="text-gray-600">Group locations that share inventory and pricing.</p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setEditingPool({ id: 'new', name: '', syncInventory: true, syncPricing: true });
+                    setSelectedLocations([]);
+                  }}
+                  className="bg-[#647653] hover:bg-[#556145] text-white"
+                >
+                  <PlusIcon className="w-4 h-4 mr-2" />
+                  New Pool
+                </Button>
               </div>
-              <Button
-                onClick={() => {
-                  setEditingPool({ id: 'new', name: '', syncInventory: true, syncPricing: true });
-                  setSelectedLocations([]);
-                }}
-                className="bg-[#647653] hover:bg-[#556145] text-white"
-              >
-                <PlusIcon className="w-4 h-4 mr-2" />
-                New Pool
-              </Button>
-            </div>
 
-            {/* Pool Editor Card */}
-            {editingPool && (
-              <Card className="border-2 border-[#647653]">
+              {/* Pool Editor */}
+              {editingPool && (
+                <Card className="border-2 border-[#647653]">
+                  <CardHeader>
+                    <CardTitle>{editingPool.id === 'new' ? 'Create Pool' : 'Edit Pool'}</CardTitle>
+                    <CardDescription>Configure your pool settings and select locations.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Pool Name</label>
+                      <Input
+                        placeholder="e.g. West Coast Stores"
+                        value={editingPool.name || ''}
+                        onChange={(e) => setEditingPool({ ...editingPool, name: e.target.value })}
+                        className="focus:ring-[#647653]"
+                      />
+                    </div>
+
+                    <div className="flex gap-6">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Switch
+                          checked={editingPool.syncInventory ?? true}
+                          onCheckedChange={(checked) =>
+                            setEditingPool({ ...editingPool, syncInventory: checked })
+                          }
+                        />
+                        <span className="text-sm">Sync Inventory</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <Switch
+                          checked={editingPool.syncPricing ?? true}
+                          onCheckedChange={(checked) =>
+                            setEditingPool({ ...editingPool, syncPricing: checked })
+                          }
+                        />
+                        <span className="text-sm">Sync Pricing</span>
+                      </label>
+                    </div>
+
+                    {/* Location Selection */}
+                    <div>
+                      <label className="block text-sm font-medium mb-2">
+                        Locations ({selectedLocations.length} selected)
+                      </label>
+                      <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                        {locations.length === 0 ? (
+                          <p className="p-4 text-sm text-gray-500 text-center">No locations available</p>
+                        ) : (
+                          locations.map((loc) => {
+                            const isSelected = selectedLocations.includes(loc.platformLocationId);
+                            // Simple icon fallback if not using explicit SVG paths
+                            // const logo = PLATFORM_LOGOS[loc.platformType]; 
+
+                            return (
+                              <div
+                                key={loc.platformLocationId}
+                                onClick={() =>
+                                  setSelectedLocations((prev) =>
+                                    isSelected
+                                      ? prev.filter((id) => id !== loc.platformLocationId)
+                                      : [...prev, loc.platformLocationId]
+                                  )
+                                }
+                                className={cn(
+                                  'flex items-center justify-between p-3 cursor-pointer border-b last:border-b-0 transition-colors',
+                                  isSelected ? 'bg-[#647653]/10' : 'hover:bg-gray-50'
+                                )}
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div>
+                                    <div className="font-medium text-sm">{loc.locationName}</div>
+                                    <div className="text-xs text-gray-500">{loc.connectionName}</div>
+                                  </div>
+                                </div>
+                                {isSelected && <CheckIcon className="w-5 h-5 text-[#647653]" />}
+                              </div>
+                            );
+                          })
+                        )}
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="outline"
+                        onClick={() => {
+                          setEditingPool(null);
+                          setSelectedLocations([]);
+                        }}
+                      >
+                        Cancel
+                      </Button>
+                      <Button
+                        onClick={savePool}
+                        disabled={!editingPool.name || selectedLocations.length === 0}
+                        className="bg-[#647653] hover:bg-[#556145] text-white"
+                      >
+                        {editingPool.id === 'new' ? 'Create Pool' : 'Save Changes'}
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Pool List */}
+              <Card className="border border-gray-200">
                 <CardHeader>
-                  <CardTitle>{editingPool.id === 'new' ? 'Create Pool' : 'Edit Pool'}</CardTitle>
-                  <CardDescription>Configure your pool settings and select locations.</CardDescription>
+                  <CardTitle>Your Pools</CardTitle>
+                  <CardDescription>Manage inventory sync groups</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  {pools.length === 0 ? (
+                    <div className="text-center py-8">
+                      <MapPinIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">No pools yet. Create one to get started.</p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {pools.map((pool) => (
+                        <div
+                          key={pool.id}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-lg bg-[#647653]/10 flex items-center justify-center">
+                              <MapPinIcon className="w-5 h-5 text-[#647653]" />
+                            </div>
+                            <div>
+                              <div className="font-medium">{pool.name}</div>
+                              <div className="flex items-center gap-3 text-sm text-gray-500">
+                                <span>{pool.locationIds.length} locations</span>
+                                {pool.syncInventory && (
+                                  <Badge className="bg-[#647653] text-white text-xs">Inventory</Badge>
+                                )}
+                                {pool.syncPricing && (
+                                  <Badge className="bg-blue-100 text-blue-800 text-xs">Pricing</Badge>
+                                )}
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                setEditingPool(pool);
+                                setSelectedLocations(pool.locationIds);
+                              }}
+                            >
+                              <SettingsIcon className="w-4 h-4" />
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => deletePool(pool.id)}
+                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                            >
+                              <Trash2Icon className="w-4 h-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+
+          {/* === TEAM TAB === */}
+          {activeTab === 'team' && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-bold">Team Access</h2>
+                <p className="text-gray-600">Control which pools each team member can access.</p>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4">
+                {members.map((member) => (
+                  <Card key={member.userId} className="overflow-hidden">
+                    <div className="flex flex-col md:flex-row md:items-center p-4 gap-4">
+                      {/* Member Info */}
+                      <div className="flex items-center gap-4 min-w-[200px]">
+                        {member.imageUrl ? (
+                          <div className="relative w-10 h-10">
+                            <Image src={member.imageUrl} alt="" fill className="rounded-full object-cover" />
+                          </div>
+                        ) : (
+                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                            {member.firstName?.[0] || member.email[0]}
+                          </div>
+                        )}
+                        <div>
+                          <div className="font-medium">
+                            {member.firstName} {member.lastName}
+                          </div>
+                          <div className="text-sm text-gray-500">{member.email}</div>
+                          <div className="flex mt-1">
+                            <Badge variant="secondary" className="text-xs">
+                              {member.role.replace('org:', '')}
+                            </Badge>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Permissions Matrix */}
+                      <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-4">
+                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                          Allowed Pools
+                        </h4>
+
+                        {member.role === 'org:admin' ? (
+                          <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                            <ShieldIcon className="w-4 h-4 text-[#647653]" />
+                            <span>Admins have full access to all pools.</span>
+                          </div>
+                        ) : (
+                          <div className="flex flex-wrap gap-2">
+                            {pools.length === 0 ? (
+                              <p className="text-sm text-gray-400 italic">No pools created yet.</p>
+                            ) : (
+                              pools.map(pool => {
+                                const hasAccess = member.assignedPoolIds.includes(pool.id);
+                                return (
+                                  <button
+                                    key={pool.id}
+                                    onClick={() => toggleMemberPool(member.userId, pool.id, !hasAccess)}
+                                    className={cn(
+                                      "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all border",
+                                      hasAccess
+                                        ? "bg-[#647653]/10 border-[#647653] text-[#647653] hover:bg-[#647653]/20"
+                                        : "bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600"
+                                    )}
+                                  >
+                                    {hasAccess ? <CheckIcon className="w-3 h-3" /> : <PlusIcon className="w-3 h-3" />}
+                                    {pool.name}
+                                  </button>
+                                );
+                              })
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* === PARTNERS TAB === */}
+          {activeTab === 'partners' && (
+            <div className="space-y-4">
+              <div>
+                <h2 className="text-2xl font-bold">Partners</h2>
+                <p className="text-gray-600">
+                  Share inventory with external partners. They get their own copy that stays in sync.
+                </p>
+              </div>
+
+              {/* Invite Partner Card */}
+              <Card className="border border-gray-200">
+                <CardHeader>
+                  <CardTitle>Invite a Partner</CardTitle>
+                  <CardDescription>
+                    Send an invite link. They'll get a copy of your products to add to their platforms.
+                  </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Pool Name</label>
-                    <Input
-                      placeholder="e.g. West Coast Stores"
-                      value={editingPool.name || ''}
-                      onChange={(e) => setEditingPool({ ...editingPool, name: e.target.value })}
-                      className="focus:ring-[#647653]"
-                    />
-                  </div>
-
-                  <div className="flex gap-6">
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Switch
-                        checked={editingPool.syncInventory ?? true}
-                        onCheckedChange={(checked) =>
-                          setEditingPool({ ...editingPool, syncInventory: checked })
-                        }
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Partner Email</label>
+                      <Input
+                        type="email"
+                        placeholder="partner@company.com"
+                        value={inviteEmail}
+                        onChange={(e) => setInviteEmail(e.target.value)}
                       />
-                      <span className="text-sm">Sync Inventory</span>
-                    </label>
-                    <label className="flex items-center gap-2 cursor-pointer">
-                      <Switch
-                        checked={editingPool.syncPricing ?? true}
-                        onCheckedChange={(checked) =>
-                          setEditingPool({ ...editingPool, syncPricing: checked })
-                        }
-                      />
-                      <span className="text-sm">Sync Pricing</span>
-                    </label>
-                  </div>
-
-                  {/* Location Selection */}
-                  <div>
-                    <label className="block text-sm font-medium mb-2">
-                      Locations ({selectedLocations.length} selected)
-                    </label>
-                    <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
-                      {locations.length === 0 ? (
-                        <p className="p-4 text-sm text-gray-500 text-center">No locations available</p>
-                      ) : (
-                        locations.map((loc) => {
-                          const isSelected = selectedLocations.includes(loc.platformLocationId);
-                          const logo = PLATFORM_LOGOS[loc.platformType];
-
-                          return (
-                            <div
-                              key={loc.platformLocationId}
-                              onClick={() =>
-                                setSelectedLocations((prev) =>
-                                  isSelected
-                                    ? prev.filter((id) => id !== loc.platformLocationId)
-                                    : [...prev, loc.platformLocationId]
-                                )
-                              }
-                              className={cn(
-                                'flex items-center justify-between p-3 cursor-pointer border-b last:border-b-0 transition-colors',
-                                isSelected ? 'bg-[#647653]/10' : 'hover:bg-gray-50'
-                              )}
-                            >
-                              <div className="flex items-center gap-3">
-                                {logo && (
-                                  <Image src={logo} alt={loc.platformType} width={20} height={20} />
-                                )}
-                                <div>
-                                  <div className="font-medium text-sm">{loc.locationName}</div>
-                                  <div className="text-xs text-gray-500">{loc.connectionName}</div>
-                                </div>
-                              </div>
-                              {isSelected && <CheckIcon className="w-5 h-5 text-[#647653]" />}
-                            </div>
-                          );
-                        })
-                      )}
+                    </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Share Pool</label>
+                      <select
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        value={invitePoolId}
+                        onChange={(e) => setInvitePoolId(e.target.value)}
+                      >
+                        <option value="">Select a pool...</option>
+                        {pools.map((pool) => (
+                          <option key={pool.id} value={pool.id}>
+                            {pool.name} ({pool.locationIds.length} locations)
+                          </option>
+                        ))}
+                      </select>
                     </div>
                   </div>
 
-                  <div className="flex gap-2 pt-2">
-                    <Button
-                      variant="outline"
-                      onClick={() => {
-                        setEditingPool(null);
-                        setSelectedLocations([]);
-                      }}
-                    >
-                      Cancel
-                    </Button>
-                    <Button
-                      onClick={savePool}
-                      disabled={!editingPool.name || selectedLocations.length === 0}
-                      className="bg-[#647653] hover:bg-[#556145] text-white"
-                    >
-                      {editingPool.id === 'new' ? 'Create Pool' : 'Save Changes'}
-                    </Button>
-                  </div>
+                  <Button
+                    onClick={sendPartnerInvite}
+                    disabled={!inviteEmail || !invitePoolId || isInviting}
+                    className="bg-[#647653] hover:bg-[#556145] text-white"
+                  >
+                    {isInviting ? (
+                      <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+                    ) : (
+                      <SendIcon className="w-4 h-4 mr-2" />
+                    )}
+                    Send Invite
+                  </Button>
                 </CardContent>
               </Card>
-            )}
 
-            {/* Pool List */}
-            <Card className="border border-gray-200">
-              <CardHeader>
-                <CardTitle>Your Pools</CardTitle>
-                <CardDescription>Manage inventory sync groups</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {isLoading ? (
-                  <div className="flex items-center justify-center py-8">
-                    <Loader2Icon className="w-6 h-6 animate-spin text-gray-400" />
-                  </div>
-                ) : pools.length === 0 ? (
-                  <div className="text-center py-8">
-                    <MapPinIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No pools yet. Create one to get started.</p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {pools.map((pool) => (
-                      <div
-                        key={pool.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-lg bg-[#647653]/10 flex items-center justify-center">
-                            <MapPinIcon className="w-5 h-5 text-[#647653]" />
-                          </div>
+              {/* Pending Invites */}
+              {pendingInvites.length > 0 && (
+                <Card className="border border-gray-200">
+                  <CardHeader>
+                    <CardTitle>Pending Invites</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {pendingInvites.map((invite) => (
+                        <div
+                          key={invite.id}
+                          className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                        >
                           <div>
-                            <div className="font-medium">{pool.name}</div>
-                            <div className="flex items-center gap-3 text-sm text-gray-500">
-                              <span>{pool.locationIds.length} locations</span>
-                              {pool.syncInventory && (
-                                <Badge className="bg-[#647653] text-white text-xs">Inventory</Badge>
-                              )}
-                              {pool.syncPricing && (
-                                <Badge className="bg-blue-100 text-blue-800 text-xs">Pricing</Badge>
-                              )}
+                            <div className="font-medium">{invite.email}</div>
+                            <div className="text-sm text-gray-500">
+                              Pool: {invite.poolName} · Expires {formatDate(invite.expiresAt)}
                             </div>
                           </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-amber-100 text-amber-800">Pending</Badge>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => {
+                                navigator.clipboard.writeText(invite.inviteLink);
+                                alert('Link copied!');
+                              }}
+                            >
+                              <CopyIcon className="w-4 h-4" />
+                            </Button>
+                          </div>
                         </div>
-
-                        <div className="flex items-center gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              setEditingPool(pool);
-                              setSelectedLocations(pool.locationIds);
-                            }}
-                          >
-                            <SettingsIcon className="w-4 h-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => deletePool(pool.id)}
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2Icon className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-
-        {/* ================================================================ */}
-        {/* PARTNERS TAB */}
-        {/* ================================================================ */}
-        {activeTab === 'partners' && (
-          <div className="space-y-4">
-            <div>
-              <h2 className="text-2xl font-bold">Partners</h2>
-              <p className="text-gray-600">
-                Share inventory with external partners. They get their own copy that stays in sync.
-              </p>
-            </div>
-
-            {/* Invite Partner Card */}
-            <Card className="border border-gray-200">
-              <CardHeader>
-                <CardTitle>Invite a Partner</CardTitle>
-                <CardDescription>
-                  Send an invite link. They'll get a copy of your products to add to their platforms.
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Partner Email</label>
-                    <Input
-                      type="email"
-                      placeholder="partner@company.com"
-                      value={inviteEmail}
-                      onChange={(e) => setInviteEmail(e.target.value)}
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium mb-2">Share Pool</label>
-                    <select
-                      className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
-                      value={invitePoolId}
-                      onChange={(e) => setInvitePoolId(e.target.value)}
-                    >
-                      <option value="">Select a pool...</option>
-                      {pools.map((pool) => (
-                        <option key={pool.id} value={pool.id}>
-                          {pool.name} ({pool.locationIds.length} locations)
-                        </option>
                       ))}
-                    </select>
-                  </div>
-                </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
 
-                <Button
-                  onClick={sendPartnerInvite}
-                  disabled={!inviteEmail || !invitePoolId || isInviting}
-                  className="bg-[#647653] hover:bg-[#556145] text-white"
-                >
-                  {isInviting ? (
-                    <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
-                  ) : (
-                    <SendIcon className="w-4 h-4 mr-2" />
-                  )}
-                  Send Invite
-                </Button>
-              </CardContent>
-            </Card>
-
-            {/* Pending Invites */}
-            {pendingInvites.length > 0 && (
+              {/* Active Partnerships */}
               <Card className="border border-gray-200">
                 <CardHeader>
-                  <CardTitle>Pending Invites</CardTitle>
+                  <CardTitle>Active Partnerships</CardTitle>
+                  <CardDescription>Partners with synced inventory access</CardDescription>
                 </CardHeader>
                 <CardContent>
-                  <div className="space-y-3">
-                    {pendingInvites.map((invite) => (
-                      <div
-                        key={invite.id}
-                        className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-                      >
-                        <div>
-                          <div className="font-medium">{invite.email}</div>
-                          <div className="text-sm text-gray-500">
-                            Pool: {invite.poolName} · Expires {formatDate(invite.expiresAt)}
+                  {partnerships.length === 0 ? (
+                    <div className="text-center py-8">
+                      <Link2Icon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                      <p className="text-gray-500">No active partnerships yet.</p>
+                      <p className="text-sm text-gray-400 mt-1">
+                        Send an invite above to share inventory with a partner.
+                      </p>
+                    </div>
+                  ) : (
+                    <div className="space-y-3">
+                      {partnerships.map((partner) => (
+                        <div
+                          key={partner.id}
+                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
+                        >
+                          <div className="flex items-center gap-4">
+                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#647653] to-[#556145] flex items-center justify-center text-white font-semibold">
+                              {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
+                            </div>
+                            <div>
+                              <div className="font-medium">
+                                {partner.partnerOrgName || partner.partnerEmail}
+                              </div>
+                              <div className="text-sm text-gray-500">
+                                {partner.productCount} products synced · Pool: {partner.poolName}
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-[#647653] text-white">Active</Badge>
+                            <Button variant="ghost" size="sm">
+                              <ChevronRightIcon className="w-4 h-4" />
+                            </Button>
                           </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-amber-100 text-amber-800">Pending</Badge>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => {
-                              navigator.clipboard.writeText(invite.inviteLink);
-                              alert('Link copied!');
-                            }}
-                          >
-                            <CopyIcon className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
+                      ))}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
-            )}
-
-            {/* Active Partnerships */}
-            <Card className="border border-gray-200">
-              <CardHeader>
-                <CardTitle>Active Partnerships</CardTitle>
-                <CardDescription>Partners with synced inventory access</CardDescription>
-              </CardHeader>
-              <CardContent>
-                {partnerships.length === 0 ? (
-                  <div className="text-center py-8">
-                    <Link2Icon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                    <p className="text-gray-500">No active partnerships yet.</p>
-                    <p className="text-sm text-gray-400 mt-1">
-                      Send an invite above to share inventory with a partner.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {partnerships.map((partner) => (
-                      <div
-                        key={partner.id}
-                        className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#647653] to-[#556145] flex items-center justify-center text-white font-semibold">
-                            {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
-                          </div>
-                          <div>
-                            <div className="font-medium">
-                              {partner.partnerOrgName || partner.partnerEmail}
-                            </div>
-                            <div className="text-sm text-gray-500">
-                              {partner.productCount} products synced · Pool: {partner.poolName}
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Badge className="bg-[#647653] text-white">Active</Badge>
-                          <Button variant="ghost" size="sm">
-                            <ChevronRightIcon className="w-4 h-4" />
-                          </Button>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
-        )}
-      </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }
-
-
