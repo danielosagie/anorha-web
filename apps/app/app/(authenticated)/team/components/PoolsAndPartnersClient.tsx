@@ -91,6 +91,7 @@ export default function PoolsAndPartnersClient() {
   // Invite State
   const [inviteEmail, setInviteEmail] = useState('');
   const [invitePoolId, setInvitePoolId] = useState('');
+  const [inviteCanRevoke, setInviteCanRevoke] = useState(true); // Default: consignment mode
   const [isInviting, setIsInviting] = useState(false);
 
   const loadData = useCallback(async () => {
@@ -245,8 +246,9 @@ export default function PoolsAndPartnersClient() {
         body: JSON.stringify({
           inviteeEmail: inviteEmail,
           poolId: invitePoolId,
-          shareType: 'sync',
-          syncDirection: 'bidirectional'
+          shareType: inviteCanRevoke ? 'consignment' : 'sync',
+          syncDirection: 'bidirectional',
+          canRevoke: inviteCanRevoke,
         })
       });
 
@@ -256,6 +258,7 @@ export default function PoolsAndPartnersClient() {
         alert('Invite sent! Link copied to clipboard.');
         setInviteEmail('');
         setInvitePoolId('');
+        setInviteCanRevoke(true); // Reset to default
         loadData();
       }
     } catch (e) {
@@ -655,6 +658,27 @@ export default function PoolsAndPartnersClient() {
                           </option>
                         ))}
                       </select>
+                    </div>
+
+                    {/* Consignment Mode Toggle */}
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
+                      <div className="flex-1 mr-4">
+                        <span className="font-medium text-gray-900">Consignment Mode</span>
+                        <p className="text-sm text-gray-500 mt-0.5">
+                          {inviteCanRevoke
+                            ? 'You retain control. Can revoke products anytime.'
+                            : 'Partner gets permanent copies. Cannot revoke.'}
+                        </p>
+                      </div>
+                      <label className="relative inline-flex items-center cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={inviteCanRevoke}
+                          onChange={(e) => setInviteCanRevoke(e.target.checked)}
+                          className="sr-only peer"
+                        />
+                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#647653]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#647653]"></div>
+                      </label>
                     </div>
                   </div>
 
