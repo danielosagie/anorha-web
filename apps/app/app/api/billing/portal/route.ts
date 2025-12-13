@@ -15,7 +15,9 @@ export async function GET() {
       return NextResponse.json({ error: text }, { status: res.status });
     }
     const { url } = await res.json();
-    return NextResponse.redirect(url, { status: 303 });
+    // Return JSON with URL - client handles redirect
+    // (Using redirect causes issues with fetch + redirect: 'manual')
+    return NextResponse.json({ url });
   } catch (e: any) {
     return NextResponse.json({ error: e?.message || 'Failed to create portal' }, { status: 500 });
   }

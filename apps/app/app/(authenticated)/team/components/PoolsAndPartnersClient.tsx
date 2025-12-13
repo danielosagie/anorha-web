@@ -94,6 +94,11 @@ export default function PoolsAndPartnersClient() {
   const [inviteCanRevoke, setInviteCanRevoke] = useState(true); // Default: consignment mode
   const [isInviting, setIsInviting] = useState(false);
 
+  // Invite Success Modal State
+  const [showInviteSuccess, setShowInviteSuccess] = useState(false);
+  const [createdInviteLink, setCreatedInviteLink] = useState('');
+  const [linkCopied, setLinkCopied] = useState(false);
+
   const loadData = useCallback(async () => {
     if (!orgId) return;
 
@@ -253,13 +258,18 @@ export default function PoolsAndPartnersClient() {
       });
 
       if (res.ok) {
-        const { inviteLink } = await res.json();
-        await navigator.clipboard.writeText(inviteLink);
-        alert('Invite sent! Link copied to clipboard.');
+        const data = await res.json();
+        const inviteLink = data.inviteLink || '';
+        setCreatedInviteLink(inviteLink);
+        setShowInviteSuccess(true);
+        setLinkCopied(false);
         setInviteEmail('');
         setInvitePoolId('');
         setInviteCanRevoke(true); // Reset to default
         loadData();
+      } else {
+        const errText = await res.text();
+        alert(`Failed to send invite: ${errText}`);
       }
     } catch (e) {
       console.error('Failed to send invite:', e);
@@ -787,6 +797,52 @@ export default function PoolsAndPartnersClient() {
           )}
         </>
       )}
+
+      {/* Invite Success Modal */}
+      {showInviteSuccess && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
+            <div className="text-center mb-4">
+              <div className="text-5xl mb-3">🎉</div>
+              <h2 className="text-xl font-bold text-gray-900">Invite Sent!</h2>
+              <p className="text-gray-600 mt-2">
+                An email has been sent to your partner. Share this link if they didn't receive it:
+              </p>
+            </div>
+
+            <div className="bg-gray-100 rounded-lg p-3 mb-4">
+              <input
+                type="text"
+                readOnly
+                value={createdInviteLink}
+                className="w-full bg-transparent text-sm text-gray-700 outline-none"
+                onClick={(e) => (e.target as HTMLInputElement).select()}
+              />
+            </div>
+
+            <div className="flex gap-3">
+              <Button
+                onClick={async () => {
+                  await navigator.clipboard.writeText(createdInviteLink);
+                  setLinkCopied(true);
+                  setTimeout(() => setLinkCopied(false), 2000);
+                }}
+                className="flex-1 bg-[#647653] hover:bg-[#556647] text-white"
+              >
+                {linkCopied ? '✓ Copied!' : 'Copy Link'}
+              </Button>
+              <Button
+                variant="outline"
+                onClick={() => setShowInviteSuccess(false)}
+                className="flex-1"
+              >
+                Done
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
+
