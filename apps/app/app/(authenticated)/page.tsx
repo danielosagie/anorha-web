@@ -14,9 +14,11 @@ export const metadata: Metadata = {
 
 const App = () => {
   return (
-    <PageWrapper title='Dashboard' description='Stay up to date' >
-      <InConstruction />
-    </PageWrapper>
+    <div className="bg-[#FEF4DD]">
+      <PageWrapper title='Dashboard' description='Stay up to date' >
+        <InConstruction />
+      </PageWrapper>
+    </div>
 
   );
 };

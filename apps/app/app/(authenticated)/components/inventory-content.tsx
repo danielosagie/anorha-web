@@ -8,7 +8,7 @@ import {
   UploadIcon,
   DownloadIcon,
 } from 'lucide-react';
-import { InventoryClient } from '../inventory-client';
+import { InventoryClient } from '../inventory/inventory-client';
 import { PageWrapper } from '../components/page-wrapper';
 
 function toPlatformKey(name?: string | null) {

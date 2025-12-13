@@ -41,8 +41,11 @@ export default function PartnerAcceptPage() {
 
         const fetchInvite = async () => {
             try {
-                // Remove trailing slash if present and construct URL properly
-                const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
+                // Normalize API base URL - ensure it ends with /api
+                let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
+                if (!apiBase.endsWith('/api')) {
+                    apiBase = `${apiBase}/api`;
+                }
                 const res = await fetch(`${apiBase}/cross-org/invites/token/${token}`);
 
                 if (!res.ok) {
@@ -75,8 +78,11 @@ export default function PartnerAcceptPage() {
 
         try {
             const authToken = await getToken();
-            // Remove trailing slash if present
-            const apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
+            // Normalize API base URL - ensure it ends with /api
+            let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
+            if (!apiBase.endsWith('/api')) {
+                apiBase = `${apiBase}/api`;
+            }
 
             const res = await fetch(`${apiBase}/cross-org/invites/${token}/accept`, {
                 method: 'POST',
@@ -148,7 +154,7 @@ export default function PartnerAcceptPage() {
     }
 
     const isExpired = invite?.ExpiresAt && new Date(invite.ExpiresAt) < new Date();
-    const isAlreadyAccepted = invite?.Status === 'ACCEPTED';
+    const isAlreadyAccepted = invite?.Status?.toLowerCase() === 'accepted';
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">

@@ -20,7 +20,7 @@ export function PageWrapper({
 }: PageWrapperProps) {
   return (
     <div 
-      className="flex flex-col border-2 border-[#AFAFAF] rounded-lg w-full p-2 min-h-0 min-h-[98vh]"
+      className="flex flex-col border-2 border-[#AFAFAF] align-center rounded-lg w-full p-2 min-h-0 min-h-[99vh]"
       style={{ backgroundColor: '#FFFCF5' }}
     >
     <Header 
