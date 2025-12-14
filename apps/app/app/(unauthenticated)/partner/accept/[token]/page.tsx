@@ -135,19 +135,84 @@ export default function PartnerAcceptPage() {
     if (success) {
         return (
             <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-                <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
-                    <div className="text-6xl mb-4">🎉</div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Partnership Activated!</h1>
-                    <p className="text-gray-600 mb-6">
-                        You're now connected with {invite?.sourceOrg?.Name || 'your partner'}.
-                        Their products are syncing to your account.
-                    </p>
-                    <Link
-                        href="/team#partners"
-                        className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700"
-                    >
-                        View Partnerships
-                    </Link>
+                <div className="max-w-lg w-full bg-white rounded-xl shadow-lg overflow-hidden">
+                    {/* Success Header */}
+                    <div className="bg-green-600 px-8 py-6 text-center">
+                        <div className="text-5xl mb-2">🎉</div>
+                        <h1 className="text-2xl font-bold text-white">Partnership Activated!</h1>
+                    </div>
+
+                    <div className="p-8">
+                        <p className="text-gray-600 text-center mb-6">
+                            You're now connected with <span className="font-semibold">{invite?.sourceOrg?.Name || 'your partner'}</span>.
+                            Their products will sync to your account.
+                        </p>
+
+                        {/* Onboarding Steps */}
+                        <div className="bg-gray-50 rounded-xl p-6 mb-6">
+                            <h2 className="font-bold text-gray-900 mb-4">📱 Get Started</h2>
+                            <div className="space-y-4">
+                                {/* Step 1 - Account Created */}
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">✓</div>
+                                    <div>
+                                        <p className="font-medium text-gray-900">Account Created</p>
+                                        <p className="text-sm text-gray-500">You're all set up!</p>
+                                    </div>
+                                </div>
+
+                                {/* Step 2 - Download App */}
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">2</div>
+                                    <div className="flex-1">
+                                        <p className="font-medium text-gray-900">Download the App</p>
+                                        <p className="text-sm text-gray-500">Manage inventory on the go</p>
+                                    </div>
+                                </div>
+
+                                {/* Step 3 - Connect Platform */}
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">3</div>
+                                    <div>
+                                        <p className="font-medium text-gray-700">Connect Your Platform</p>
+                                        <p className="text-sm text-gray-500">Link Shopify, Square, or other POS</p>
+                                    </div>
+                                </div>
+
+                                {/* Step 4 - Auto Sync */}
+                                <div className="flex items-center gap-3">
+                                    <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">4</div>
+                                    <div>
+                                        <p className="font-medium text-gray-700">Auto-Sync Active</p>
+                                        <p className="text-sm text-gray-500">Inventory syncs automatically</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Download App CTA */}
+                        <div className="space-y-3">
+                            <a
+                                href="https://anorha.app"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="block w-full bg-green-600 text-white px-6 py-4 rounded-lg font-semibold text-center hover:bg-green-700 transition-colors"
+                            >
+                                📱 Download Mobile App
+                            </a>
+
+                            <Link
+                                href="/team#partners"
+                                className="block w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-200 transition-colors"
+                            >
+                                Continue on Web →
+                            </Link>
+                        </div>
+
+                        <p className="text-sm text-gray-500 text-center mt-4">
+                            For the best experience, we recommend using the mobile app to manage your inventory.
+                        </p>
+                    </div>
                 </div>
             </div>
         );

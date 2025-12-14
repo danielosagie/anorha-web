@@ -99,6 +99,21 @@ export default function PoolsAndPartnersClient() {
   const [createdInviteLink, setCreatedInviteLink] = useState('');
   const [linkCopied, setLinkCopied] = useState(false);
 
+  // Create Location Modal State
+  const [showCreateLocation, setShowCreateLocation] = useState(false);
+  const [newLocationName, setNewLocationName] = useState('');
+  const [newLocationConnectionId, setNewLocationConnectionId] = useState('');
+  const [isCreatingLocation, setIsCreatingLocation] = useState(false);
+
+  // Connections with location creation capability
+  interface ConnectionCapability {
+    connectionId: string;
+    connectionName: string;
+    platformType: string;
+    canCreateLocations: boolean;
+  }
+  const [connectionsWithCapabilities, setConnectionsWithCapabilities] = useState<ConnectionCapability[]>([]);
+
   const loadData = useCallback(async () => {
     if (!orgId) return;
 
@@ -120,9 +135,20 @@ export default function PoolsAndPartnersClient() {
         // Transform the nested structure from available locations endpoint to flat list
         const rawLocs: Record<string, any> = await locsRes.json();
         const flatLocs: Location[] = [];
+        const capabilities: ConnectionCapability[] = [];
 
         // The endpoint returns { connectionId: { platformType, connectionName, locations: [...] } }
-        Object.values(rawLocs).forEach((conn: any) => {
+        Object.entries(rawLocs).forEach(([connectionId, conn]: [string, any]) => {
+          const platformType = (conn.platformType || 'unknown').toLowerCase();
+          const canCreate = platformType === 'shopify' || platformType === 'square';
+
+          capabilities.push({
+            connectionId,
+            connectionName: conn.connectionName || 'Unknown Connection',
+            platformType,
+            canCreateLocations: canCreate,
+          });
+
           if (conn.locations) {
             conn.locations.forEach((l: any) => {
               flatLocs.push({
@@ -135,6 +161,7 @@ export default function PoolsAndPartnersClient() {
           }
         });
         setLocations(flatLocs);
+        setConnectionsWithCapabilities(capabilities.filter(c => c.canCreateLocations));
       }
 
       if (partnersRes?.ok) {
@@ -279,6 +306,36 @@ export default function PoolsAndPartnersClient() {
     }
   };
 
+  const revokeInvite = async (inviteId: string) => {
+    if (!confirm('Are you sure you want to revoke this invite?')) return;
+
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}/api/cross-org/invites/${inviteId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        setPendingInvites(prev => prev.filter(i => i.id !== inviteId));
+      } else {
+        alert('Failed to revoke invite');
+      }
+    } catch (e) {
+      console.error('Failed to revoke invite:', e);
+    }
+  };
+
+  const copyToClipboard = async (text: string) => {
+    try {
+      await navigator.clipboard.writeText(text);
+      setLinkCopied(true);
+      setTimeout(() => setLinkCopied(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy query: ', err);
+    }
+  };
+
   const toggleMemberPool = async (userId: string, poolId: string, checked: boolean) => {
     if (!orgId) return;
 
@@ -308,6 +365,47 @@ export default function PoolsAndPartnersClient() {
     } catch (e) {
       console.error(e);
       loadData(); // Revert
+    }
+  };
+
+  const createLocation = async () => {
+    if (!newLocationName.trim() || !newLocationConnectionId) {
+      alert('Please enter a location name and select a platform');
+      return;
+    }
+
+    setIsCreatingLocation(true);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}/api/locations/create`, {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          connectionId: newLocationConnectionId,
+          name: newLocationName.trim(),
+          address: { countryCode: 'US' }, // Default to US - could add address form later
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        // Auto-select the newly created location
+        if (data.location?.platformLocationId) {
+          setSelectedLocations(prev => [...prev, data.location.platformLocationId]);
+        }
+        setShowCreateLocation(false);
+        setNewLocationName('');
+        setNewLocationConnectionId('');
+        loadData(); // Refresh locations list
+      } else {
+        const errText = await res.text();
+        alert(`Failed to create location: ${errText}`);
+      }
+    } catch (e) {
+      console.error('Failed to create location:', e);
+      alert('Failed to create location');
+    } finally {
+      setIsCreatingLocation(false);
     }
   };
 
@@ -454,7 +552,84 @@ export default function PoolsAndPartnersClient() {
                           })
                         )}
                       </div>
+
+                      {/* Create Location Button - only show if we have capable connections */}
+                      {connectionsWithCapabilities.length > 0 && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => setShowCreateLocation(true)}
+                          className="mt-2 w-full border-dashed border-gray-300 text-gray-600 hover:text-gray-900"
+                        >
+                          <PlusIcon className="w-4 h-4 mr-2" />
+                          Create New Location
+                        </Button>
+                      )}
                     </div>
+
+                    {/* Create Location Modal */}
+                    {showCreateLocation && (
+                      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+                        <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+                          <h3 className="text-lg font-bold mb-4">Create New Location</h3>
+                          <p className="text-sm text-gray-600 mb-4">
+                            Create a new location on your connected platform. It will be automatically added to your available locations.
+                          </p>
+
+                          <div className="space-y-4">
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Platform</label>
+                              <select
+                                value={newLocationConnectionId}
+                                onChange={(e) => setNewLocationConnectionId(e.target.value)}
+                                className="w-full border border-gray-200 rounded-lg p-2 text-sm"
+                              >
+                                <option value="">Select a platform...</option>
+                                {connectionsWithCapabilities.map((c) => (
+                                  <option key={c.connectionId} value={c.connectionId}>
+                                    {c.connectionName} ({c.platformType})
+                                  </option>
+                                ))}
+                              </select>
+                            </div>
+
+                            <div>
+                              <label className="block text-sm font-medium mb-1">Location Name</label>
+                              <Input
+                                value={newLocationName}
+                                onChange={(e) => setNewLocationName(e.target.value)}
+                                placeholder="e.g., Downtown Store, Warehouse A"
+                              />
+                            </div>
+                          </div>
+
+                          <div className="flex gap-2 mt-6">
+                            <Button
+                              variant="outline"
+                              onClick={() => {
+                                setShowCreateLocation(false);
+                                setNewLocationName('');
+                                setNewLocationConnectionId('');
+                              }}
+                              className="flex-1"
+                            >
+                              Cancel
+                            </Button>
+                            <Button
+                              onClick={createLocation}
+                              disabled={isCreatingLocation || !newLocationName.trim() || !newLocationConnectionId}
+                              className="flex-1 bg-[#647653] hover:bg-[#556145] text-white"
+                            >
+                              {isCreatingLocation ? (
+                                <><Loader2Icon className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
+                              ) : (
+                                <><PlusIcon className="w-4 h-4 mr-2" /> Create Location</>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     <div className="flex gap-2 pt-2">
                       <Button
@@ -627,172 +802,218 @@ export default function PoolsAndPartnersClient() {
 
           {/* === PARTNERS TAB === */}
           {activeTab === 'partners' && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-2xl font-bold">Partners</h2>
-                <p className="text-gray-600">
-                  Share inventory with external partners. They get their own copy that stays in sync.
-                </p>
+            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                <div>
+                  <h2 className="text-2xl font-bold tracking-tight">Partnerships</h2>
+                  <p className="text-gray-500 mt-1">
+                    Manage your shared inventory network and invitations.
+                  </p>
+                </div>
               </div>
 
-              {/* Invite Partner Card */}
-              <Card className="border border-gray-200">
-                <CardHeader>
-                  <CardTitle>Invite a Partner</CardTitle>
-                  <CardDescription>
-                    Send an invite link. They'll get a copy of your products to add to their platforms.
-                  </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Partner Email</label>
-                      <Input
-                        type="email"
-                        placeholder="partner@company.com"
-                        value={inviteEmail}
-                        onChange={(e) => setInviteEmail(e.target.value)}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium mb-2">Share Pool</label>
-                      <select
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
-                        value={invitePoolId}
-                        onChange={(e) => setInvitePoolId(e.target.value)}
-                      >
-                        <option value="">Select a pool...</option>
-                        {pools.map((pool) => (
-                          <option key={pool.id} value={pool.id}>
-                            {pool.name} ({pool.locationIds.length} locations)
-                          </option>
-                        ))}
-                      </select>
-                    </div>
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                {/* Left Column: Invite Action */}
+                <div className="lg:col-span-1 space-y-6">
+                  <Card className="border border-gray-200 shadow-sm overflow-hidden sticky top-4">
+                    <div className="h-2 bg-[#647653]" />
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <SendIcon className="w-5 h-5 text-[#647653]" />
+                        Invite Partner
+                      </CardTitle>
+                      <CardDescription>
+                        Send a link to share your inventory pool.
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5 text-gray-700">Partner Email</label>
+                        <Input
+                          type="email"
+                          placeholder="partner@company.com"
+                          value={inviteEmail}
+                          onChange={(e) => setInviteEmail(e.target.value)}
+                          className="bg-gray-50 focus:bg-white transition-colors"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5 text-gray-700">Share Pool</label>
+                        <div className="relative">
+                          <select
+                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#647653] focus:bg-white transition-all text-sm"
+                            value={invitePoolId}
+                            onChange={(e) => setInvitePoolId(e.target.value)}
+                          >
+                            <option value="">Select a pool...</option>
+                            {pools.map((pool) => (
+                              <option key={pool.id} value={pool.id}>
+                                {pool.name} ({pool.locationIds.length} locations)
+                              </option>
+                            ))}
+                          </select>
+                          <ChevronRightIcon className="w-4 h-4 text-gray-400 absolute right-3 top-2.5 rotate-90 pointer-events-none" />
+                        </div>
+                      </div>
 
-                    {/* Consignment Mode Toggle */}
-                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-lg border border-gray-200">
-                      <div className="flex-1 mr-4">
-                        <span className="font-medium text-gray-900">Consignment Mode</span>
-                        <p className="text-sm text-gray-500 mt-0.5">
+                      {/* Consignment Mode Toggle */}
+                      <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                        <div className="flex items-center justify-between mb-2">
+                          <span className="font-medium text-sm text-gray-900">Revocable Access</span>
+                          <Switch
+                            checked={inviteCanRevoke}
+                            onCheckedChange={setInviteCanRevoke}
+                            className="data-[state=checked]:bg-[#647653]"
+                          />
+                        </div>
+                        <p className="text-xs text-gray-500 leading-relaxed">
                           {inviteCanRevoke
-                            ? 'You retain control. Can revoke products anytime.'
-                            : 'Partner gets permanent copies. Cannot revoke.'}
+                            ? 'You stay in control. Revoke access anytime to remove products from their system.'
+                            : 'Permanent transfer. Once shared, they keep the product data forever.'}
                         </p>
                       </div>
-                      <label className="relative inline-flex items-center cursor-pointer">
-                        <input
-                          type="checkbox"
-                          checked={inviteCanRevoke}
-                          onChange={(e) => setInviteCanRevoke(e.target.checked)}
-                          className="sr-only peer"
-                        />
-                        <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-[#647653]/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-[#647653]"></div>
-                      </label>
-                    </div>
-                  </div>
 
-                  <Button
-                    onClick={sendPartnerInvite}
-                    disabled={!inviteEmail || !invitePoolId || isInviting}
-                    className="bg-[#647653] hover:bg-[#556145] text-white"
-                  >
-                    {isInviting ? (
-                      <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+                      <Button
+                        onClick={sendPartnerInvite}
+                        disabled={!inviteEmail || !invitePoolId || isInviting}
+                        className="w-full bg-[#647653] hover:bg-[#556145] text-white transition-all shadow-sm hover:shadow"
+                      >
+                        {isInviting ? (
+                          <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                          <SendIcon className="w-4 h-4 mr-2" />
+                        )}
+                        Send Invite
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </div>
+
+                {/* Right Column: Lists */}
+                <div className="lg:col-span-2 space-y-8">
+
+                  {/* Pending Invites Swimlane */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-amber-400" />
+                      Pending Invites
+                    </h3>
+
+                    {pendingInvites.length === 0 ? (
+                      <div className="text-center py-6 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                        <p className="text-sm text-gray-500">No pending invites.</p>
+                      </div>
                     ) : (
-                      <SendIcon className="w-4 h-4 mr-2" />
+                      <div className="space-y-3">
+                        {pendingInvites.map((invite) => (
+                          <div
+                            key={invite.id}
+                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-gray-300 hover:shadow-md transition-all duration-200"
+                          >
+                            <div className="flex items-start gap-4 mb-3 sm:mb-0">
+                              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
+                                <SendIcon className="w-5 h-5 text-amber-500" />
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900">{invite.email}</div>
+                                <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
+                                  <Badge variant="outline" className="text-xs font-normal bg-gray-50">
+                                    {invite.poolName}
+                                  </Badge>
+                                  <span>•</span>
+                                  <span>Expires {formatDate(invite.expiresAt)}</span>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 pl-14 sm:pl-0">
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                onClick={() => copyToClipboard(invite.inviteLink)}
+                                className="text-gray-600 hover:text-[#647653] hover:border-[#647653]"
+                              >
+                                {linkCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+                                <span className="ml-2 sm:hidden">Copy Link</span>
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => revokeInvite(invite.id)}
+                                className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                              >
+                                <Trash2Icon className="w-4 h-4" />
+                                <span className="ml-2 sm:hidden">Revoke</span>
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
                     )}
-                    Send Invite
-                  </Button>
-                </CardContent>
-              </Card>
+                  </section>
 
-              {/* Pending Invites */}
-              {pendingInvites.length > 0 && (
-                <Card className="border border-gray-200">
-                  <CardHeader>
-                    <CardTitle>Pending Invites</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {pendingInvites.map((invite) => (
-                        <div
-                          key={invite.id}
-                          className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
-                        >
-                          <div>
-                            <div className="font-medium">{invite.email}</div>
-                            <div className="text-sm text-gray-500">
-                              Pool: {invite.poolName} · Expires {formatDate(invite.expiresAt)}
-                            </div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-amber-100 text-amber-800">Pending</Badge>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => {
-                                navigator.clipboard.writeText(invite.inviteLink);
-                                alert('Link copied!');
-                              }}
-                            >
-                              <CopyIcon className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+                  {/* Active Partnerships Swimlane */}
+                  <section>
+                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-[#647653]" />
+                      Active Partnerships
+                    </h3>
 
-              {/* Active Partnerships */}
-              <Card className="border border-gray-200">
-                <CardHeader>
-                  <CardTitle>Active Partnerships</CardTitle>
-                  <CardDescription>Partners with synced inventory access</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {partnerships.length === 0 ? (
-                    <div className="text-center py-8">
-                      <Link2Icon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">No active partnerships yet.</p>
-                      <p className="text-sm text-gray-400 mt-1">
-                        Send an invite above to share inventory with a partner.
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {partnerships.map((partner) => (
-                        <div
-                          key={partner.id}
-                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg"
-                        >
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-[#647653] to-[#556145] flex items-center justify-center text-white font-semibold">
-                              {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
-                            </div>
-                            <div>
-                              <div className="font-medium">
-                                {partner.partnerOrgName || partner.partnerEmail}
+                    {partnerships.length === 0 ? (
+                      <div className="text-center py-12 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
+                        <Link2Icon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
+                        <h4 className="text-gray-900 font-medium">No partners yet</h4>
+                        <p className="text-sm text-gray-500 max-w-sm mx-auto mt-1">
+                          When partners accept your invite, they'll appear here. You'll be able to see their sync status and manage access.
+                        </p>
+                      </div>
+                    ) : (
+                      <div className="space-y-3">
+                        {partnerships.map((partner) => (
+                          <div
+                            key={partner.id}
+                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-[#647653]/30 hover:shadow-md transition-all duration-200"
+                          >
+                            <div className="flex items-center gap-4">
+                              <div className="relative">
+                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#647653] to-[#45523e] flex items-center justify-center text-white text-lg font-bold shadow-sm">
+                                  {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
+                                </div>
+                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
+                                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                                </div>
                               </div>
-                              <div className="text-sm text-gray-500">
-                                {partner.productCount} products synced · Pool: {partner.poolName}
+
+                              <div>
+                                <div className="font-semibold text-gray-900 text-lg">
+                                  {partner.partnerOrgName || partner.partnerEmail}
+                                </div>
+                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 mt-0.5">
+                                  <div className="flex items-center gap-1.5">
+                                    <MapPinIcon className="w-3.5 h-3.5" />
+                                    {partner.poolName}
+                                  </div>
+                                  <div className="w-1 h-1 rounded-full bg-gray-300" />
+                                  <div className="flex items-center gap-1.5">
+                                    <Link2Icon className="w-3.5 h-3.5" />
+                                    {partner.productCount} products synced
+                                  </div>
+                                </div>
                               </div>
                             </div>
+
+                            <div className="flex items-center gap-2 mt-4 sm:mt-0 pl-16 sm:pl-0">
+                              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
+                                <SettingsIcon className="w-4 h-4" />
+                              </Button>
+                            </div>
                           </div>
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-[#647653] text-white">Active</Badge>
-                            <Button variant="ghost" size="sm">
-                              <ChevronRightIcon className="w-4 h-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+                </div>
+              </div>
             </div>
           )}
         </>
@@ -800,41 +1021,51 @@ export default function PoolsAndPartnersClient() {
 
       {/* Invite Success Modal */}
       {showInviteSuccess && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6">
-            <div className="text-center mb-4">
-              <div className="text-5xl mb-3">🎉</div>
-              <h2 className="text-xl font-bold text-gray-900">Invite Sent!</h2>
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-100">
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <SendIcon className="w-8 h-8 text-green-600 ml-1" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900">Invite Sent!</h2>
               <p className="text-gray-600 mt-2">
-                An email has been sent to your partner. Share this link if they didn't receive it:
+                We've emailed your partner. You can also copy the link below and send it manually.
               </p>
             </div>
 
-            <div className="bg-gray-100 rounded-lg p-3 mb-4">
-              <input
-                type="text"
-                readOnly
-                value={createdInviteLink}
-                className="w-full bg-transparent text-sm text-gray-700 outline-none"
-                onClick={(e) => (e.target as HTMLInputElement).select()}
-              />
+            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 relative group">
+              <p className="font-mono text-sm text-gray-600 break-all pr-8 line-clamp-3">
+                {createdInviteLink}
+              </p>
+              <div className="absolute top-2 right-2">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => copyToClipboard(createdInviteLink)}
+                  className={cn(
+                    "h-8 w-8 p-0 rounded-lg transition-colors",
+                    linkCopied ? "bg-green-100 text-green-700" : "hover:bg-gray-200 text-gray-500"
+                  )}
+                >
+                  {linkCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+                </Button>
+              </div>
             </div>
 
             <div className="flex gap-3">
               <Button
-                onClick={async () => {
-                  await navigator.clipboard.writeText(createdInviteLink);
-                  setLinkCopied(true);
-                  setTimeout(() => setLinkCopied(false), 2000);
+                variant="outline"
+                className="flex-1 border-gray-200 hover:bg-gray-50 hover:text-gray-900"
+                onClick={() => {
+                  copyToClipboard(createdInviteLink);
+                  // Don't close immediately so they see the copied check
                 }}
-                className="flex-1 bg-[#647653] hover:bg-[#556647] text-white"
               >
-                {linkCopied ? '✓ Copied!' : 'Copy Link'}
+                {linkCopied ? 'Copied!' : 'Copy Link'}
               </Button>
               <Button
-                variant="outline"
+                className="flex-1 bg-[#647653] hover:bg-[#556145] text-white"
                 onClick={() => setShowInviteSuccess(false)}
-                className="flex-1"
               >
                 Done
               </Button>
@@ -845,5 +1076,6 @@ export default function PoolsAndPartnersClient() {
     </div>
   );
 }
+
 
 
