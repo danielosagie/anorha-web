@@ -1,4 +1,5 @@
 import { captureException } from '@sentry/nextjs';
+export { captureException };
 import { log } from './log';
 
 export const parseError = (error: unknown): string => {
