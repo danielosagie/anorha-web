@@ -5,7 +5,7 @@ import { Progress } from '@repo/design-system/components/ui/progress';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/design-system/components/ui/table';
 import { Badge } from '@repo/design-system/components/ui/badge';
 import { Button } from '@repo/design-system/components/ui/button';
-import { TrendingUpIcon, CalendarIcon, ExternalLinkIcon, RefreshCwIcon, CreditCardIcon, AlertCircleIcon } from 'lucide-react';
+import { TrendingUpIcon, CalendarIcon, ExternalLinkIcon, RefreshCwIcon, CreditCardIcon, AlertCircleIcon, PlusCircleIcon } from 'lucide-react';
 import { BillingActions } from './billing-actions';
 import { TierSelector } from './tier-selector';
 import { PageWrapper } from '../components/page-wrapper';
@@ -47,7 +47,8 @@ export function BillingClient({
   const [partnerPaymentMethod, setPartnerPaymentMethod] = useState(initialPartnerPaymentMethod);
   const [isAddingPaymentMethod, setIsAddingPaymentMethod] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
-  
+  const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+
   // Check if user is a partner (needs their own payment method for AI scans)
   const isPartner = userRole === 'partner';
 
@@ -99,7 +100,7 @@ export function BillingClient({
     try {
       // Use standard Clerk token (backend accepts it via ClerkTokenService)
       const token = await getToken();
-      
+
       if (!token) {
         console.error('No auth token available');
         return;
@@ -296,7 +297,7 @@ export function BillingClient({
     return (
       <div className="flex items-center justify-center min-h-screen p-4" style={{ backgroundColor: '#FEF4DD' }}>
         <div className="w-full">
-          <TierSelector 
+          <TierSelector
             onSelectTier={handleTierSelected}
             onClose={() => setShowTierSelector(false)}
           />
@@ -385,11 +386,11 @@ export function BillingClient({
                         {teamMembersCount}{' '}
                         {teamMembersIncluded
                           ? (
-                              <span className="text-muted-foreground">
-                                / {teamMembersIncluded} included
-                                {teamMembersExtra > 0 ? ` (+${teamMembersExtra} extra)` : ''}
-                              </span>
-                            )
+                            <span className="text-muted-foreground">
+                              / {teamMembersIncluded} included
+                              {teamMembersExtra > 0 ? ` (+${teamMembersExtra} extra)` : ''}
+                            </span>
+                          )
                           : null}
                       </TableCell>
                       <TableCell className="text-right">
@@ -510,82 +511,132 @@ export function BillingClient({
                     />
                   </div>
                 )}
-                {/* Edit usage limit button */}
-                <div>
+                {/* Add more credits button */}
+                <div className="flex gap-2">
                   <Button
                     variant="secondary"
                     size="sm"
-                    className="rounded-md bg-gray-50 border font-normal text-xs py-1 hover:bg-gray-100"
-                    disabled
+                    className="rounded-md bg-green-50 border border-green-200 font-normal text-xs py-1 hover:bg-green-100 text-green-700"
+                    disabled={isTopUpLoading}
+                    onClick={async () => {
+                      setIsTopUpLoading(true);
+                      try {
+                        const token = await getToken();
+                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+                        let apiBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+                        if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
+
+                        const res = await fetch(`${apiBase}/billing/allowance/topup`, {
+                          method: 'POST',
+                          headers: {
+                            'Authorization': `Bearer ${token}`,
+                            'Content-Type': 'application/json',
+                          },
+                          body: JSON.stringify({ amountCents: 1000 }), // $10 default
+                        });
+
+                        if (res.ok) {
+                          const data = await res.json();
+                          if (data.checkoutUrl) {
+                            window.location.href = data.checkoutUrl;
+                          }
+                        }
+                      } catch (error) {
+                        console.error('Top-up error:', error);
+                      } finally {
+                        setIsTopUpLoading(false);
+                      }
+                    }}
                   >
-                    Edit Limit
+                    <PlusCircleIcon className="size-3 mr-1" />
+                    {isTopUpLoading ? 'Loading...' : 'Add $10 Credits'}
                   </Button>
                 </div>
               </div>
             </CardContent>
           </Card>
 
-          {/* Partner Payment Method Card - Only shown for partners */}
+          {/* Partner Upgrade / Payment Method Card - Only shown for partners */}
           {isPartner && (
             <Card className="shadow-none border-2 border-yellow-200 bg-yellow-50">
               <CardHeader className="pb-2">
                 <CardTitle className="flex items-center gap-2 text-base">
                   <CreditCardIcon className="size-5 text-yellow-600" />
-                  Partner Payment Method
+                  Unlock Full Features
                 </CardTitle>
                 <CardDescription>
-                  Add a payment method to enable per-usage AI scanning
+                  Upgrade to your own plan for full sync + AI features, or add a payment method for per-usage AI
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                {partnerPaymentMethod?.hasPaymentMethod ? (
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="p-2 bg-white rounded-lg border">
-                        <CreditCardIcon className="size-5 text-gray-600" />
-                      </div>
-                      <div>
-                        <p className="font-medium">
-                          {partnerPaymentMethod.brand || 'Card'} •••• {partnerPaymentMethod.lastFour || '****'}
-                        </p>
-                        {partnerPaymentMethod.expiresAt && (
-                          <p className="text-xs text-muted-foreground">
-                            Expires {partnerPaymentMethod.expiresAt}
-                          </p>
-                        )}
-                      </div>
+                <div className="space-y-4">
+                  {/* Upgrade Option */}
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-green-200">
+                    <TrendingUpIcon className="size-5 text-green-600 mt-0.5 flex-shrink-0" />
+                    <div className="flex-1">
+                      <p className="font-medium text-green-800">Start your own plan</p>
+                      <p className="text-sm text-muted-foreground">
+                        Get your own inventory, full sync, and AI features starting at $20/mo
+                      </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={handleAddPartnerPaymentMethod}
-                      disabled={isAddingPaymentMethod}
+                      onClick={() => setShowTierSelector(true)}
+                      className="border-green-300 text-green-700 hover:bg-green-50"
                     >
-                      {isAddingPaymentMethod ? 'Loading...' : 'Update'}
+                      Upgrade
                     </Button>
                   </div>
-                ) : (
-                  <div className="space-y-4">
+
+                  {/* Payment Method Option */}
+                  {partnerPaymentMethod?.hasPaymentMethod ? (
+                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
+                      <div className="flex items-center gap-3">
+                        <div className="p-2 bg-gray-50 rounded-lg border">
+                          <CreditCardIcon className="size-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">
+                            {partnerPaymentMethod.brand || 'Card'} •••• {partnerPaymentMethod.lastFour || '****'}
+                          </p>
+                          {partnerPaymentMethod.expiresAt && (
+                            <p className="text-xs text-muted-foreground">
+                              Expires {partnerPaymentMethod.expiresAt}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddPartnerPaymentMethod}
+                        disabled={isAddingPaymentMethod}
+                      >
+                        {isAddingPaymentMethod ? 'Loading...' : 'Update'}
+                      </Button>
+                    </div>
+                  ) : (
                     <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-yellow-200">
                       <AlertCircleIcon className="size-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                      <div className="text-sm">
-                        <p className="font-medium text-yellow-800">No payment method on file</p>
-                        <p className="text-muted-foreground">
-                          As a partner, you can use the owner&apos;s AI credits for free. 
-                          To use AI scanning beyond their limits, add your own payment method 
-                          and you&apos;ll be charged $0.20 per scan.
+                      <div className="flex-1">
+                        <p className="font-medium text-yellow-800">Per-usage AI option</p>
+                        <p className="text-sm text-muted-foreground">
+                          Add a payment method to use AI features at $0.20 per scan (billed to you)
                         </p>
                       </div>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={handleAddPartnerPaymentMethod}
+                        disabled={isAddingPaymentMethod}
+                        className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                      >
+                        {isAddingPaymentMethod ? 'Loading...' : 'Add Card'}
+                      </Button>
                     </div>
-                    <Button
-                      onClick={handleAddPartnerPaymentMethod}
-                      disabled={isAddingPaymentMethod}
-                      className="w-full bg-yellow-600 hover:bg-yellow-700"
-                    >
-                      {isAddingPaymentMethod ? 'Loading...' : 'Add Payment Method for AI Scans'}
-                    </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -605,8 +656,8 @@ export function BillingClient({
                     {(() => {
                       // Handle both number and price object formats
                       const total = upcoming.upcoming.total;
-                      const amount = typeof total === 'object' 
-                        ? (total?.price_amount || total?.amount || 0) / 100 
+                      const amount = typeof total === 'object'
+                        ? (total?.price_amount || total?.amount || 0) / 100
                         : (total || 0) / 100;
                       return amount.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
                     })()}
@@ -638,8 +689,8 @@ export function BillingClient({
                           const created = inv.created_at || inv.created;
                           if (!created) return 'N/A';
                           // If it's a small number, it's Unix seconds - convert to ms
-                          const timestamp = typeof created === 'number' && created < 10000000000 
-                            ? created * 1000 
+                          const timestamp = typeof created === 'number' && created < 10000000000
+                            ? created * 1000
                             : created;
                           return new Date(timestamp).toLocaleDateString();
                         })()}</div>
@@ -653,9 +704,9 @@ export function BillingClient({
                               // Use total_amount (cents) if available, else total
                               const amount = inv.total_amount ?? inv.total ?? 0;
                               // Convert cents to dollars
-                              return (amount / 100).toLocaleString(undefined, { 
-                                style: 'currency', 
-                                currency: inv.currency?.toUpperCase() || 'USD' 
+                              return (amount / 100).toLocaleString(undefined, {
+                                style: 'currency',
+                                currency: inv.currency?.toUpperCase() || 'USD'
                               });
                             })()}
                           </div>

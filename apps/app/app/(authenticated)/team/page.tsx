@@ -123,13 +123,6 @@ export default function TeamPage() {
                 */}
 
             {/* @ts-ignore - OrganizationProfile.Page exists at runtime per Clerk docs */}
-            <OrganizationProfile.Page
-              label="Permissions"
-              url="permissions"
-              labelIcon={<Settings className="w-4 h-4" />}
-            >
-              <MemberPermissionsPage />
-            </OrganizationProfile.Page>
 
             <OrganizationProfile.Page
               label="Pools/Permissions"

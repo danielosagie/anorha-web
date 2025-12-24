@@ -11,17 +11,25 @@ nextConfig.images?.remotePatterns?.push({
   hostname: 'assets.basehub.com',
 });
 
-if (process.env.NODE_ENV === 'production') {
-  const redirects: NextConfig['redirects'] = async () => [
-    {
-      source: '/legal',
-      destination: '/legal/privacy',
-      statusCode: 301,
-    },
-  ];
+const redirects: NextConfig['redirects'] = async () => [
+  {
+    source: '/legal',
+    destination: '/legal/privacy',
+    permanent: true,
+  },
+  {
+    source: '/privacy',
+    destination: '/legal/privacy',
+    permanent: true,
+  },
+  {
+    source: '/terms',
+    destination: '/legal/terms',
+    permanent: true,
+  },
+];
 
-  nextConfig.redirects = redirects;
-}
+nextConfig.redirects = redirects;
 
 if (env.VERCEL) {
   nextConfig = withSentry(nextConfig);
