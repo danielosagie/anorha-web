@@ -7,9 +7,16 @@
 import { init, replayIntegration } from '@sentry/nextjs';
 import { keys } from './keys';
 
-export const initializeSentry = (): ReturnType<typeof init> =>
-  init({
-    dsn: keys().NEXT_PUBLIC_SENTRY_DSN,
+export const initializeSentry = (): ReturnType<typeof init> | undefined => {
+  const dsn = keys().NEXT_PUBLIC_SENTRY_DSN;
+
+  // Skip initialization if no DSN is configured
+  if (!dsn) {
+    return undefined;
+  }
+
+  return init({
+    dsn,
 
     // Adjust this value in production, or use tracesSampler for greater control
     tracesSampleRate: 1,
@@ -34,3 +41,4 @@ export const initializeSentry = (): ReturnType<typeof init> =>
       }),
     ],
   });
+};

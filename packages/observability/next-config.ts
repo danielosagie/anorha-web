@@ -38,6 +38,13 @@ export const sentryConfig: Parameters<typeof withSentryConfig>[1] = {
 };
 
 export const withSentry = (sourceConfig: object): object => {
+  const { SENTRY_ORG, SENTRY_PROJECT, NEXT_PUBLIC_SENTRY_DSN } = keys();
+
+  // Skip Sentry wrapping if not configured
+  if (!SENTRY_ORG || !SENTRY_PROJECT || !NEXT_PUBLIC_SENTRY_DSN) {
+    return sourceConfig;
+  }
+
   const configWithTranspile = {
     ...sourceConfig,
     transpilePackages: ['@sentry/nextjs'],

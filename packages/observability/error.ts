@@ -1,6 +1,14 @@
-import { captureException } from '@sentry/nextjs';
-export { captureException };
+import { captureException as sentryCaptureException } from '@sentry/nextjs';
 import { log } from './log';
+import { keys } from './keys';
+
+// Wrapper that only calls Sentry if configured
+export const captureException = (error: unknown): void => {
+  const dsn = keys().NEXT_PUBLIC_SENTRY_DSN;
+  if (dsn) {
+    sentryCaptureException(error);
+  }
+};
 
 export const parseError = (error: unknown): string => {
   let message = 'An error occurred';
