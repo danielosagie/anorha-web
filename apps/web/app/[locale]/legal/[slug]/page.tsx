@@ -1,3 +1,4 @@
+import type React from 'react';
 import { ArrowLeftIcon } from '@radix-ui/react-icons';
 import { createMetadata } from '@repo/seo/metadata';
 import type { Metadata } from 'next';
@@ -9,7 +10,8 @@ type LegalPageProperties = {
   }>;
 };
 
-const legalContent: Record<string, { title: string; description: string; content: JSX.Element }> = {
+const legalContent: Record<string, { title: string; description: string; content: React.ReactNode }> = {
+
   privacy: {
     title: 'Privacy Policy',
     description: 'Privacy policy for Anorha - how we handle your data and protect your privacy',
