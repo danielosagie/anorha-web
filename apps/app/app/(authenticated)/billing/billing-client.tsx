@@ -48,6 +48,8 @@ export function BillingClient({
   const [isAddingPaymentMethod, setIsAddingPaymentMethod] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
+  const [showCreditsModal, setShowCreditsModal] = useState(false);
+  const [selectedCreditAmount, setSelectedCreditAmount] = useState<number | null>(50);
 
   // Check if user is a partner (needs their own payment method for AI scans)
   const isPartner = userRole === 'partner';
@@ -60,6 +62,26 @@ export function BillingClient({
 
   const formatCurrency = (value: number) =>
     value.toLocaleString('en-US', { style: 'currency', currency: 'USD' });
+
+  // Map technical feature keys to user-friendly display names
+  const getFeatureDisplayName = (key: string): string => {
+    const displayNames: Record<string, string> = {
+      'ai_quick_scan': 'Photo Scan',
+      'ai_recognize_match': 'Auto-Match',
+      'ai_generate_groq': 'AI Generation',
+      'ai_generate_scrape_credits': 'Web Research',
+      'ai_insight_generation': 'Insights',
+      'ai_receipt_parsing': 'Receipt Processing',
+      'ai_manifest_analysis': 'Manifest Analysis',
+      'ai_liquidation_research': 'Liquidation Research',
+      'match_serpapi_search': 'Product Search',
+      'generation_firecrawl': 'Web Scraping',
+      'sync': 'Inventory Sync',
+      'import': 'Product Import',
+      'export': 'Product Export',
+    };
+    return displayNames[key] || key.replace(/^ai_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+  };
 
   const planFromSummary =
     summary?.subscription?.CurrentPlan ||
@@ -430,8 +452,7 @@ export function BillingClient({
                       featureEntries.slice(0, 3).map(([key, value]: [string, any]) => (
                         <TableRow key={key}>
                           <TableCell className="text-sm">
-                            {key.replace(/_/g, ' ').charAt(0).toUpperCase() +
-                              key.replace(/_/g, ' ').slice(1)}
+                            {getFeatureDisplayName(key)}
                           </TableCell>
                           <TableCell className="text-right text-sm">
                             {value.totalQuantity || value.count || 0}
@@ -512,45 +533,104 @@ export function BillingClient({
                   </div>
                 )}
                 {/* Add more credits button */}
-                <div className="flex gap-2">
+                <div className="flex flex-col gap-3 mt-2">
                   <Button
-                    variant="secondary"
+                    variant="outline"
                     size="sm"
-                    className="rounded-md bg-green-50 border border-green-200 font-normal text-xs py-1 hover:bg-green-100 text-green-700"
-                    disabled={isTopUpLoading}
-                    onClick={async () => {
-                      setIsTopUpLoading(true);
-                      try {
-                        const token = await getToken();
-                        const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-                        let apiBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-                        if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
-
-                        const res = await fetch(`${apiBase}/billing/allowance/topup`, {
-                          method: 'POST',
-                          headers: {
-                            'Authorization': `Bearer ${token}`,
-                            'Content-Type': 'application/json',
-                          },
-                          body: JSON.stringify({ amountCents: 1000 }), // $10 default
-                        });
-
-                        if (res.ok) {
-                          const data = await res.json();
-                          if (data.checkoutUrl) {
-                            window.location.href = data.checkoutUrl;
-                          }
-                        }
-                      } catch (error) {
-                        console.error('Top-up error:', error);
-                      } finally {
-                        setIsTopUpLoading(false);
-                      }
-                    }}
+                    className="w-fit rounded-md border border-green-300 font-normal text-sm py-2 px-4 hover:bg-green-50 text-green-700"
+                    onClick={() => setShowCreditsModal(true)}
                   >
-                    <PlusCircleIcon className="size-3 mr-1" />
-                    {isTopUpLoading ? 'Loading...' : 'Add $10 Credits'}
+                    <PlusCircleIcon className="size-4 mr-2" />
+                    Add Credits
                   </Button>
+
+                  {/* Credits Modal */}
+                  {showCreditsModal && (
+                    <Card className="p-4 bg-zinc-800 border-zinc-700">
+                      <div className="space-y-3">
+                        <div>
+                          <h3 className="font-semibold text-white">Add Credits</h3>
+                          <p className="text-xs text-zinc-400">Choose an amount to add to your balance</p>
+                        </div>
+
+                        <div className="flex flex-wrap gap-2">
+                          {[10, 25, 50, 100].map((amount) => (
+                            <Button
+                              key={amount}
+                              variant={selectedCreditAmount === amount ? "default" : "outline"}
+                              size="sm"
+                              className={`px-4 py-2 ${selectedCreditAmount === amount ? 'bg-green-600 text-white' : 'border-zinc-600 text-zinc-300 hover:bg-zinc-700'}`}
+                              onClick={() => setSelectedCreditAmount(amount)}
+                            >
+                              ${amount}
+                            </Button>
+                          ))}
+                          <Button
+                            variant={selectedCreditAmount !== null && ![10, 25, 50, 100].includes(selectedCreditAmount) ? "default" : "outline"}
+                            size="sm"
+                            className="px-4 py-2 border-zinc-600 text-zinc-300 hover:bg-zinc-700"
+                            onClick={() => {
+                              const custom = prompt('Enter custom amount in dollars:', '75');
+                              if (custom && !isNaN(Number(custom))) {
+                                setSelectedCreditAmount(Number(custom));
+                              }
+                            }}
+                          >
+                            Custom
+                          </Button>
+                        </div>
+
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            size="sm"
+                            disabled={!selectedCreditAmount || isTopUpLoading}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                            onClick={async () => {
+                              if (!selectedCreditAmount) return;
+                              setIsTopUpLoading(true);
+                              try {
+                                const token = await getToken();
+                                const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
+                                let apiBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+                                if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
+
+                                const res = await fetch(`${apiBase}/billing/allowance/topup`, {
+                                  method: 'POST',
+                                  headers: {
+                                    'Authorization': `Bearer ${token}`,
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({ amountCents: selectedCreditAmount * 100 }),
+                                });
+
+                                if (res.ok) {
+                                  const data = await res.json();
+                                  if (data.checkoutUrl) {
+                                    window.location.href = data.checkoutUrl;
+                                  }
+                                }
+                              } catch (error) {
+                                console.error('Top-up error:', error);
+                              } finally {
+                                setIsTopUpLoading(false);
+                                setShowCreditsModal(false);
+                              }
+                            }}
+                          >
+                            {isTopUpLoading ? 'Processing...' : `Add $${selectedCreditAmount || 0} Credits`}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-zinc-400 hover:text-white"
+                            onClick={() => setShowCreditsModal(false)}
+                          >
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    </Card>
+                  )}
                 </div>
               </div>
             </CardContent>

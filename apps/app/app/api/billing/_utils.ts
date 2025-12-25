@@ -11,7 +11,7 @@ export async function getSupabaseToken() {
     // Get Clerk JWT directly (backend SupabaseAuthGuard handles Clerk JWTs)
     // Use standard Clerk token to avoid "No JWT template exists" errors
     const clerkToken = await getToken();
-    
+
     if (!clerkToken) {
       console.error('[getSupabaseToken] Missing Clerk session token');
       throw new Error('Missing Clerk session token');
@@ -38,11 +38,17 @@ export async function getSupabaseToken() {
 }
 
 export async function getAuthenticatedBackendHeaders() {
-  const { token } = await getSupabaseToken();
-  return {
-    'Authorization': `Bearer ${token}`,
-    'Content-Type': 'application/json',
-  };
+  try {
+    const { token } = await getSupabaseToken();
+    console.log('[getAuthenticatedBackendHeaders] Got token, length:', token?.length || 0);
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
+  } catch (error) {
+    console.error('[getAuthenticatedBackendHeaders] Failed to get token:', error);
+    throw error;
+  }
 }
 
 export function handleBackendError(error: any) {

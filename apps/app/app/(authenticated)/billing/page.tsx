@@ -16,33 +16,52 @@ export const metadata: Metadata = {
 
 async function getBillingData(userRole?: string) {
   const origin = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3000';
-  
+
   // Normalize base URL to always end with /api
   let baseUrl = origin.endsWith('/') ? origin.slice(0, -1) : origin;
   if (!baseUrl.endsWith('/api')) baseUrl = `${baseUrl}/api`;
 
+  console.log('[BillingPage] getBillingData starting, baseUrl:', baseUrl);
+
   try {
     const headers = await getAuthenticatedBackendHeaders();
+    console.log('[BillingPage] Got auth headers, fetching billing data...');
 
     // Use the proxy routes that handle JWT token exchange
     const [summaryRes, invoicesRes, upcomingRes, partnerPaymentRes] = await Promise.all([
-      fetch(`${baseUrl}/billing/summary`, { headers, cache: 'no-store' }).catch(() => null),
-      fetch(`${baseUrl}/billing/invoices?limit=12`, { headers, cache: 'no-store' }).catch(() => null),
-      fetch(`${baseUrl}/billing/upcoming`, { headers, cache: 'no-store' }).catch(() => null),
+      fetch(`${baseUrl}/billing/summary`, { headers, cache: 'no-store' }).catch((e) => {
+        console.error('[BillingPage] Summary fetch error:', e);
+        return null;
+      }),
+      fetch(`${baseUrl}/billing/invoices?limit=12`, { headers, cache: 'no-store' }).catch((e) => {
+        console.error('[BillingPage] Invoices fetch error:', e);
+        return null;
+      }),
+      fetch(`${baseUrl}/billing/upcoming`, { headers, cache: 'no-store' }).catch((e) => {
+        console.error('[BillingPage] Upcoming fetch error:', e);
+        return null;
+      }),
       // Only fetch partner payment method if user is a partner
-      userRole === 'partner' 
-        ? fetch(`${baseUrl}/billing/partner/payment-method`, { headers, cache: 'no-store' }).catch(() => null)
+      userRole === 'partner'
+        ? fetch(`${baseUrl}/billing/partner/payment-method`, { headers, cache: 'no-store' }).catch((e) => {
+          console.error('[BillingPage] Partner payment fetch error:', e);
+          return null;
+        })
         : Promise.resolve(null),
     ]);
+
+    console.log('[BillingPage] Fetch results - summary:', summaryRes?.status, 'invoices:', invoicesRes?.status, 'upcoming:', upcomingRes?.status);
 
     const summary = summaryRes?.ok ? await summaryRes.json() : null;
     const invoices = invoicesRes?.ok ? await invoicesRes.json() : null;
     const upcoming = upcomingRes?.ok ? await upcomingRes.json() : { upcoming: null };
     const partnerPaymentMethod = partnerPaymentRes?.ok ? await partnerPaymentRes.json() : null;
 
+    console.log('[BillingPage] Parsed data - summary:', !!summary, 'invoices:', !!invoices, 'upcoming:', !!upcoming?.upcoming);
+
     return { summary, invoices, upcoming, partnerPaymentMethod } as const;
   } catch (error) {
-    console.error('Failed to fetch billing data:', error);
+    console.error('[BillingPage] Failed to fetch billing data:', error);
     // Return null data instead of throwing to prevent page crash
     return { summary: null, invoices: null, upcoming: { upcoming: null }, partnerPaymentMethod: null } as const;
   }
