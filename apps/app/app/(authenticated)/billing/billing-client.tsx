@@ -546,11 +546,11 @@ export function BillingClient({
 
                   {/* Credits Modal */}
                   {showCreditsModal && (
-                    <Card className="p-4 bg-zinc-800 border-zinc-700">
+                    <Card className="p-4 bg-white border-2 border-gray-200 shadow-lg">
                       <div className="space-y-3">
                         <div>
-                          <h3 className="font-semibold text-white">Add Credits</h3>
-                          <p className="text-xs text-zinc-400">Choose an amount to add to your balance</p>
+                          <h3 className="font-semibold text-gray-900">Add Credits</h3>
+                          <p className="text-xs text-muted-foreground">Choose an amount to add to your balance</p>
                         </div>
 
                         <div className="flex flex-wrap gap-2">
@@ -559,7 +559,7 @@ export function BillingClient({
                               key={amount}
                               variant={selectedCreditAmount === amount ? "default" : "outline"}
                               size="sm"
-                              className={`px-4 py-2 ${selectedCreditAmount === amount ? 'bg-green-600 text-white' : 'border-zinc-600 text-zinc-300 hover:bg-zinc-700'}`}
+                              className={`px-4 py-2 ${selectedCreditAmount === amount ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
                               onClick={() => setSelectedCreditAmount(amount)}
                             >
                               ${amount}
@@ -568,7 +568,7 @@ export function BillingClient({
                           <Button
                             variant={selectedCreditAmount !== null && ![10, 25, 50, 100].includes(selectedCreditAmount) ? "default" : "outline"}
                             size="sm"
-                            className="px-4 py-2 border-zinc-600 text-zinc-300 hover:bg-zinc-700"
+                            className="px-4 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
                             onClick={() => {
                               const custom = prompt('Enter custom amount in dollars:', '75');
                               if (custom && !isNaN(Number(custom))) {
@@ -622,7 +622,7 @@ export function BillingClient({
                           <Button
                             variant="ghost"
                             size="sm"
-                            className="text-zinc-400 hover:text-white"
+                            className="text-gray-500 hover:text-gray-700"
                             onClick={() => setShowCreditsModal(false)}
                           >
                             Cancel

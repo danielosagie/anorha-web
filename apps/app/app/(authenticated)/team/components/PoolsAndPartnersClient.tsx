@@ -210,7 +210,8 @@ export default function PoolsAndPartnersClient() {
     } finally {
       setIsLoading(false);
     }
-  }, [orgId, getToken, organization]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [orgId, getToken]); // Note: organization used inside but ref changes shouldn't trigger reload
 
   useEffect(() => {
     if (isOrgLoaded && isAuthLoaded && orgId) {
@@ -323,6 +324,28 @@ export default function PoolsAndPartnersClient() {
       }
     } catch (e) {
       console.error('Failed to revoke invite:', e);
+    }
+  };
+
+  const revokePartnership = async (partnershipId: string) => {
+    if (!confirm('Are you sure you want to delete this partnership? This will break the sync connection with your partner.')) return;
+
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        setPartnerships(prev => prev.filter(p => p.id !== partnershipId));
+      } else {
+        const errText = await res.text();
+        alert(`Failed to delete partnership: ${errText}`);
+      }
+    } catch (e) {
+      console.error('Failed to delete partnership:', e);
+      alert('Failed to delete partnership');
     }
   };
 
@@ -1003,8 +1026,14 @@ export default function PoolsAndPartnersClient() {
                             </div>
 
                             <div className="flex items-center gap-2 mt-4 sm:mt-0 pl-16 sm:pl-0">
-                              <Button variant="ghost" size="sm" className="text-gray-400 hover:text-gray-600">
-                                <SettingsIcon className="w-4 h-4" />
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="text-red-400 hover:text-red-600 hover:bg-red-50"
+                                onClick={() => revokePartnership(partner.id)}
+                                title="Delete Partnership"
+                              >
+                                <Trash2Icon className="w-4 h-4" />
                               </Button>
                             </div>
                           </div>
