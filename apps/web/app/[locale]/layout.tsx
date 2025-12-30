@@ -23,13 +23,14 @@ export const metadata: Metadata = {
     apple: '/logo.png',
   },
   manifest: '/manifest.json', // For PWA
+  keywords: ['inventory management', 'multi-channel listing', 'shopify sync', 'cross-listing app'],
 };
 
 const RootLayout = async ({ children, params }: RootLayoutProperties) => {
   const { locale } = await params;
   const dictionary = await getDictionary(locale);
 
-  
+
 
   return (
     <html

@@ -3,27 +3,53 @@ import { getSupabaseToken } from '../_utils';
 
 export const dynamic = 'force-dynamic';
 
-export async function POST(request: NextRequest) {
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const tier = searchParams.get('tier') || 'Growth';
+  const shop = searchParams.get('shop'); // For Shopify context
+  const platform = searchParams.get('platform'); // Explicit platform override
+
   try {
-    const body = await request.json().catch(() => ({}));
     const { token, apiBase } = await getSupabaseToken();
-    const res = await fetch(`${apiBase}/billing/checkout`, {
+
+    // Determine provider based on context
+    let paymentProvider = 'stripe';
+    if (shop || platform === 'shopify') paymentProvider = 'shopify';
+    else if (platform === 'square') paymentProvider = 'square';
+    else if (platform === 'clover') paymentProvider = 'clover';
+    else if (process.env.NEXT_PUBLIC_DEFAULT_BILLING_PROVIDER === 'polar') paymentProvider = 'polar';
+
+    const response = await fetch(`${apiBase}/billing/checkout-session`, {
       method: 'POST',
       headers: {
-        Authorization: `Bearer ${token}`,
+        'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        tier,
+        paymentProvider,
+        shop,
+        successUrl: `${process.env.NEXT_PUBLIC_APP_URL}/billing/success`,
+        cancelUrl: `${process.env.NEXT_PUBLIC_APP_URL}/billing`,
+      }),
     });
-    if (!res.ok) {
-      const text = await res.text();
-      return NextResponse.json({ error: text }, { status: res.status });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(`Backend error: ${response.status} ${errorText}`);
     }
-    const { url } = await res.json();
-    return NextResponse.redirect(url, { status: 303 });
-  } catch (e: any) {
-    return NextResponse.json({ error: e?.message || 'Failed to create checkout' }, { status: 500 });
+
+    const { url } = await response.json();
+    if (url) {
+      return NextResponse.redirect(url);
+    }
+
+    throw new Error('No checkout URL returned');
+  } catch (error: any) {
+    console.error('[BillingCheckout] Error:', error);
+    return NextResponse.json(
+      { error: error.message || 'Checkout initialization failed' },
+      { status: 500 }
+    );
   }
 }
-
-

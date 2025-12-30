@@ -49,6 +49,21 @@ export const createMetadata = ({
       locale: 'en_US',
     },
     publisher,
+    robots: {
+      index: true,
+      follow: true,
+      googleBot: {
+        index: true,
+        follow: true,
+        'max-video-preview': -1,
+        'max-image-preview': 'large',
+        'max-snippet': -1,
+      },
+    },
+    alternates: {
+      canonical: productionUrl ? `${protocol}://${productionUrl}` : undefined,
+    },
+    keywords: ['inventory sync', 'liquidation software', 'shopify integration', 'multi-channel selling'],
     twitter: {
       card: 'summary_large_image',
       creator: twitterHandle,

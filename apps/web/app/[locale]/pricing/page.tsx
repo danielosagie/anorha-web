@@ -150,6 +150,20 @@ const Pricing = () => (
         </div>
       </div>
     </div>
+    <script
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{
+        __html: JSON.stringify({
+          '@context': 'https://schema.org',
+          '@type': 'PriceSpecification',
+          price: '40.00',
+          priceCurrency: 'USD',
+          minPrice: '40.00',
+          maxPrice: '500.00',
+          userDefinedValue: false,
+        }),
+      }}
+    />
   </div>
 );
 
