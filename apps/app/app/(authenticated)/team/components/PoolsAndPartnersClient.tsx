@@ -48,6 +48,7 @@ interface Partnership {
   partnerEmail: string;
   poolName: string;
   productCount: number;
+  isPaused?: boolean; // NEW: sync pause status
 }
 
 interface PendingInvite {
@@ -210,7 +211,7 @@ export default function PoolsAndPartnersClient() {
     } finally {
       setIsLoading(false);
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [orgId, getToken]); // Note: organization used inside but ref changes shouldn't trigger reload
 
   useEffect(() => {
@@ -346,6 +347,30 @@ export default function PoolsAndPartnersClient() {
     } catch (e) {
       console.error('Failed to delete partnership:', e);
       alert('Failed to delete partnership');
+    }
+  };
+
+  const togglePartnershipPause = async (partnershipId: string, currentlyPaused: boolean) => {
+    const action = currentlyPaused ? 'resume' : 'pause';
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}/${action}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        // Update local state
+        setPartnerships(prev => prev.map(p =>
+          p.id === partnershipId ? { ...p, isPaused: !currentlyPaused } : p
+        ));
+      } else {
+        const errText = await res.text();
+        alert(`Failed to ${action} partnership: ${errText}`);
+      }
+    } catch (e) {
+      console.error(`Failed to ${action} partnership:`, e);
+      alert(`Failed to ${action} partnership`);
     }
   };
 
@@ -838,8 +863,7 @@ export default function PoolsAndPartnersClient() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column: Invite Action */}
                 <div className="lg:col-span-1 space-y-6">
-                  <Card className="border border-gray-200 shadow-sm overflow-hidden sticky top-4">
-                    <div className="h-2 bg-[#647653]" />
+                  <Card className="border border-gray-200 shadow-sm overflow-hidden sticky top-4 border-t-[#647653] border-2">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <SendIcon className="w-5 h-5 text-[#647653]" />
@@ -1003,7 +1027,10 @@ export default function PoolsAndPartnersClient() {
                                   {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
                                 </div>
                                 <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
-                                  <div className="w-2.5 h-2.5 rounded-full bg-green-500 animate-pulse" />
+                                  <div className={cn(
+                                    "w-2.5 h-2.5 rounded-full",
+                                    partner.isPaused ? "bg-amber-400" : "bg-green-500 animate-pulse"
+                                  )} />
                                 </div>
                               </div>
 
@@ -1025,7 +1052,18 @@ export default function PoolsAndPartnersClient() {
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-2 mt-4 sm:mt-0 pl-16 sm:pl-0">
+                            <div className="flex items-center gap-3 mt-4 sm:mt-0 pl-16 sm:pl-0">
+                              {/* Pause/Resume Toggle */}
+                              <div className="flex items-center gap-2">
+                                <span className={cn("text-xs font-medium", partner.isPaused ? "text-amber-600" : "text-green-600")}>
+                                  {partner.isPaused ? 'Paused' : 'Syncing'}
+                                </span>
+                                <Switch
+                                  checked={!partner.isPaused}
+                                  onCheckedChange={() => togglePartnershipPause(partner.id, !!partner.isPaused)}
+                                  className="data-[state=checked]:bg-green-500"
+                                />
+                              </div>
                               <Button
                                 variant="ghost"
                                 size="sm"

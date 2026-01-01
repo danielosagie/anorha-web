@@ -4,19 +4,30 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo
 import dynamic from 'next/dynamic';
 import { useState } from 'react';
 import { Header } from '../components/header';
-import MemberPermissionsPage from './components/MemberPermissionsPage';
-import ConnectionsPage from './components/ConnectionsPage';
-import { Settings, Link2 } from 'lucide-react';
+import { Settings, Link2, Loader2 } from 'lucide-react';
 
 import { OrganizationProfile, OrganizationSwitcher } from '@clerk/nextjs';
-import PoolsAndPartnersClient from './components/PoolsAndPartnersClient';
+
+// Lazy load heavy components to speed up initial page load
+const PoolsAndPartnersClient = dynamic(
+  () => import('./components/PoolsAndPartnersClient'),
+  {
+    loading: () => (
+      <div className="flex items-center justify-center py-12">
+        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <span className="ml-2 text-gray-500">Loading...</span>
+      </div>
+    ),
+    ssr: false, // Client-only component
+  }
+);
 
 
 export default function TeamPage() {
   const [borderColor, setBorderColor] = useState('rgba(0, 0, 0, 0)');
 
   return (
-    <div className="flex flex-1 flex-col p-2 min-h-[98vh]" style={{ backgroundColor: '#FEF4DD' }}>
+    <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
       <div className="bg-[#FFFCF5] rounded-lg border-2 p-4 flex flex-col flex-1 overflow-hidden" style={{ borderColor: '#AFAFAF' }}>
         <Header page="Team"></Header>
         <div className="flex flex-1 min-h-0 flex-col rounded-lg border-2 border-[#E4E4E7]">

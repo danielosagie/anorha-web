@@ -98,7 +98,14 @@ export default function PartnerAcceptPage() {
         }
     }, [justAuth, isLoaded, isSignedIn, orgListLoaded, hasOrgs, step]);
 
+    const [termsAccepted, setTermsAccepted] = useState(false);
+
     const handleAcceptClick = () => {
+        if (!termsAccepted && isSignedIn) {
+            toast.error("Please accept the partnership terms to proceed.");
+            return;
+        }
+
         if (!isSignedIn) {
             // 1. Redirect to sign-up/in with return URL
             const returnUrl = `/partner/accept/${token}?auth=success`;
@@ -259,6 +266,9 @@ export default function PartnerAcceptPage() {
     }
 
     // Default: 'invite_details'
+    const senderName = invite?.sourceOrg?.Name || invite?.InviteeEmail || 'Partner';
+    const isConsignment = invite?.CanRevoke;
+
     return (
         <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-8 duration-700 fade-in">
             {/* Header Section */}
@@ -270,29 +280,60 @@ export default function PartnerAcceptPage() {
                     Accept Partner Invite
                 </h1>
                 <p className="text-sm text-muted-foreground">
-                    from <span className="font-medium text-foreground">{invite?.sourceOrg?.Name || invite?.InviteeEmail}</span>?
+                    from <span className="font-medium text-foreground">{senderName}</span>
                 </p>
             </div>
 
             {/* Info Card */}
             <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-sm border border-border/50">
                 <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Products</span>
+                    <span className="text-muted-foreground">Products Shared</span>
                     <span className="font-medium bg-white px-2 py-0.5 rounded shadow-sm text-xs border">{invite?.variantCount || 0}</span>
                 </div>
                 <div className="flex justify-between items-center">
                     <span className="text-muted-foreground">Mode</span>
                     <span className="font-medium capitalize flex items-center gap-1.5 bg-white px-2 py-0.5 rounded shadow-sm text-xs border">
-                        {invite?.CanRevoke ? '📦 Consignment' : '🤝 Partnership'}
+                        {isConsignment ? '📦 Consignment' : '🤝 Partnership'}
                     </span>
                 </div>
             </div>
 
+            {/* Terms & Context */}
+            <div className="text-xs text-muted-foreground space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                <p className="font-medium text-gray-900">What does this mean?</p>
+                <ul className="list-disc leading-relaxed pl-4 space-y-1">
+                    {isConsignment ? (
+                        <li>You will receive inventory updates from <strong>{senderName}</strong>.</li>
+                    ) : (
+                        <li>You and <strong>{senderName}</strong> will sync inventory levels.</li>
+                    )}
+                    <li>Product details and prices remain managed by you.</li>
+                    <li>You can disconnect this partnership at any time.</li>
+                </ul>
+            </div>
+
+            {/* Terms Checkbox */}
+            <div className="flex items-start gap-2 pt-2">
+                <div className="flex items-center h-5">
+                    <input
+                        id="terms"
+                        type="checkbox"
+                        checked={termsAccepted}
+                        onChange={(e) => setTermsAccepted(e.target.checked)}
+                        className="h-4 w-4 rounded border-gray-300 text-[#647653] focus:ring-[#647653]"
+                    />
+                </div>
+                <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
+                    I agree to enable inventory synchronization {isConsignment ? 'from' : 'with'} <strong>{senderName}</strong>.
+                </label>
+            </div>
+
             {/* Actions */}
-            <div className="space-y-3">
+            <div className="space-y-3 pt-2">
                 <Button
                     onClick={handleAcceptClick}
-                    className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11 shadow-sm transition-all hover:scale-[1.02]"
+                    disabled={!termsAccepted && isSignedIn}
+                    className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11 shadow-sm transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
                 >
                     Yes, Accept Invite
                 </Button>

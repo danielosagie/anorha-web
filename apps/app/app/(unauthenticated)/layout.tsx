@@ -48,12 +48,10 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
 
       <div className="relative z-20 mt-auto">
         <blockquote className="space-y-2">
-          <p className="text-lg">
-            &ldquo;This library has saved me countless hours of work and helped
-            me deliver stunning designs to my clients faster than ever
-            before.&rdquo;
+          <p className="text-lg text-black/80">
+            &ldquo;We cut our listing time in half and I can just focus on selling. Anorha does all the hard work.&rdquo;
           </p>
-          <footer className="text-sm">Sofia Davis</footer>
+          <footer className="text-sm text-black/60">Sofia Davis — Boutique Owner, LA</footer>
         </blockquote>
       </div>
     </div>

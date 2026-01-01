@@ -12,6 +12,7 @@ import { PageWrapper } from '../components/page-wrapper';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@clerk/nextjs';
+import { Input } from '@repo/design-system/components/ui/input';
 
 interface BillingClientProps {
   summary: any;
@@ -443,7 +444,7 @@ export function BillingClient({
                             / {onDemandLimit || 'unlimited'}
                           </span>
                         </TableCell>
-                        <TableCell className="text-right text-green-700">Included</TableCell>
+                        <TableCell className="text-right text-[#647653] font-medium">Included</TableCell>
                       </TableRow>
                     )}
 
@@ -485,7 +486,7 @@ export function BillingClient({
           </Card>
 
           {/* Current Usage - Match image's two usage bars style */}
-          <Card className="shadow-none mt-4">
+          <Card className="border-2 shadow-none mt-4">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 {/*<TrendingUpIcon className="size-5" />*/}
@@ -528,7 +529,7 @@ export function BillingClient({
                           : 0
                       }
                       className="h-3 bg-gray-200"
-                      indicatorClassName="bg-gray-400"
+                      indicatorClassName="bg-[#647653]"
                     />
                   </div>
                 )}
@@ -537,7 +538,7 @@ export function BillingClient({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-fit rounded-md border border-green-300 font-normal text-sm py-2 px-4 hover:bg-green-50 text-green-700"
+                    className="w-fit rounded-md border-2 border-[#647653] bg-[#647653] font-normal text-sm text-white py-2 px-4 hover:bg-[#647653] hover:text-white hover:border-[#647653] transition-all"
                     onClick={() => setShowCreditsModal(true)}
                   >
                     <PlusCircleIcon className="size-4 mr-2" />
@@ -559,32 +560,43 @@ export function BillingClient({
                               key={amount}
                               variant={selectedCreditAmount === amount ? "default" : "outline"}
                               size="sm"
-                              className={`px-4 py-2 ${selectedCreditAmount === amount ? 'bg-green-600 hover:bg-green-700 text-white' : 'border-gray-300 text-gray-700 hover:bg-gray-50'}`}
+                              className={`px-4 py-2 transition-all ${selectedCreditAmount === amount
+                                ? 'bg-[#647653] hover:bg-[#526144] border-2 border-[#647653] text-white'
+                                : 'border-2 border-gray-300 text-black hover:bg-[#647653] hover:text-white hover:border-[#647653]'
+                                }`}
                               onClick={() => setSelectedCreditAmount(amount)}
                             >
                               ${amount}
                             </Button>
                           ))}
-                          <Button
-                            variant={selectedCreditAmount !== null && ![10, 25, 50, 100].includes(selectedCreditAmount) ? "default" : "outline"}
-                            size="sm"
-                            className="px-4 py-2 border-gray-300 text-gray-700 hover:bg-gray-50"
-                            onClick={() => {
-                              const custom = prompt('Enter custom amount in dollars:', '75');
-                              if (custom && !isNaN(Number(custom))) {
-                                setSelectedCreditAmount(Number(custom));
-                              }
-                            }}
-                          >
-                            Custom
-                          </Button>
+                          {selectedCreditAmount !== null && ![10, 25, 50, 100].includes(selectedCreditAmount) ? (
+                            <div className="relative">
+                              <Input
+                                className="w-24 border-2 border-[#647653] focus-visible:ring-[#647653]"
+                                type="number"
+                                placeholder="Amount"
+                                autoFocus
+                                value={selectedCreditAmount}
+                                onChange={(e) => setSelectedCreditAmount(Number(e.target.value))}
+                              />
+                            </div>
+                          ) : (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="border-2 border-gray-300 text-black hover:bg-[#647653] hover:text-white hover:border-[#647653] py-2 px-4 transition-all"
+                              onClick={() => setSelectedCreditAmount(75)}
+                            >
+                              Custom
+                            </Button>
+                          )}
                         </div>
 
                         <div className="flex gap-2 pt-2">
                           <Button
                             size="sm"
                             disabled={!selectedCreditAmount || isTopUpLoading}
-                            className="bg-green-600 hover:bg-green-700 text-white"
+                            className="bg-[#a1a1a1] hover:bg-[#526144] border-2 border-[#a1a1a1] text-white font-semibold transition-all"
                             onClick={async () => {
                               if (!selectedCreditAmount) return;
                               setIsTopUpLoading(true);
@@ -651,10 +663,10 @@ export function BillingClient({
               <CardContent>
                 <div className="space-y-4">
                   {/* Upgrade Option */}
-                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-green-200">
-                    <TrendingUpIcon className="size-5 text-green-600 mt-0.5 flex-shrink-0" />
+                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border-2 border-[#000]">
+                    <TrendingUpIcon className="size-5 text-[#647653] mt-0.5 flex-shrink-0" />
                     <div className="flex-1">
-                      <p className="font-medium text-green-800">Start your own plan</p>
+                      <p className="font-medium text-[#647653]">Start your own plan</p>
                       <p className="text-sm text-muted-foreground">
                         Get your own inventory, full sync, and AI features starting at $20/mo
                       </p>
@@ -663,7 +675,7 @@ export function BillingClient({
                       variant="outline"
                       size="sm"
                       onClick={() => setShowTierSelector(true)}
-                      className="border-green-300 text-green-700 hover:bg-green-50"
+                      className="border-2 border-[#000] text-black hover:bg-[#647653] hover:text-white hover:border-[#647653] transition-all"
                     >
                       Upgrade
                     </Button>
@@ -710,7 +722,7 @@ export function BillingClient({
                         size="sm"
                         onClick={handleAddPartnerPaymentMethod}
                         disabled={isAddingPaymentMethod}
-                        className="border-yellow-300 text-yellow-700 hover:bg-yellow-50"
+                        className="border-2 border-[#000] text-black hover:bg-[#647653] hover:text-white hover:border-[#647653] transition-all"
                       >
                         {isAddingPaymentMethod ? 'Loading...' : 'Add Card'}
                       </Button>
@@ -777,7 +789,7 @@ export function BillingClient({
                         <div className="text-sm text-muted-foreground">{inv.number || 'Invoice'}</div>
                       </div>
                       <div className="flex items-center gap-3">
-                        <Badge className={inv.status === 'paid' ? 'bg-green-100 text-green-800' : undefined}>{inv.status || 'open'}</Badge>
+                        <Badge className={inv.status === 'paid' ? 'bg-[#647653]/10 text-[#647653] border-[#647653]/20' : undefined}>{inv.status || 'open'}</Badge>
                         <div className="text-right">
                           <div className="font-medium">
                             {(() => {

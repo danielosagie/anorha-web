@@ -40,20 +40,22 @@ export function OrgGuard({ children }: OrgGuardProps) {
         }
     }, [isLoaded, hasOrgs, pathname, router]);
 
-    // While loading, show nothing (or could show a loader)
+    // While loading, show a focused loader to prevent layout shift
     if (!isLoaded) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+            <div className="flex items-center justify-center h-screen bg-[#FEF4DD]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#647653]" />
             </div>
         );
     }
 
-    // If no orgs and not on onboarding, don't render children (will redirect)
-    if (!hasOrgs && !pathname?.includes('/onboarding')) {
+    // If no orgs and not on onboarding/partner paths, redirect
+    // This is a safety fallback for the client side, though the server in AppLayout handles most of this now.
+    const isPublicPath = pathname?.includes('/onboarding') || pathname?.includes('/partner/accept');
+    if (!hasOrgs && !isPublicPath) {
         return (
-            <div className="flex items-center justify-center h-screen">
-                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600" />
+            <div className="flex items-center justify-center h-screen bg-[#FEF4DD]">
+                <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#647653]" />
             </div>
         );
     }

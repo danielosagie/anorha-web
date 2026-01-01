@@ -80,6 +80,20 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
     };
 
     if (mode === 'card') {
+        // Detect if user is on iOS or mobile (client-side only)
+        const [isMobile, setIsMobile] = useState(false);
+        const [isIOS, setIsIOS] = useState(false);
+
+        useEffect(() => {
+            if (typeof window !== 'undefined') {
+                const ua = navigator.userAgent;
+                const mobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua);
+                const ios = /iPhone|iPad|iPod/i.test(ua);
+                setIsMobile(mobile);
+                setIsIOS(ios);
+            }
+        }, []);
+
         return (
             <div className="bg-white rounded-2xl border border-gray-100 p-8 flex flex-col items-center text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div
@@ -92,13 +106,41 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
                 <div className="space-y-2">
                     <h3 className="font-bold text-gray-900 text-xl">Get the Mobile App</h3>
                     <p className="text-gray-500 max-w-xs mx-auto">
-                        Scan this code with your iPhone camera to install the app via TestFlight.
+                        {isMobile
+                            ? (isIOS
+                                ? "Tap below to install via TestFlight."
+                                : "The app is currently available for iOS. Android coming soon!")
+                            : "Scan this code with your iPhone camera to install the app via TestFlight."
+                        }
                     </p>
                 </div>
 
-                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 inline-block">
-                    <QRCode url={TESTFLIGHT_URL} size={200} />
-                </div>
+                {/* Show QR code on desktop, direct button on mobile */}
+                {!isMobile ? (
+                    <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 inline-block">
+                        <QRCode url={TESTFLIGHT_URL} size={200} />
+                    </div>
+                ) : isIOS ? (
+                    <Button
+                        className="w-full max-w-xs h-14 text-lg gap-3"
+                        style={{ backgroundColor: BRAND_GREEN }}
+                        asChild
+                    >
+                        <a href={TESTFLIGHT_URL}>
+                            <span className="text-2xl"></span>
+                            Open in TestFlight
+                        </a>
+                    </Button>
+                ) : (
+                    <div className="w-full max-w-xs bg-gray-50 rounded-xl p-6 border border-gray-100 text-center">
+                        <p className="text-gray-600 text-sm">
+                            📧 Want to be notified when Android is available?
+                        </p>
+                        <p className="text-xs text-gray-400 mt-2">
+                            Contact us at hello@anorha.com
+                        </p>
+                    </div>
+                )}
 
                 <div className="space-y-4 w-full max-w-xs">
                     {INVITE_CODE && (
@@ -120,16 +162,18 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
                         </div>
                     )}
 
-                    <Button
-                        variant="outline"
-                        className="w-full gap-2"
-                        asChild
-                    >
-                        <a href={TESTFLIGHT_URL} target="_blank" rel="noopener noreferrer">
-                            Open TestFlight Link
-                            <span className="text-xs opacity-50">↗</span>
-                        </a>
-                    </Button>
+                    {!isMobile && (
+                        <Button
+                            variant="outline"
+                            className="w-full gap-2"
+                            asChild
+                        >
+                            <a href={TESTFLIGHT_URL} target="_blank" rel="noopener noreferrer">
+                                Open TestFlight Link
+                                <span className="text-xs opacity-50">↗</span>
+                            </a>
+                        </Button>
+                    )}
                 </div>
             </div>
         );
