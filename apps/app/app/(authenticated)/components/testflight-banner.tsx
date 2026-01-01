@@ -1,0 +1,213 @@
+'use client';
+
+import { useState, useEffect, useRef } from 'react';
+import { Button } from '@repo/design-system/components/ui/button';
+import {
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogHeader,
+    DialogTitle,
+    DialogTrigger,
+} from '@repo/design-system/components/ui/dialog';
+import { env } from '@/env';
+
+// Configuration - defaults provided if env vars are missing
+const TESTFLIGHT_URL = env.NEXT_PUBLIC_TESTFLIGHT_URL || 'https://testflight.apple.com/v1/app/6755371742?build=192233562';
+const INVITE_CODE = env.NEXT_PUBLIC_TESTFLIGHT_INVITE_CODE || '';
+
+// Brand colors (matching sidebar active state)
+const BRAND_GREEN = '#647653';
+const BRAND_GREEN_HOVER = '#647653';
+const BRAND_GREEN_LIGHT = 'rgba(100, 118, 83, 0.1)';
+
+// Simple QR Code component using Canvas API with qr-code-generator pattern
+function QRCode({ url, size = 200 }: { url: string; size?: number }) {
+    const canvasRef = useRef<HTMLCanvasElement>(null);
+    const [error, setError] = useState(false);
+
+    useEffect(() => {
+        const canvas = canvasRef.current;
+        if (!canvas) return;
+
+        // Use a reliable external QR code image as fallback
+        const img = new Image();
+        img.crossOrigin = 'anonymous';
+        img.onload = () => {
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, size, size);
+                ctx.drawImage(img, 0, 0, size, size);
+            }
+        };
+        img.onerror = () => setError(true);
+        // Using goqr.me API which is more reliable
+        img.src = `https://api.qrserver.com/v1/create-qr-code/?size=${size}x${size}&data=${encodeURIComponent(url)}&format=png&margin=10`;
+    }, [url, size]);
+
+    if (error) {
+        return (
+            <div
+                className="flex items-center justify-center bg-gray-100 rounded-lg"
+                style={{ width: size, height: size }}
+            >
+                <span className="text-gray-500 text-sm text-center px-4">
+                    QR Code unavailable.<br />
+                    <a href={url} className="text-[#5c9c00] underline">Click here</a>
+                </span>
+            </div>
+        );
+    }
+
+    return (
+        <canvas
+            ref={canvasRef}
+            width={size}
+            height={size}
+            className="rounded-lg"
+        />
+    );
+}
+
+export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card' }) {
+    const [copied, setCopied] = useState(false);
+
+    const handleCopy = async () => {
+        await navigator.clipboard.writeText(INVITE_CODE || TESTFLIGHT_URL);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
+    };
+
+    if (mode === 'card') {
+        return (
+            <div className="bg-white rounded-2xl border border-gray-100 p-8 flex flex-col items-center text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
+                <div
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm mb-2"
+                    style={{ backgroundColor: BRAND_GREEN_LIGHT }}
+                >
+                    📱
+                </div>
+
+                <div className="space-y-2">
+                    <h3 className="font-bold text-gray-900 text-xl">Get the Mobile App</h3>
+                    <p className="text-gray-500 max-w-xs mx-auto">
+                        Scan this code with your iPhone camera to install the app via TestFlight.
+                    </p>
+                </div>
+
+                <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100 inline-block">
+                    <QRCode url={TESTFLIGHT_URL} size={200} />
+                </div>
+
+                <div className="space-y-4 w-full max-w-xs">
+                    {INVITE_CODE && (
+                        <div className="w-full bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-2 border border-gray-100">
+                            <span className="text-gray-500 text-xs uppercase font-semibold tracking-wider">Invite Code</span>
+                            <div className="flex items-center gap-2">
+                                <code className="bg-white px-2 py-1 rounded border text-sm font-mono text-gray-900">
+                                    {INVITE_CODE}
+                                </code>
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={handleCopy}
+                                    className="h-6 w-6 text-gray-400 hover:text-green-600"
+                                >
+                                    {copied ? '✓' : '⎘'}
+                                </Button>
+                            </div>
+                        </div>
+                    )}
+
+                    <Button
+                        variant="outline"
+                        className="w-full gap-2"
+                        asChild
+                    >
+                        <a href={TESTFLIGHT_URL} target="_blank" rel="noopener noreferrer">
+                            Open TestFlight Link
+                            <span className="text-xs opacity-50">↗</span>
+                        </a>
+                    </Button>
+                </div>
+            </div>
+        );
+    }
+
+    // Default 'banner' mode
+    return (
+        <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+                <div
+                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                    style={{ backgroundColor: BRAND_GREEN_LIGHT }}
+                >
+                    📱
+                </div>
+                <div>
+                    <h3 className="font-semibold text-gray-900 text-lg">Get the Mobile App</h3>
+                    <p className="text-gray-500 text-sm">Download for iOS to scan products and sync inventory</p>
+                </div>
+            </div>
+
+            <Dialog>
+                <DialogTrigger asChild>
+                    <Button
+                        style={{ backgroundColor: BRAND_GREEN }}
+                        className="hover:opacity-90 text-white"
+                    >
+                        Show QR Code
+                    </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-md">
+                    <DialogHeader>
+                        <DialogTitle>Download Mobile App</DialogTitle>
+                        <DialogDescription>
+                            Scan this QR code with your iPhone to install via TestFlight.
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="flex flex-col items-center justify-center p-4 space-y-6">
+                        <div className="bg-white p-4 rounded-xl shadow-sm border border-gray-100">
+                            <QRCode url={TESTFLIGHT_URL} size={250} />
+                        </div>
+
+                        {INVITE_CODE && (
+                            <div className="w-full bg-gray-50 rounded-lg p-3 flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2">
+                                    <span className="text-gray-500 text-sm">Invite code:</span>
+                                    <code className="bg-white px-2 py-1 rounded border text-sm font-mono text-gray-900">
+                                        {INVITE_CODE}
+                                    </code>
+                                </div>
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={handleCopy}
+                                    className="h-8 text-gray-500"
+                                    style={{ color: copied ? BRAND_GREEN : undefined }}
+                                >
+                                    {copied ? 'Copied!' : 'Copy'}
+                                </Button>
+                            </div>
+                        )}
+
+                        <div className="text-center">
+                            <a
+                                href={TESTFLIGHT_URL}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="text-sm font-medium hover:underline"
+                                style={{ color: BRAND_GREEN }}
+                            >
+                                Open TestFlight Link Directly →
+                            </a>
+                        </div>
+                    </div>
+                </DialogContent>
+            </Dialog>
+        </div>
+    );
+}
+

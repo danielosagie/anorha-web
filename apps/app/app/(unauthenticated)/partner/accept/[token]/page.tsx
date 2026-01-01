@@ -1,9 +1,14 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useRouter } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
+import { useParams, useRouter, useSearchParams } from 'next/navigation';
+import { useAuth, useOrganizationList, CreateOrganization } from '@clerk/nextjs';
 import Link from 'next/link';
+import { TestFlightBanner } from '@/app/(authenticated)/components/testflight-banner';
+import { Button } from '@repo/design-system/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
+import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface InviteDetails {
     Id: string;
@@ -22,26 +27,34 @@ interface InviteDetails {
     variantCount?: number;
 }
 
+type FlowStep = 'loading' | 'error' | 'invite_details' | 'create_org' | 'accepting' | 'success';
+
 export default function PartnerAcceptPage() {
     const params = useParams();
     const router = useRouter();
+    const searchParams = useSearchParams();
     const { isLoaded, isSignedIn, getToken } = useAuth();
+    const { userMemberships, isLoaded: orgListLoaded } = useOrganizationList({
+        userMemberships: { infinite: true },
+    });
 
     const token = params.token as string;
+    // Check if we just came back from auth flow
+    const justAuth = searchParams.get('auth') === 'success';
 
-    const [loading, setLoading] = useState(true);
-    const [accepting, setAccepting] = useState(false);
+    const [step, setStep] = useState<FlowStep>('loading');
     const [error, setError] = useState<string | null>(null);
     const [invite, setInvite] = useState<InviteDetails | null>(null);
-    const [success, setSuccess] = useState(false);
+    const [linkedCount, setLinkedCount] = useState<number>(0);
 
-    // Fetch invite details (public endpoint)
+    const hasOrgs = userMemberships?.data && userMemberships.data.length > 0;
+
+    // Fetch invite details
     useEffect(() => {
         if (!token) return;
 
         const fetchInvite = async () => {
             try {
-                // Normalize API base URL - ensure it ends with /api
                 let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
                 if (!apiBase.endsWith('/api')) {
                     apiBase = `${apiBase}/api`;
@@ -50,35 +63,69 @@ export default function PartnerAcceptPage() {
 
                 if (!res.ok) {
                     const text = await res.text();
+                    // If 404/400, handle nicely
                     throw new Error(text || 'Invite not found');
                 }
 
                 const data = await res.json();
                 setInvite(data);
+
+                // If already accepted, go to success
+                if (data.Status?.toLowerCase() === 'accepted') {
+                    setStep('success');
+                } else {
+                    setStep('invite_details');
+                }
             } catch (err: any) {
                 setError(err.message || 'Failed to load invite');
-            } finally {
-                setLoading(false);
+                setStep('error');
             }
         };
 
         fetchInvite();
     }, [token]);
 
-    // Accept the invite
-    const handleAccept = async () => {
+    // Handle flow logic when dependencies load
+    useEffect(() => {
+        if (justAuth && isLoaded && isSignedIn && step === 'invite_details') {
+            if (orgListLoaded) {
+                if (!hasOrgs) {
+                    setStep('create_org');
+                } else {
+                    acceptInvite();
+                }
+            }
+        }
+    }, [justAuth, isLoaded, isSignedIn, orgListLoaded, hasOrgs, step]);
+
+    const handleAcceptClick = () => {
         if (!isSignedIn) {
-            // Redirect to sign-in with return URL
-            router.push(`/sign-in?redirect_url=/partner/accept/${token}`);
+            // 1. Redirect to sign-up/in with return URL
+            const returnUrl = `/partner/accept/${token}?auth=success`;
+            router.push(`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`);
             return;
         }
 
-        setAccepting(true);
+        // 2. Signed in - check orgs
+        if (orgListLoaded && !hasOrgs) {
+            setStep('create_org');
+            return;
+        }
+
+        // 3. Signed in & Has Orgs - Accept
+        acceptInvite();
+    };
+
+    const handleDeclineClick = () => {
+        router.push('/');
+    };
+
+    const acceptInvite = async () => {
+        setStep('accepting');
         setError(null);
 
         try {
             const authToken = await getToken();
-            // Normalize API base URL - ensure it ends with /api
             let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
             if (!apiBase.endsWith('/api')) {
                 apiBase = `${apiBase}/api`;
@@ -98,229 +145,165 @@ export default function PartnerAcceptPage() {
                 throw new Error(text || 'Failed to accept invite');
             }
 
-            setSuccess(true);
+            const result = await res.json();
+            setLinkedCount(result.linkedCount || 0);
+            setStep('success');
+            toast.success('Partnership established!');
         } catch (err: any) {
+            console.error(err);
             setError(err.message || 'Failed to accept invite');
-        } finally {
-            setAccepting(false);
+            setStep('invite_details'); // Go back to allow retry
         }
     };
 
-    if (loading) {
+    // --- Render Steps ---
+
+    if (step === 'loading') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50">
-                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-green-600"></div>
+            <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-700">
+                <Loader2 className="h-8 w-8 animate-spin text-[#5c9c00]" />
+                <p className="text-muted-foreground">Loading invite...</p>
             </div>
         );
     }
 
-    if (error && !invite) {
+    if (step === 'error') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-                <div className="max-w-md w-full bg-white rounded-xl shadow-lg p-8 text-center">
-                    <div className="text-6xl mb-4">❌</div>
-                    <h1 className="text-2xl font-bold text-gray-900 mb-2">Invite Not Found</h1>
-                    <p className="text-gray-600 mb-6">{error}</p>
-                    <Link
-                        href="/team"
-                        className="inline-block bg-green-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-green-700"
-                    >
-                        Go to Team Page
-                    </Link>
+            <Card className="w-full border-red-200 animate-in zoom-in-95 duration-500">
+                <CardHeader>
+                    <div className="text-4xl mb-2 text-center">❌</div>
+                    <CardTitle className="text-center text-red-700">Invite Issue</CardTitle>
+                </CardHeader>
+                <CardContent className="text-center space-y-4">
+                    <p className="text-gray-600">{error}</p>
+                    <Button onClick={() => router.push('/')} variant="outline" className="w-full">
+                        Go Home
+                    </Button>
+                </CardContent>
+            </Card>
+        );
+    }
+
+    if (step === 'create_org') {
+        return (
+            <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-8 duration-700 fade-in">
+                <div className="flex flex-col space-y-2 text-center">
+                    <h1 className="text-2xl font-semibold tracking-tight">
+                        Welcome to Anorha!
+                    </h1>
+                    <p className="text-sm text-muted-foreground">
+                        Create an organization to start managing your inventory across platforms.
+                    </p>
                 </div>
+
+                <Card className="border-0 shadow-none bg-transparent">
+                    <CardContent className="p-0 flex justify-center">
+                        <CreateOrganization
+                            afterCreateOrganizationUrl={`/partner/accept/${token}`}
+                            appearance={{
+                                elements: {
+                                    rootBox: "w-full shadow-none",
+                                    card: "shadow-none border border-gray-200 w-full",
+                                    headerTitle: "hidden",
+                                    headerSubtitle: "hidden",
+                                }
+                            }}
+                        />
+                    </CardContent>
+                </Card>
             </div>
         );
     }
 
-    if (success) {
+    if (step === 'accepting') {
         return (
-            <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-                <div className="max-w-lg w-full bg-white rounded-xl shadow-lg overflow-hidden">
-                    {/* Success Header */}
-                    <div className="bg-green-600 px-8 py-6 text-center">
-                        <div className="text-5xl mb-2">🎉</div>
-                        <h1 className="text-2xl font-bold text-white">Partnership Activated!</h1>
-                    </div>
-
-                    <div className="p-8">
-                        <p className="text-gray-600 text-center mb-6">
-                            You're now connected with <span className="font-semibold">{invite?.sourceOrg?.Name || 'your partner'}</span>.
-                            Their products will sync to your account.
-                        </p>
-
-                        {/* Onboarding Steps */}
-                        <div className="bg-gray-50 rounded-xl p-6 mb-6">
-                            <h2 className="font-bold text-gray-900 mb-4">📱 Get Started</h2>
-                            <div className="space-y-4">
-                                {/* Step 1 - Account Created */}
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center text-sm font-bold">✓</div>
-                                    <div>
-                                        <p className="font-medium text-gray-900">Account Created</p>
-                                        <p className="text-sm text-gray-500">You're all set up!</p>
-                                    </div>
-                                </div>
-
-                                {/* Step 2 - Download App */}
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-blue-500 text-white flex items-center justify-center text-sm font-bold">2</div>
-                                    <div className="flex-1">
-                                        <p className="font-medium text-gray-900">Download the App</p>
-                                        <p className="text-sm text-gray-500">Manage inventory on the go</p>
-                                    </div>
-                                </div>
-
-                                {/* Step 3 - Connect Platform */}
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">3</div>
-                                    <div>
-                                        <p className="font-medium text-gray-700">Connect Your Platform</p>
-                                        <p className="text-sm text-gray-500">Link Shopify, Square, or other POS</p>
-                                    </div>
-                                </div>
-
-                                {/* Step 4 - Auto Sync */}
-                                <div className="flex items-center gap-3">
-                                    <div className="w-8 h-8 rounded-full bg-gray-300 text-gray-600 flex items-center justify-center text-sm font-bold">4</div>
-                                    <div>
-                                        <p className="font-medium text-gray-700">Auto-Sync Active</p>
-                                        <p className="text-sm text-gray-500">Inventory syncs automatically</p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        {/* Download App CTA */}
-                        <div className="space-y-3">
-                            <a
-                                href="https://anorha.app"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                className="block w-full bg-green-600 text-white px-6 py-4 rounded-lg font-semibold text-center hover:bg-green-700 transition-colors"
-                            >
-                                📱 Download Mobile App
-                            </a>
-
-                            <Link
-                                href="/team#partners"
-                                className="block w-full bg-gray-100 text-gray-700 px-6 py-3 rounded-lg font-medium text-center hover:bg-gray-200 transition-colors"
-                            >
-                                Continue on Web →
-                            </Link>
-                        </div>
-
-                        <p className="text-sm text-gray-500 text-center mt-4">
-                            For the best experience, we recommend using the mobile app to manage your inventory.
-                        </p>
-                    </div>
-                </div>
+            <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500">
+                <Loader2 className="h-8 w-8 animate-spin text-[#5c9c00]" />
+                <p className="text-muted-foreground">Establishing partnership...</p>
             </div>
         );
     }
 
-    const isExpired = invite?.ExpiresAt && new Date(invite.ExpiresAt) < new Date();
-    const isAlreadyAccepted = invite?.Status?.toLowerCase() === 'accepted';
-
-    return (
-        <div className="min-h-screen flex items-center justify-center bg-gray-50 p-4">
-            <div className="max-w-lg w-full bg-white rounded-xl shadow-lg overflow-hidden">
-                {/* Header */}
-                <div className="bg-green-600 px-8 py-6 text-center">
-                    <h1 className="text-2xl font-bold text-white">Partner Invitation</h1>
+    if (step === 'success') {
+        return (
+            <div className="flex flex-col space-y-6 text-center animate-in zoom-in-95 slide-in-from-bottom-4 duration-700 fade-in">
+                <div className="flex flex-col space-y-2">
+                    <h1 className="text-2xl font-bold text-gray-900">
+                        Partnership Established!
+                    </h1>
+                    {linkedCount > 0 && (
+                        <p className="text-sm text-muted-foreground">
+                            {linkedCount} products ready to sync.
+                        </p>
+                    )}
                 </div>
 
-                {/* Content */}
-                <div className="p-8">
-                    {isExpired && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                            <p className="text-red-700 font-medium">This invite has expired.</p>
-                        </div>
-                    )}
+                <div className="text-left">
+                    <TestFlightBanner mode="card" />
+                </div>
 
-                    {isAlreadyAccepted && (
-                        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                            <p className="text-blue-700 font-medium">This invite has already been accepted.</p>
-                        </div>
-                    )}
-
-                    <div className="text-center mb-8">
-                        <p className="text-lg text-gray-700">
-                            <span className="font-bold text-gray-900">{invite?.sourceOrg?.Name || 'A partner'}</span>
-                            {' '}wants to share inventory with you
-                        </p>
-                    </div>
-
-                    {/* Details */}
-                    <div className="bg-gray-50 rounded-lg p-4 mb-6 space-y-3">
-                        {invite?.pool?.name && (
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Pool:</span>
-                                <span className="font-medium text-gray-900">{invite.pool.name}</span>
-                            </div>
-                        )}
-                        {invite?.variantCount !== undefined && (
-                            <div className="flex justify-between">
-                                <span className="text-gray-600">Products:</span>
-                                <span className="font-medium text-gray-900">{invite.variantCount}</span>
-                            </div>
-                        )}
-                        <div className="flex justify-between">
-                            <span className="text-gray-600">Type:</span>
-                            <span className="font-medium text-gray-900 capitalize">
-                                {invite?.CanRevoke ? '📦 Consignment' : '🤝 Partnership'}
-                            </span>
-                        </div>
-                    </div>
-
-                    {invite?.CanRevoke && (
-                        <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-6">
-                            <p className="text-sm text-yellow-800">
-                                <strong>Consignment Mode:</strong> The sender retains control of these products and can update inventory/pricing.
-                            </p>
-                        </div>
-                    )}
-
-                    {error && (
-                        <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-                            <p className="text-red-700">{error}</p>
-                        </div>
-                    )}
-
-                    {/* Actions */}
-                    {!isExpired && !isAlreadyAccepted && (
-                        <div className="space-y-3">
-                            {!isSignedIn && isLoaded && (
-                                <p className="text-center text-sm text-gray-600 mb-4">
-                                    You'll need to sign in to accept this invitation.
-                                </p>
-                            )}
-
-                            <button
-                                onClick={handleAccept}
-                                disabled={accepting}
-                                className="w-full bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                {accepting ? 'Accepting...' : isSignedIn ? 'Accept Invitation' : 'Sign In & Accept'}
-                            </button>
-
-                            <Link
-                                href="/"
-                                className="block w-full text-center py-3 px-6 rounded-lg font-medium text-gray-600 hover:bg-gray-100"
-                            >
-                                Decline
-                            </Link>
-                        </div>
-                    )}
-
-                    {(isExpired || isAlreadyAccepted) && (
-                        <Link
-                            href="/team#partners"
-                            className="block w-full text-center bg-green-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-green-700"
+                <div className="space-y-4 pt-4 border-t">
+                    <Link href="/">
+                        <Button
+                            className="w-full bg-gray-900 hover:bg-gray-800 text-white"
                         >
-                            Go to Partnerships
-                        </Link>
-                    )}
+                            Go to Web App
+                        </Button>
+                    </Link>
+                    <p className="text-xs text-muted-foreground">
+                        Setup teams & billing
+                    </p>
                 </div>
+            </div>
+        );
+    }
+
+    // Default: 'invite_details'
+    return (
+        <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-8 duration-700 fade-in">
+            {/* Header Section */}
+            <div className="flex flex-col space-y-2 text-center">
+                <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center text-xl mb-2 shadow-sm">
+                    🤝
+                </div>
+                <h1 className="text-2xl font-semibold tracking-tight">
+                    Accept Partner Invite
+                </h1>
+                <p className="text-sm text-muted-foreground">
+                    from <span className="font-medium text-foreground">{invite?.sourceOrg?.Name || invite?.InviteeEmail}</span>?
+                </p>
+            </div>
+
+            {/* Info Card */}
+            <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-sm border border-border/50">
+                <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Products</span>
+                    <span className="font-medium bg-white px-2 py-0.5 rounded shadow-sm text-xs border">{invite?.variantCount || 0}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                    <span className="text-muted-foreground">Mode</span>
+                    <span className="font-medium capitalize flex items-center gap-1.5 bg-white px-2 py-0.5 rounded shadow-sm text-xs border">
+                        {invite?.CanRevoke ? '📦 Consignment' : '🤝 Partnership'}
+                    </span>
+                </div>
+            </div>
+
+            {/* Actions */}
+            <div className="space-y-3">
+                <Button
+                    onClick={handleAcceptClick}
+                    className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11 shadow-sm transition-all hover:scale-[1.02]"
+                >
+                    Yes, Accept Invite
+                </Button>
+
+                <Button
+                    onClick={handleDeclineClick}
+                    variant="ghost"
+                    className="w-full h-11 text-muted-foreground hover:text-foreground"
+                >
+                    No, Decline
+                </Button>
             </div>
         </div>
     );

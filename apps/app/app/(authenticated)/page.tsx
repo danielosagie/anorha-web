@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { InConstruction } from './components/in-construction';
 import { PageWrapper } from './components/page-wrapper';
+import { TestFlightBanner } from './components/testflight-banner';
 
 export const metadata: Metadata = {
   title: 'Dashboard | Anorha',
@@ -16,6 +17,7 @@ const App = () => {
   return (
     <div className="bg-[#FEF4DD]">
       <PageWrapper title='Dashboard' description='Stay up to date' >
+        <TestFlightBanner />
         <InConstruction />
       </PageWrapper>
     </div>

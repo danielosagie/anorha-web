@@ -20,12 +20,16 @@ api_version = "2025-04"
 
 [[webhooks.subscriptions]]
 topics = ["products/create", "products/update", "products/delete"]
-uri = "https://api.sssync.app/api/webhooks/shopify"
+uri = "https://api.sssync.app/webhooks/shopify"
 
 [[webhooks.subscriptions]]
 topics = ["inventory_levels/update"]
-uri = "https://api.sssync.app/api/webhooks/shopify"
+uri = "https://api.sssync.app/webhooks/shopify"
+
+[[webhooks.subscriptions]]
+topics = ["app_subscriptions/update", "app/uninstalled"]
+uri = "https://api.sssync.app/webhooks/shopify"
 
 [[webhooks.subscriptions]]
 compliance_topics = ["customers/data_request", "customers/redact", "shop/redact"]
-uri = "https://api.sssync.app/api/webhooks/shopify"
+uri = "https://api.sssync.app/webhooks/shopify"
