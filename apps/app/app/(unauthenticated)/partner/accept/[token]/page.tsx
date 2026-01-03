@@ -319,28 +319,59 @@ export default function PartnerAcceptPage() {
 
     // Step 3: Success & Actions
     const renderStep3 = () => (
-        <div className="flex flex-col space-y-6 text-center animate-in zoom-in-95 slide-in-from-bottom-4 duration-700 fade-in">
-            <div className="mx-auto h-16 w-16 rounded-full bg-green-100 flex items-center justify-center text-3xl mb-2 text-green-600 shadow-sm">
-                🎉
-            </div>
-            <div className="flex flex-col space-y-2">
-                <h1 className="text-2xl font-bold text-gray-900">Partnership Established!</h1>
-                {linkedCount > 0 && <p className="text-sm text-muted-foreground">{linkedCount} products ready to sync.</p>}
+        <div className="flex flex-col space-y-8 text-center animate-in zoom-in-95 slide-in-from-bottom-4 duration-700 fade-in relative">
+            {/* Celebration confetti effect */}
+            <div className="absolute inset-0 overflow-hidden pointer-events-none">
+                <div className="absolute top-0 left-1/4 w-2 h-2 bg-[#647653] rounded-full animate-bounce opacity-60" style={{ animationDelay: '0ms', animationDuration: '1.5s' }} />
+                <div className="absolute top-2 right-1/4 w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: '200ms', animationDuration: '1.8s' }} />
+                <div className="absolute top-4 left-1/3 w-1 h-1 bg-emerald-400 rounded-full animate-bounce opacity-50" style={{ animationDelay: '400ms', animationDuration: '2s' }} />
+                <div className="absolute top-1 right-1/3 w-2 h-2 bg-blue-400 rounded-full animate-bounce opacity-50" style={{ animationDelay: '300ms', animationDuration: '1.7s' }} />
             </div>
 
-            <div className="space-y-3 pt-6 pb-2">
-                <p className="text-sm font-medium text-gray-900">What would you like to do next?</p>
+            {/* Success icon with glow effect */}
+            <div className="relative mx-auto">
+                <div className="absolute inset-0 bg-[#647653]/20 rounded-full blur-xl scale-150 animate-pulse" />
+                <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-[#647653] to-[#4a5a3c] flex items-center justify-center text-4xl shadow-lg shadow-[#647653]/25">
+                    🎉
+                </div>
+            </div>
+
+            {/* Success message with gradient accent */}
+            <div className="flex flex-col space-y-2">
+                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-[#647653] to-gray-900 bg-clip-text text-transparent">
+                    Partnership Established!
+                </h1>
+                {linkedCount > 0 && (
+                    <p className="text-sm text-muted-foreground">
+                        <span className="inline-flex items-center gap-1.5 bg-[#647653]/10 text-[#647653] px-3 py-1 rounded-full font-medium">
+                            ✓ {linkedCount} products ready to sync
+                        </span>
+                    </p>
+                )}
+            </div>
+
+            {/* Action cards in glassmorphic container */}
+            <div className="space-y-4 pt-2">
+                <p className="text-sm font-medium text-gray-700">What would you like to do next?</p>
 
                 <Link href="/" className="block w-full">
-                    <Button variant="outline" className="w-full h-12 border-gray-300 hover:bg-gray-50 flex items-center justify-center gap-2">
-                        <LayoutDashboard className="h-4 w-4" />
-                        Open Web Dashboard
+                    <Button
+                        variant="outline"
+                        className="w-full h-14 border-gray-200 hover:bg-gray-50 hover:border-[#647653]/30 flex items-center justify-center gap-3 rounded-xl transition-all duration-200 hover:shadow-md group"
+                    >
+                        <LayoutDashboard className="h-5 w-5 text-gray-500 group-hover:text-[#647653] transition-colors" />
+                        <span className="font-medium">Open Web Dashboard</span>
                     </Button>
                 </Link>
 
-                <div className="pt-2">
-                    <TestFlightBanner mode="card" />
+                <div className="relative">
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-200 to-transparent h-px top-1/2" />
+                    <span className="relative bg-white px-4 text-xs text-gray-400 font-medium uppercase tracking-wider">
+                        or
+                    </span>
                 </div>
+
+                <TestFlightBanner mode="card" />
             </div>
         </div>
     );

@@ -39,7 +39,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
           height={32}
           className="h-8 w-8"
         />
-        <span className="font-medium text-black text-lg">Anorha</span>
+        <span className="font-medium text-white text-lg mix-blend-difference">Anorha</span>
       </div>
 
       <div className="absolute top-4 right-4 z-20">
@@ -48,10 +48,10 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
 
       <div className="relative z-20 mt-auto">
         <blockquote className="space-y-2">
-          <p className="text-lg text-black/80">
+          <p className="text-lg text-white mix-blend-difference">
             &ldquo;We cut our listing time in half and I can just focus on selling. Anorha does all the hard work.&rdquo;
           </p>
-          <footer className="text-sm text-black/60">Sofia Davis — Boutique Owner, LA</footer>
+          <footer className="text-sm text-white/80 mix-blend-difference">Sofia Davis — Boutique Owner, LA</footer>
         </blockquote>
       </div>
     </div>
