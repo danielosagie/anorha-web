@@ -12,7 +12,7 @@ import { cn } from '@repo/design-system/lib/utils';
 import {
   MapPinIcon, UsersIcon, Link2Icon, PlusIcon, Trash2Icon,
   Loader2Icon, CheckIcon, SendIcon, CopyIcon,
-  SettingsIcon, ChevronRightIcon, ShieldIcon
+  SettingsIcon, ChevronRightIcon, ShieldIcon, EyeIcon, EyeOffIcon
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -1404,6 +1404,8 @@ export default function PoolsAndPartnersClient() {
             </Button>
           </div>
         </div>
+      )}
+
       {/* Create Location Modal */}
       {showCreateLocation && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
