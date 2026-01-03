@@ -48,7 +48,10 @@ interface Partnership {
   partnerEmail: string;
   poolName: string;
   productCount: number;
-  isPaused?: boolean; // NEW: sync pause status
+  isPaused?: boolean;
+  direction: 'sent' | 'received'; // Whether we sent or received this partnership
+  shareType?: 'consignment' | 'wholesale' | 'sync';
+  canTerminate?: boolean; // Whether current user can terminate
 }
 
 interface PendingInvite {
@@ -57,6 +60,18 @@ interface PendingInvite {
   poolName: string;
   expiresAt: string;
   inviteLink: string;
+}
+
+interface LinkedProduct {
+  id: string;
+  sourceVariantId: string;
+  sourceVariantTitle: string;
+  sourceVariantSku: string;
+  targetVariantId?: string;
+  status: 'active' | 'paused' | 'revoked' | 'terminated';
+  visibilityStatus?: 'available' | 'out_of_stock' | 'hidden' | 'revoked';
+  sharedQuantity?: number;
+  lastSyncAt?: string;
 }
 
 type Tab = 'pools' | 'partners' | 'team';
@@ -115,6 +130,11 @@ export default function PoolsAndPartnersClient() {
     canCreateLocations: boolean;
   }
   const [connectionsWithCapabilities, setConnectionsWithCapabilities] = useState<ConnectionCapability[]>([]);
+
+  // Linked Products State
+  const [expandedPartnership, setExpandedPartnership] = useState<string | null>(null);
+  const [linkedProducts, setLinkedProducts] = useState<Record<string, LinkedProduct[]>>({});
+  const [loadingLinkedProducts, setLoadingLinkedProducts] = useState<string | null>(null);
 
   const loadData = useCallback(async () => {
     if (!orgId) return;
@@ -339,25 +359,32 @@ export default function PoolsAndPartnersClient() {
     }
   };
 
-  const revokePartnership = async (partnershipId: string) => {
-    if (!confirm('Are you sure you want to delete this partnership? This will break the sync connection with your partner.')) return;
+  const terminatePartnership = async (partnershipId: string, cleanup: boolean = true) => {
+    const message = cleanup
+      ? 'Are you sure you want to end this partnership? This will remove all shared products from the partner\'s account.'
+      : 'Are you sure you want to end this partnership? Shared products will remain but sync will stop.';
+    if (!confirm(message)) return;
 
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}?orgId=${orgId}`, {
+      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}?cleanup=${cleanup}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
 
       if (res.ok) {
+        const result = await res.json();
         setPartnerships(prev => prev.filter(p => p.id !== partnershipId));
+        if (result.cleanedUp) {
+          alert(`Partnership ended. Cleaned up ${result.cleanedUp.variants} products.`);
+        }
       } else {
         const errText = await res.text();
-        alert(`Failed to delete partnership: ${errText}`);
+        alert(`Failed to end partnership: ${errText}`);
       }
     } catch (e) {
-      console.error('Failed to delete partnership:', e);
-      alert('Failed to delete partnership');
+      console.error('Failed to end partnership:', e);
+      alert('Failed to end partnership');
     }
   };
 
@@ -384,6 +411,95 @@ export default function PoolsAndPartnersClient() {
       alert(`Failed to ${action} partnership`);
     }
   };
+
+  // ========================================================================
+  // LINKED PRODUCTS FUNCTIONS
+  // ========================================================================
+
+  const fetchLinkedProducts = async (partnershipId: string) => {
+    if (linkedProducts[partnershipId]) {
+      // Already loaded, just toggle expansion
+      setExpandedPartnership(expandedPartnership === partnershipId ? null : partnershipId);
+      return;
+    }
+
+    setLoadingLinkedProducts(partnershipId);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}/products`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        setLinkedProducts(prev => ({ ...prev, [partnershipId]: data }));
+        setExpandedPartnership(partnershipId);
+      } else {
+        console.error('Failed to fetch linked products');
+      }
+    } catch (e) {
+      console.error('Error fetching linked products:', e);
+    } finally {
+      setLoadingLinkedProducts(null);
+    }
+  };
+
+  const toggleLinkSync = async (linkId: string, partnershipId: string, currentlyPaused: boolean) => {
+    const action = currentlyPaused ? 'resume' : 'pause';
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}/api/cross-org/links/${linkId}/${action}`, {
+        method: 'PATCH',
+        headers: { Authorization: `Bearer ${token}` }
+      });
+
+      if (res.ok) {
+        // Update local state
+        setLinkedProducts(prev => ({
+          ...prev,
+          [partnershipId]: prev[partnershipId]?.map(p =>
+            p.id === linkId ? { ...p, status: currentlyPaused ? 'active' : 'paused' } : p
+          ) || []
+        }));
+      } else {
+        alert('Failed to update link sync status');
+      }
+    } catch (e) {
+      console.error('Error toggling link sync:', e);
+    }
+  };
+
+  const toggleLinkVisibility = async (linkId: string, partnershipId: string, currentlyHidden: boolean) => {
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}/api/cross-org/links/${linkId}/visibility`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ hidden: !currentlyHidden })
+      });
+
+      if (res.ok) {
+        // Update local state
+        setLinkedProducts(prev => ({
+          ...prev,
+          [partnershipId]: prev[partnershipId]?.map(p =>
+            p.id === linkId ? {
+              ...p,
+              visibilityStatus: currentlyHidden ? 'available' : 'hidden'
+            } : p
+          ) || []
+        }));
+      } else {
+        alert('Failed to update visibility');
+      }
+    } catch (e) {
+      console.error('Error toggling visibility:', e);
+    }
+  };
+
 
   const copyToClipboard = async (text: string) => {
     try {
@@ -1030,61 +1146,216 @@ export default function PoolsAndPartnersClient() {
                         {partnerships.map((partner) => (
                           <div
                             key={partner.id}
-                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-[#647653]/30 hover:shadow-md transition-all duration-200"
+                            className="bg-white border border-gray-200 rounded-xl shadow-sm hover:border-[#647653]/30 hover:shadow-md transition-all duration-200 overflow-hidden"
                           >
-                            <div className="flex items-center gap-4">
-                              <div className="relative">
-                                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#647653] to-[#45523e] flex items-center justify-center text-white text-lg font-bold shadow-sm">
-                                  {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
+                            {/* Card Header / Main Row */}
+                            <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                              <div className="flex items-center gap-4">
+                                <div className="relative">
+                                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#647653] to-[#45523e] flex items-center justify-center text-white text-lg font-bold shadow-sm">
+                                    {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
+                                  </div>
+                                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
+                                    <div className={cn(
+                                      "w-2.5 h-2.5 rounded-full",
+                                      partner.isPaused ? "bg-amber-400" : "bg-green-500 animate-pulse"
+                                    )} />
+                                  </div>
                                 </div>
-                                <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
-                                  <div className={cn(
-                                    "w-2.5 h-2.5 rounded-full",
-                                    partner.isPaused ? "bg-amber-400" : "bg-green-500 animate-pulse"
-                                  )} />
+
+                                <div>
+                                  <div className="font-semibold text-gray-900 text-lg">
+                                    {partner.partnerOrgName || partner.partnerEmail}
+                                  </div>
+                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 mt-0.5">
+                                    <div className="flex items-center gap-1.5">
+                                      <MapPinIcon className="w-3.5 h-3.5" />
+                                      {partner.poolName}
+                                    </div>
+                                    <div className="w-1 h-1 rounded-full bg-gray-300" />
+                                    <div className="flex items-center gap-1.5">
+                                      <Link2Icon className="w-3.5 h-3.5" />
+                                      {partner.productCount} products synced
+                                    </div>
+                                    <div className="w-1 h-1 rounded-full bg-gray-300" />
+                                    <Badge variant="outline" className={cn(
+                                      "text-xs font-normal border-0",
+                                      partner.direction === 'sent'
+                                        ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10"
+                                        : "bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10"
+                                    )}>
+                                      {partner.direction === 'sent' ? '↑ Sent' : '↓ Received'}
+                                    </Badge>
+                                  </div>
                                 </div>
                               </div>
 
-                              <div>
-                                <div className="font-semibold text-gray-900 text-lg">
-                                  {partner.partnerOrgName || partner.partnerEmail}
+                              <div className="flex items-center gap-3 sm:ml-auto">
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => fetchLinkedProducts(partner.id)}
+                                  className={cn(
+                                    "transition-colors",
+                                    expandedPartnership === partner.id
+                                      ? "bg-gray-100 text-gray-900 border-gray-300"
+                                      : "text-gray-600 hover:text-[#647653] hover:border-[#647653]"
+                                  )}
+                                >
+                                  {loadingLinkedProducts === partner.id ? (
+                                    <Loader2Icon className="w-4 h-4 animate-spin" />
+                                  ) : (
+                                    <>
+                                      {expandedPartnership === partner.id ? 'Hide Items' : 'View Items'}
+                                      <ChevronRightIcon className={cn(
+                                        "w-4 h-4 ml-2 transition-transform duration-200",
+                                        expandedPartnership === partner.id ? "rotate-90" : ""
+                                      )} />
+                                    </>
+                                  )}
+                                </Button>
+
+                                <div className="h-4 w-px bg-gray-200 mx-1" />
+
+                                <div className="flex items-center gap-2" title={partner.isPaused ? "Resume Partnership" : "Pause Partnership"}>
+                                  <Switch
+                                    checked={!partner.isPaused}
+                                    onCheckedChange={() => togglePartnershipPause(partner.id, !!partner.isPaused)}
+                                    className="data-[state=checked]:bg-[#647653]"
+                                  />
                                 </div>
-                                <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 mt-0.5">
-                                  <div className="flex items-center gap-1.5">
-                                    <MapPinIcon className="w-3.5 h-3.5" />
-                                    {partner.poolName}
-                                  </div>
-                                  <div className="w-1 h-1 rounded-full bg-gray-300" />
-                                  <div className="flex items-center gap-1.5">
-                                    <Link2Icon className="w-3.5 h-3.5" />
-                                    {partner.productCount} products synced
-                                  </div>
-                                </div>
+
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                  onClick={() => terminatePartnership(
+                                    partner.id,
+                                    partner.shareType === 'consignment' || partner.direction === 'sent'
+                                  )}
+                                  title={partner.direction === 'sent' ? 'End Partnership' : 'Leave Partnership'}
+                                >
+                                  <Trash2Icon className="w-4 h-4" />
+                                </Button>
                               </div>
                             </div>
 
-                            <div className="flex items-center gap-3 mt-4 sm:mt-0 pl-16 sm:pl-0">
-                              {/* Pause/Resume Toggle */}
-                              <div className="flex items-center gap-2">
-                                <span className={cn("text-xs font-medium", partner.isPaused ? "text-amber-600" : "text-green-600")}>
-                                  {partner.isPaused ? 'Paused' : 'Syncing'}
-                                </span>
-                                <Switch
-                                  checked={!partner.isPaused}
-                                  onCheckedChange={() => togglePartnershipPause(partner.id, !!partner.isPaused)}
-                                  className="data-[state=checked]:bg-green-500"
-                                />
+                            {/* Expandable Linked Products Section */}
+                            {expandedPartnership === partner.id && linkedProducts[partner.id] && (
+                              <div className="border-t border-gray-100 bg-gray-50/50 p-4 animate-in slide-in-from-top-2 duration-200">
+                                <div className="flex items-center justify-between mb-4">
+                                  <div className="flex items-center gap-2">
+                                    <h4 className="text-sm font-semibold text-gray-900">
+                                      Linked Products
+                                    </h4>
+                                    <Badge variant="secondary" className="text-xs bg-gray-200/50 text-gray-600 font-normal">
+                                      {linkedProducts[partner.id].length}
+                                    </Badge>
+                                  </div>
+
+                                  {/* Future: Add Search Bar Here */}
+                                  {/* <div className="relative">
+                                    <SearchIcon className="w-3.5 h-3.5 absolute left-2.5 top-2 text-gray-400" />
+                                    <input 
+                                      type="text" 
+                                      placeholder="Filter products..." 
+                                      className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#647653]"
+                                    />
+                                  </div> */}
+                                </div>
+
+                                {linkedProducts[partner.id].length === 0 ? (
+                                  <div className="text-center py-8 text-gray-500 bg-white border border-gray-200 border-dashed rounded-lg">
+                                    <p className="text-sm">No products explicitly linked yet.</p>
+                                    <p className="text-xs mt-1">Add items to your pool to auto-share them.</p>
+                                  </div>
+                                ) : (
+                                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                    <table className="w-full text-sm text-left">
+                                      <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
+                                        <tr>
+                                          <th className="px-4 py-3 w-1/2">Product</th>
+                                          <th className="px-4 py-3 text-center">Stock</th>
+                                          <th className="px-4 py-3 text-center">Sync Status</th>
+                                          <th className="px-4 py-3 text-center">Visibility</th>
+                                        </tr>
+                                      </thead>
+                                      <tbody className="divide-y divide-gray-100">
+                                        {linkedProducts[partner.id].map((product) => (
+                                          <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                                            <td className="px-4 py-3">
+                                              <div className="font-medium text-gray-900">{product.sourceVariantTitle}</div>
+                                              <div className="text-xs text-gray-500 font-mono mt-0.5">
+                                                {product.sourceVariantSku || 'NO SKU'}
+                                              </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                              <span className={cn(
+                                                "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
+                                                (product.sharedQuantity || 0) > 0
+                                                  ? "bg-green-50 text-green-700"
+                                                  : "bg-gray-100 text-gray-500"
+                                              )}>
+                                                {product.sharedQuantity || 0}
+                                              </span>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                              <div className="flex justify-center">
+                                                <div
+                                                  className="flex items-center gap-2 cursor-pointer group"
+                                                  onClick={() => toggleLinkSync(product.id, partner.id, product.status !== 'active')}
+                                                >
+                                                  <div className={cn(
+                                                    "w-1.5 h-1.5 rounded-full",
+                                                    product.status === 'active' ? "bg-green-500" : "bg-amber-400"
+                                                  )} />
+                                                  <span className={cn(
+                                                    "text-xs group-hover:underline decoration-dashed decoration-gray-300",
+                                                    product.status === 'active' ? "text-gray-600" : "text-amber-600 font-medium"
+                                                  )}>
+                                                    {product.status === 'active' ? 'Active' : 'Paused'}
+                                                  </span>
+                                                </div>
+                                              </div>
+                                            </td>
+                                            <td className="px-4 py-3 text-center">
+                                              <Button
+                                                variant="ghost"
+                                                size="sm"
+                                                className={cn(
+                                                  "h-7 px-2",
+                                                  product.visibilityStatus === 'hidden'
+                                                    ? "text-gray-400 hover:text-gray-600 bg-gray-50"
+                                                    : "text-[#647653] hover:text-[#556145] hover:bg-[#647653]/5"
+                                                )}
+                                                onClick={() => toggleLinkVisibility(
+                                                  product.id,
+                                                  partner.id,
+                                                  product.visibilityStatus === 'hidden'
+                                                )}
+                                                title={product.visibilityStatus === 'hidden' ? "Hidden from partner" : "Visible to partner"}
+                                              >
+                                                {product.visibilityStatus === 'hidden' ? (
+                                                  <>
+                                                    <EyeOffIcon className="w-3.5 h-3.5 mr-1.5" />
+                                                    <span className="text-xs">Hidden</span>
+                                                  </>
+                                                ) : (
+                                                  <>
+                                                    <EyeIcon className="w-3.5 h-3.5 mr-1.5" />
+                                                    <span className="text-xs">Visible</span>
+                                                  </>
+                                                )}
+                                              </Button>
+                                            </td>
+                                          </tr>
+                                        ))}
+                                      </tbody>
+                                    </table>
+                                  </div>
+                                )}
                               </div>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-red-400 hover:text-red-600 hover:bg-red-50"
-                                onClick={() => revokePartnership(partner.id)}
-                                title="Delete Partnership"
-                              >
-                                <Trash2Icon className="w-4 h-4" />
-                              </Button>
-                            </div>
+                            )}
                           </div>
                         ))}
                       </div>
@@ -1111,42 +1382,64 @@ export default function PoolsAndPartnersClient() {
               </p>
             </div>
 
-            <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 mb-6 relative group">
-              <p className="font-mono text-sm text-gray-600 break-all pr-8 line-clamp-3">
+            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 flex items-center justify-between gap-3">
+              <code className="text-sm text-gray-600 truncate flex-1 font-mono bg-white px-2 py-1 rounded border border-gray-100">
                 {createdInviteLink}
-              </p>
-              <div className="absolute top-2 right-2">
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => copyToClipboard(createdInviteLink)}
-                  className={cn(
-                    "h-8 w-8 p-0 rounded-lg transition-colors",
-                    linkCopied ? "bg-green-100 text-green-700" : "hover:bg-gray-200 text-gray-500"
-                  )}
-                >
-                  {linkCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
-                </Button>
-              </div>
+              </code>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => copyToClipboard(createdInviteLink)}
+                className="shrink-0 hover:border-[#647653] hover:text-[#647653]"
+              >
+                {linkCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
+              </Button>
             </div>
 
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                className="flex-1 border-gray-200 hover:bg-gray-50 hover:text-gray-900"
-                onClick={() => {
-                  copyToClipboard(createdInviteLink);
-                  // Don't close immediately so they see the copied check
-                }}
-              >
-                {linkCopied ? 'Copied!' : 'Copy Link'}
-              </Button>
-              <Button
-                className="flex-1 bg-[#647653] hover:bg-[#556145] text-white"
-                onClick={() => setShowInviteSuccess(false)}
-              >
-                Done
-              </Button>
+            <Button
+              className="w-full bg-[#647653] hover:bg-[#556145] text-white py-6 text-lg rounded-xl"
+              onClick={() => setShowInviteSuccess(false)}
+            >
+              Done
+            </Button>
+          </div>
+        </div>
+      {/* Create Location Modal */}
+      {showCreateLocation && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 transform transition-all">
+            <h3 className="text-xl font-bold mb-4">Create New Location</h3>
+            <p className="text-gray-600 mb-6 text-sm">
+              Create a location in the selected platform to sync your inventory.
+            </p>
+
+            <div className="space-y-4">
+              <div>
+                <label className="block text-sm font-medium mb-1.5 text-gray-700">Location Name</label>
+                <Input
+                  value={newLocationName}
+                  onChange={(e) => setNewLocationName(e.target.value)}
+                  placeholder="e.g. Warehouse 1"
+                  className="w-full"
+                />
+              </div>
+
+              <div className="flex gap-3 mt-6">
+                <Button
+                  variant="outline"
+                  className="flex-1"
+                  onClick={() => setShowCreateLocation(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 bg-[#647653] hover:bg-[#556145] text-white"
+                  onClick={createLocation}
+                  disabled={!newLocationName || isCreatingLocation}
+                >
+                  {isCreatingLocation ? <Loader2Icon className="w-4 h-4 animate-spin" /> : 'Create'}
+                </Button>
+              </div>
             </div>
           </div>
         </div>
