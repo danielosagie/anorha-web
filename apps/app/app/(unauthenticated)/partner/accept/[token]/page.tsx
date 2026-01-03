@@ -7,11 +7,12 @@ import Link from 'next/link';
 import { TestFlightBanner } from '@/app/(authenticated)/components/testflight-banner';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
-import { Loader2 } from 'lucide-react';
+import { Loader2, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InviteDetails {
     Id: string;
+    sourceOrgId?: string;
     InviteeEmail: string;
     Status: string;
     ShareType: string;
@@ -27,116 +28,94 @@ interface InviteDetails {
     variantCount?: number;
 }
 
-type FlowStep = 'loading' | 'error' | 'invite_details' | 'create_org' | 'accepting' | 'success';
+// Stepper Component
+function Stepper({ current, total }: { current: number; total: number }) {
+    return (
+        <div className="flex flex-col items-center mt-8 space-y-2">
+            <div className="flex items-center space-x-2">
+                {Array.from({ length: total }).map((_, i) => {
+                    const step = i + 1;
+                    const isActive = step === current;
+                    const isCompleted = step < current;
+
+                    return (
+                        <div key={step} className="flex items-center">
+                            <div className={`
+                                h-2 rounded-full transition-all duration-300 
+                                ${isActive ? 'bg-[#647653] w-8' : isCompleted ? 'bg-[#647653]/40 w-2' : 'bg-gray-200 w-2'}
+                            `} />
+                        </div>
+                    );
+                })}
+            </div>
+            <p className="text-xs text-muted-foreground font-medium uppercase tracking-wider">
+                Step {current} of {total}: {current === 1 ? 'Review' : current === 2 ? 'Connect' : 'Complete'}
+            </p>
+        </div>
+    );
+}
 
 export default function PartnerAcceptPage() {
     const params = useParams();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { isLoaded, isSignedIn, getToken } = useAuth();
+    const { isLoaded, isSignedIn, getToken, orgId } = useAuth();
     const { userMemberships, isLoaded: orgListLoaded } = useOrganizationList({
         userMemberships: { infinite: true },
     });
 
     const token = params.token as string;
-    // Check if we just came back from auth flow
     const justAuth = searchParams.get('auth') === 'success';
 
-    const [step, setStep] = useState<FlowStep>('loading');
+    const [currentStep, setCurrentStep] = useState<number>(1);
+    const [isLoading, setIsLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
     const [invite, setInvite] = useState<InviteDetails | null>(null);
     const [linkedCount, setLinkedCount] = useState<number>(0);
+    const [termsAccepted, setTermsAccepted] = useState(false);
+    const [isAccepting, setIsAccepting] = useState(false);
 
     const hasOrgs = userMemberships?.data && userMemberships.data.length > 0;
+    const isOwnOrg = invite && orgId && invite.sourceOrgId === orgId;
 
-    // Fetch invite details
+    // Fetch Invite
     useEffect(() => {
         if (!token) return;
-
         const fetchInvite = async () => {
             try {
                 let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
-                if (!apiBase.endsWith('/api')) {
-                    apiBase = `${apiBase}/api`;
-                }
-                const res = await fetch(`${apiBase}/cross-org/invites/token/${token}`);
+                if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
 
-                if (!res.ok) {
-                    const text = await res.text();
-                    // If 404/400, handle nicely
-                    throw new Error(text || 'Invite not found');
-                }
+                const res = await fetch(`${apiBase}/cross-org/invites/token/${token}`);
+                if (!res.ok) throw new Error(await res.text() || 'Invite not found');
 
                 const data = await res.json();
                 setInvite(data);
 
-                // If already accepted, go to success
+                // If already accepted or just authorized, move to step 2
                 if (data.Status?.toLowerCase() === 'accepted') {
-                    setStep('success');
-                } else {
-                    setStep('invite_details');
+                    // If accepted, maybe jump to success? 
+                    // But user wants explicit flow. Let's start at 1 usually, unless auth redirect.
                 }
+                if (justAuth) setCurrentStep(2);
+
             } catch (err: any) {
                 setError(err.message || 'Failed to load invite');
-                setStep('error');
+            } finally {
+                setIsLoading(false);
             }
         };
-
         fetchInvite();
-    }, [token]);
+    }, [token, justAuth]);
 
-    // Handle flow logic when dependencies load
-    useEffect(() => {
-        if (justAuth && isLoaded && isSignedIn && step === 'invite_details') {
-            if (orgListLoaded) {
-                if (!hasOrgs) {
-                    setStep('create_org');
-                } else {
-                    acceptInvite();
-                }
-            }
-        }
-    }, [justAuth, isLoaded, isSignedIn, orgListLoaded, hasOrgs, step]);
-
-    const [termsAccepted, setTermsAccepted] = useState(false);
-
-    const handleAcceptClick = () => {
-        if (!termsAccepted && isSignedIn) {
-            toast.error("Please accept the partnership terms to proceed.");
-            return;
-        }
-
-        if (!isSignedIn) {
-            // 1. Redirect to sign-up/in with return URL
-            const returnUrl = `/partner/accept/${token}?auth=success`;
-            router.push(`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`);
-            return;
-        }
-
-        // 2. Signed in - check orgs
-        if (orgListLoaded && !hasOrgs) {
-            setStep('create_org');
-            return;
-        }
-
-        // 3. Signed in & Has Orgs - Accept
-        acceptInvite();
-    };
-
-    const handleDeclineClick = () => {
-        router.push('/');
-    };
-
-    const acceptInvite = async () => {
-        setStep('accepting');
+    const handleAcceptClick = async () => {
+        setIsAccepting(true);
         setError(null);
 
         try {
             const authToken = await getToken();
             let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
-            if (!apiBase.endsWith('/api')) {
-                apiBase = `${apiBase}/api`;
-            }
+            if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
 
             const res = await fetch(`${apiBase}/cross-org/invites/${token}/accept`, {
                 method: 'POST',
@@ -147,25 +126,21 @@ export default function PartnerAcceptPage() {
                 body: JSON.stringify({}),
             });
 
-            if (!res.ok) {
-                const text = await res.text();
-                throw new Error(text || 'Failed to accept invite');
-            }
+            if (!res.ok) throw new Error(await res.text() || 'Failed to accept invite');
 
             const result = await res.json();
             setLinkedCount(result.linkedCount || 0);
-            setStep('success');
             toast.success('Partnership established!');
+            setCurrentStep(3); // Move to final step
         } catch (err: any) {
             console.error(err);
             setError(err.message || 'Failed to accept invite');
-            setStep('invite_details'); // Go back to allow retry
+        } finally {
+            setIsAccepting(false);
         }
     };
 
-    // --- Render Steps ---
-
-    if (step === 'loading') {
+    if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-700">
                 <Loader2 className="h-8 w-8 animate-spin text-[#5c9c00]" />
@@ -174,7 +149,7 @@ export default function PartnerAcceptPage() {
         );
     }
 
-    if (step === 'error') {
+    if (error) {
         return (
             <Card className="w-full border-red-200 animate-in zoom-in-95 duration-500">
                 <CardHeader>
@@ -183,169 +158,203 @@ export default function PartnerAcceptPage() {
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
                     <p className="text-gray-600">{error}</p>
-                    <Button onClick={() => router.push('/')} variant="outline" className="w-full">
-                        Go Home
-                    </Button>
+                    <Button onClick={() => router.push('/')} variant="outline" className="w-full">Go Home</Button>
                 </CardContent>
             </Card>
         );
     }
 
-    if (step === 'create_org') {
+    // Step 1: Review
+    const renderStep1 = () => {
+        const senderName = invite?.sourceOrg?.Name || invite?.InviteeEmail || 'Partner';
+        const isConsignment = invite?.CanRevoke;
+
         return (
-            <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-8 duration-700 fade-in">
+            <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-8 duration-500 fade-in">
                 <div className="flex flex-col space-y-2 text-center">
-                    <h1 className="text-2xl font-semibold tracking-tight">
-                        Welcome to Anorha!
-                    </h1>
-                    <p className="text-sm text-muted-foreground">
-                        Create an organization to start managing your inventory across platforms.
-                    </p>
+                    <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center text-xl mb-2 shadow-sm">🤝</div>
+                    <h1 className="text-2xl font-semibold tracking-tight">Accept Partner Invite</h1>
+                    <p className="text-sm text-muted-foreground">from <span className="font-medium text-foreground">{senderName}</span></p>
                 </div>
 
-                <Card className="border-0 shadow-none bg-transparent">
-                    <CardContent className="p-0 flex justify-center">
+                <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-sm border border-border/50">
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Products Shared</span>
+                        <span className="font-medium bg-white px-2 py-0.5 rounded shadow-sm text-xs border">{invite?.variantCount || 0}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                        <span className="text-muted-foreground">Mode</span>
+                        <span className="font-medium capitalize flex items-center gap-1.5 bg-white px-2 py-0.5 rounded shadow-sm text-xs border">
+                            {isConsignment ? '📦 Consignment' : '🤝 Partnership'}
+                        </span>
+                    </div>
+                </div>
+
+                <div className="text-xs text-muted-foreground space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
+                    <p className="font-medium text-gray-900">What does this mean?</p>
+                    <ul className="list-disc leading-relaxed pl-4 space-y-1">
+                        <li>{isConsignment ? `You will receive inventory updates from ${senderName}` : `You and ${senderName} will sync inventory levels`}</li>
+                        <li>Product details and prices remain managed by you.</li>
+                        <li>You can disconnect this partnership at any time.</li>
+                    </ul>
+                </div>
+
+                <div className="space-y-3 pt-2">
+                    <Button
+                        onClick={() => setCurrentStep(2)}
+                        className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11"
+                    >
+                        Continue to Connection
+                    </Button>
+                    <Button onClick={() => router.push('/')} variant="ghost" className="w-full h-11">
+                        Decline
+                    </Button>
+                </div>
+            </div>
+        );
+    };
+
+    // Step 2: Authentication & Organization
+    const renderStep2 = () => {
+        if (!isLoaded || !orgListLoaded) {
+            return (
+                <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#5c9c00]" />
+                    <p className="text-muted-foreground">Verifying account...</p>
+                </div>
+            );
+        }
+
+        // Case: Not Signed In
+        if (!isSignedIn) {
+            return (
+                <div className="flex flex-col space-y-6 text-center animate-in fade-in slide-in-from-bottom-4">
+                    <div className="mx-auto h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center text-xl mb-2 text-blue-600">🔐</div>
+                    <h2 className="text-xl font-semibold">Sign In Required</h2>
+                    <p className="text-sm text-muted-foreground">Please sign in or create an account to accept this invitation.</p>
+
+                    <Button
+                        onClick={() => {
+                            const returnUrl = `/partner/accept/${token}?auth=success`;
+                            router.push(`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`);
+                        }}
+                        className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11"
+                    >
+                        Create Account / Sign In
+                    </Button>
+                    <Button onClick={() => setCurrentStep(1)} variant="ghost">Back</Button>
+                </div>
+            );
+        }
+
+        // Case: Signed In, No Org -> Create Org
+        if (!hasOrgs) {
+            return (
+                <div className="flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="text-center">
+                        <h2 className="text-xl font-semibold">Create Organization</h2>
+                        <p className="text-sm text-muted-foreground">You need an organization to sync inventory.</p>
+                    </div>
+                    <div className="border rounded-lg p-0 overflow-hidden">
                         <CreateOrganization
-                            afterCreateOrganizationUrl={`/partner/accept/${token}`}
+                            afterCreateOrganizationUrl={`/partner/accept/${token}?auth=success`}
                             appearance={{
                                 elements: {
                                     rootBox: "w-full shadow-none",
-                                    card: "shadow-none border border-gray-200 w-full",
+                                    card: "shadow-none border-0 w-full",
                                     headerTitle: "hidden",
                                     headerSubtitle: "hidden",
                                 }
                             }}
                         />
-                    </CardContent>
-                </Card>
-            </div>
-        );
-    }
-
-    if (step === 'accepting') {
-        return (
-            <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500">
-                <Loader2 className="h-8 w-8 animate-spin text-[#5c9c00]" />
-                <p className="text-muted-foreground">Establishing partnership...</p>
-            </div>
-        );
-    }
-
-    if (step === 'success') {
-        return (
-            <div className="flex flex-col space-y-6 text-center animate-in zoom-in-95 slide-in-from-bottom-4 duration-700 fade-in">
-                <div className="flex flex-col space-y-2">
-                    <h1 className="text-2xl font-bold text-gray-900">
-                        Partnership Established!
-                    </h1>
-                    {linkedCount > 0 && (
-                        <p className="text-sm text-muted-foreground">
-                            {linkedCount} products ready to sync.
-                        </p>
-                    )}
+                    </div>
+                    <Button onClick={() => setCurrentStep(1)} variant="ghost">Back</Button>
                 </div>
+            );
+        }
 
-                <div className="text-left">
-                    <TestFlightBanner mode="card" />
-                </div>
-
-                <div className="space-y-4 pt-4 border-t">
-                    <Link href="/">
-                        <Button
-                            className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-                        >
-                            Go to Web App
-                        </Button>
-                    </Link>
-                    <p className="text-xs text-muted-foreground">
-                        Setup teams & billing
+        // Case: Signed In + Has Org -> Confirm & Accept
+        return (
+            <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                <div className="text-center space-y-2">
+                    <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center text-xl mb-2 text-[#647653]">🔗</div>
+                    <h2 className="text-xl font-semibold">Ready to Connect</h2>
+                    <p className="text-sm text-muted-foreground">
+                        You are signed in as a member of an organization.
                     </p>
                 </div>
-            </div>
-        );
-    }
 
-    // Default: 'invite_details'
-    const senderName = invite?.sourceOrg?.Name || invite?.InviteeEmail || 'Partner';
-    const isConsignment = invite?.CanRevoke;
-
-    return (
-        <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-8 duration-700 fade-in">
-            {/* Header Section */}
-            <div className="flex flex-col space-y-2 text-center">
-                <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center text-xl mb-2 shadow-sm">
-                    🤝
+                <div className="flex items-start gap-2 pt-2 bg-gray-50 p-4 rounded-lg">
+                    <div className="flex items-center h-5">
+                        <input
+                            id="terms" type="checkbox"
+                            checked={termsAccepted}
+                            onChange={(e) => setTermsAccepted(e.target.checked)}
+                            className="h-4 w-4 rounded border-gray-300 text-[#647653] focus:ring-[#647653]"
+                        />
+                    </div>
+                    <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
+                        I agree to enable inventory synchronization {invite?.ShareType === 'consignment' ? 'from' : 'with'} <strong>{invite?.sourceOrg?.Name || 'Partner'}</strong>.
+                    </label>
                 </div>
-                <h1 className="text-2xl font-semibold tracking-tight">
-                    Accept Partner Invite
-                </h1>
-                <p className="text-sm text-muted-foreground">
-                    from <span className="font-medium text-foreground">{senderName}</span>
-                </p>
-            </div>
 
-            {/* Info Card */}
-            <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-sm border border-border/50">
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Products Shared</span>
-                    <span className="font-medium bg-white px-2 py-0.5 rounded shadow-sm text-xs border">{invite?.variantCount || 0}</span>
-                </div>
-                <div className="flex justify-between items-center">
-                    <span className="text-muted-foreground">Mode</span>
-                    <span className="font-medium capitalize flex items-center gap-1.5 bg-white px-2 py-0.5 rounded shadow-sm text-xs border">
-                        {isConsignment ? '📦 Consignment' : '🤝 Partnership'}
-                    </span>
-                </div>
-            </div>
+                {isOwnOrg && (
+                    <div className="p-3 bg-red-50 text-red-600 text-xs rounded-md text-center border border-red-100 font-medium">
+                        You cannot accept an invite from your own organization. Please switch accounts or organizations.
+                    </div>
+                )}
 
-            {/* Terms & Context */}
-            <div className="text-xs text-muted-foreground space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                <p className="font-medium text-gray-900">What does this mean?</p>
-                <ul className="list-disc leading-relaxed pl-4 space-y-1">
-                    {isConsignment ? (
-                        <li>You will receive inventory updates from <strong>{senderName}</strong>.</li>
-                    ) : (
-                        <li>You and <strong>{senderName}</strong> will sync inventory levels.</li>
-                    )}
-                    <li>Product details and prices remain managed by you.</li>
-                    <li>You can disconnect this partnership at any time.</li>
-                </ul>
-            </div>
-
-            {/* Terms Checkbox */}
-            <div className="flex items-start gap-2 pt-2">
-                <div className="flex items-center h-5">
-                    <input
-                        id="terms"
-                        type="checkbox"
-                        checked={termsAccepted}
-                        onChange={(e) => setTermsAccepted(e.target.checked)}
-                        className="h-4 w-4 rounded border-gray-300 text-[#647653] focus:ring-[#647653]"
-                    />
-                </div>
-                <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
-                    I agree to enable inventory synchronization {isConsignment ? 'from' : 'with'} <strong>{senderName}</strong>.
-                </label>
-            </div>
-
-            {/* Actions */}
-            <div className="space-y-3 pt-2">
                 <Button
                     onClick={handleAcceptClick}
-                    disabled={!termsAccepted && isSignedIn}
-                    className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11 shadow-sm transition-all hover:scale-[1.02] disabled:opacity-50 disabled:hover:scale-100"
+                    disabled={!termsAccepted || !!isOwnOrg || isAccepting}
+                    className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11"
                 >
-                    Yes, Accept Invite
+                    {isAccepting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+                    {isAccepting ? 'Connecting...' : 'Establish Partnership'}
                 </Button>
-
-                <Button
-                    onClick={handleDeclineClick}
-                    variant="ghost"
-                    className="w-full h-11 text-muted-foreground hover:text-foreground"
-                >
-                    No, Decline
-                </Button>
+                <Button onClick={() => setCurrentStep(1)} variant="ghost" disabled={isAccepting}>Back</Button>
             </div>
+        );
+    };
+
+    // Step 3: Success & Actions
+    const renderStep3 = () => (
+        <div className="flex flex-col space-y-6 text-center animate-in zoom-in-95 slide-in-from-bottom-4 duration-700 fade-in">
+            <div className="mx-auto h-16 w-16 rounded-full bg-green-100 flex items-center justify-center text-3xl mb-2 text-green-600 shadow-sm">
+                🎉
+            </div>
+            <div className="flex flex-col space-y-2">
+                <h1 className="text-2xl font-bold text-gray-900">Partnership Established!</h1>
+                {linkedCount > 0 && <p className="text-sm text-muted-foreground">{linkedCount} products ready to sync.</p>}
+            </div>
+
+            <div className="space-y-3 pt-6 pb-2">
+                <p className="text-sm font-medium text-gray-900">What would you like to do next?</p>
+
+                <Link href="/" className="block w-full">
+                    <Button variant="outline" className="w-full h-12 border-gray-300 hover:bg-gray-50 flex items-center justify-center gap-2">
+                        <LayoutDashboard className="h-4 w-4" />
+                        Open Web Dashboard
+                    </Button>
+                </Link>
+
+                <div className="pt-2">
+                    <TestFlightBanner mode="card" />
+                </div>
+            </div>
+        </div>
+    );
+
+    return (
+        <div className="flex flex-col min-h-[500px]">
+            <div className="flex-1">
+                {currentStep === 1 && renderStep1()}
+                {currentStep === 2 && renderStep2()}
+                {currentStep === 3 && renderStep3()}
+            </div>
+
+            {/* Stepper Logic fixed at bottom */}
+            <Stepper current={currentStep} total={3} />
         </div>
     );
 }

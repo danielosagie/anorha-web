@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useRef } from 'react';
 import Image from 'next/image';
 import { useOrganization, useAuth } from '@clerk/nextjs';
 import { Button } from '@repo/design-system/components/ui/button';
@@ -73,6 +73,7 @@ export default function PoolsAndPartnersClient() {
   const { organization, isLoaded: isOrgLoaded } = useOrganization();
   const { getToken, isLoaded: isAuthLoaded } = useAuth();
   const orgId = organization?.id;
+  const hasSyncedRef = useRef(false);
 
   // View State
   const [activeTab, setActiveTab] = useState<Tab>('pools');
@@ -123,12 +124,22 @@ export default function PoolsAndPartnersClient() {
       const token = await getToken();
       const headers = { Authorization: `Bearer ${token}` };
 
+      // Ensure local DB is in sync with Clerk (once per session)
+      if (!hasSyncedRef.current) {
+        try {
+          await fetch(`${API_BASE}/api/auth/backfill/clerk-orgs`, { method: 'POST', headers });
+          hasSyncedRef.current = true;
+        } catch (e) {
+          console.error('Auto-sync failed', e);
+        }
+      }
+
       // Parallel Fetching
       const [poolsRes, locsRes, partnersRes, invitesRes] = await Promise.all([
         fetch(`${API_BASE}/api/pools/org/${orgId}`, { headers }),
         fetch(`${API_BASE}/api/pools/locations/available?orgId=${orgId}`, { headers }),
-        fetch(`${API_BASE}/api/cross-org/partnerships`, { headers }).catch(() => null),
-        fetch(`${API_BASE}/api/cross-org/invites/pending`, { headers }).catch(() => null),
+        fetch(`${API_BASE}/api/cross-org/partnerships?orgId=${orgId}`, { headers }).catch(() => null),
+        fetch(`${API_BASE}/api/cross-org/invites/pending?orgId=${orgId}`, { headers }).catch(() => null),
       ]);
 
       if (poolsRes.ok) setPools(await poolsRes.json());
@@ -274,7 +285,7 @@ export default function PoolsAndPartnersClient() {
     setIsInviting(true);
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/cross-org/invites`, {
+      const res = await fetch(`${API_BASE}/api/cross-org/invites?orgId=${orgId}`, {
         method: 'POST',
         headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -313,7 +324,7 @@ export default function PoolsAndPartnersClient() {
 
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/cross-org/invites/${inviteId}`, {
+      const res = await fetch(`${API_BASE}/api/cross-org/invites/${inviteId}?orgId=${orgId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -333,7 +344,7 @@ export default function PoolsAndPartnersClient() {
 
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}`, {
+      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}?orgId=${orgId}`, {
         method: 'DELETE',
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -354,7 +365,7 @@ export default function PoolsAndPartnersClient() {
     const action = currentlyPaused ? 'resume' : 'pause';
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}/${action}`, {
+      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}/${action}?orgId=${orgId}`, {
         method: 'PATCH',
         headers: { Authorization: `Bearer ${token}` }
       });
