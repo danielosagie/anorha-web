@@ -1379,8 +1379,8 @@ export default function PoolsAndPartnersClient() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-100">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <SendIcon className="w-8 h-8 text-green-600 ml-1" />
+              <div className="w-16 h-16 bg-[#F1FFEF] rounded-full flex items-center justify-center mx-auto mb-4">
+                <SendIcon className="w-8 h-8 text-[#91B91F] ml-1" />
               </div>
               <h2 className="text-2xl font-bold text-gray-900">Invite Sent!</h2>
               <p className="text-gray-600 mt-2">
@@ -1389,7 +1389,7 @@ export default function PoolsAndPartnersClient() {
             </div>
 
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 flex items-center justify-between gap-3">
-              <code className="text-sm text-gray-600 truncate flex-1 font-mono bg-white px-2 py-1 rounded border border-gray-100">
+              <code className="text-sm text-gray-600 text-wrap flex-1 font-mono bg-white px-2 py-1 rounded border border-gray-100">
                 {createdInviteLink}
               </code>
               <Button
