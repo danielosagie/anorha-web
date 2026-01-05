@@ -89,6 +89,7 @@ export default function PoolsAndPartnersClient() {
   const { getToken, isLoaded: isAuthLoaded } = useAuth();
   const orgId = organization?.id;
   const hasSyncedRef = useRef(false);
+  const loadedOrgIdRef = useRef<string | null>(null);
 
   // View State
   const [activeTab, setActiveTab] = useState<Tab>('pools');
@@ -139,7 +140,10 @@ export default function PoolsAndPartnersClient() {
   const loadData = useCallback(async () => {
     if (!orgId) return;
 
-    setIsLoading(true);
+    // Only show full loading state on first load or org switch to prevent UI flashing
+    if (loadedOrgIdRef.current !== orgId) {
+      setIsLoading(true);
+    }
     try {
       const token = await getToken();
       const headers = { Authorization: `Bearer ${token}` };
@@ -240,6 +244,8 @@ export default function PoolsAndPartnersClient() {
     } catch (error) {
       console.error('Failed to load data:', error);
     } finally {
+      // Mark this org as loaded
+      loadedOrgIdRef.current = orgId;
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -1167,7 +1173,7 @@ export default function PoolsAndPartnersClient() {
                                   <div className="font-semibold text-gray-900 text-lg">
                                     {partner.partnerOrgName || partner.partnerEmail}
                                   </div>
-                                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-gray-500 mt-0.5">
+                                  <div className="flex flex-col items-start gap-y-1 text-sm text-gray-500 mt-0.5">
                                     <div className="flex items-center gap-1.5">
                                       <MapPinIcon className="w-3.5 h-3.5" />
                                       {partner.poolName}
