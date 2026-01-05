@@ -18,8 +18,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, Di
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@repo/design-system/components/ui/tooltip';
 import { ScrollArea } from '@repo/design-system/components/ui/scroll-area';
 import { Separator } from '@repo/design-system/components/ui/separator';
-import { 
-  Plus, X, Trash2, Check, ChevronDown, ChevronRight, RefreshCw, Users, 
+import {
+  Plus, X, Trash2, Check, ChevronDown, ChevronRight, RefreshCw, Users,
   MapPin, Link2, Settings, AlertTriangle, Loader2, Activity, Send,
   Shield, Eye, Edit, Zap, Clock, CheckCircle2, XCircle, AlertCircle,
   UserPlus, Mail, Copy, ExternalLink
@@ -119,11 +119,11 @@ const formatTimeAgo = (date: string | Date) => {
   const now = new Date();
   const then = new Date(date);
   const diff = now.getTime() - then.getTime();
-  
+
   const minutes = Math.floor(diff / 60000);
   const hours = Math.floor(diff / 3600000);
   const days = Math.floor(diff / 86400000);
-  
+
   if (minutes < 1) return 'Just now';
   if (minutes < 60) return `${minutes}m ago`;
   if (hours < 24) return `${hours}h ago`;
@@ -148,18 +148,18 @@ export default function MemberPermissionsPage() {
   // UI state
   const [loading, setLoading] = useState(true);
   const [activeTab, setActiveTab] = useState<'pools' | 'team' | 'partners'>('pools');
-  
+
   // Pool editing
   const [editingPool, setEditingPool] = useState<Partial<Pool> | null>(null);
   const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
   const [expandedPlatformId, setExpandedPlatformId] = useState<string | null>(null);
-  
+
   // Partner invite
   const [inviteDialogOpen, setInviteDialogOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteLocationId, setInviteLocationId] = useState('');
   const [inviteLoading, setInviteLoading] = useState(false);
-  
+
   // Reconnect dialog
   const [reconnectDialog, setReconnectDialog] = useState<{ open: boolean; connectionId: string; platformType: string } | null>(null);
 
@@ -177,7 +177,7 @@ export default function MemberPermissionsPage() {
   const loadData = useCallback(async () => {
     if (!orgId) return;
     setLoading(true);
-    
+
     try {
       const clerkToken = await getToken();
       const headers = { 'Authorization': `Bearer ${clerkToken}` };
@@ -218,14 +218,14 @@ export default function MemberPermissionsPage() {
           };
         }
         setAllLocations(enhanced);
-        
+
         // Initialize sync statuses
         const statuses: Record<string, SyncStatus> = {};
         for (const [connId, group] of Object.entries(enhanced)) {
           statuses[connId] = {
             connectionId: connId,
-            status: group.connectionStatus === 'syncing' ? 'syncing' : 
-                   group.connectionStatus === 'error' ? 'error' : 'idle',
+            status: group.connectionStatus === 'syncing' ? 'syncing' :
+              group.connectionStatus === 'error' ? 'error' : 'idle',
             lastSyncAt: group.locations[0]?.platformConnection?.lastSyncAt,
           };
         }
@@ -242,7 +242,7 @@ export default function MemberPermissionsPage() {
       if (organization?.getMemberships) {
         const membershipList = await organization.getMemberships();
         const membersData = membershipList.data || [];
-        
+
         const loadedMembers: TeamMember[] = [];
         for (const m of membersData) {
           const uid = m.publicUserData?.userId;
@@ -251,7 +251,7 @@ export default function MemberPermissionsPage() {
           try {
             const permRes = await fetch(`${API_BASE}/api/organizations/${orgId}/members/${uid}/permissions`, { headers });
             const perms = permRes.ok ? await permRes.json() : {};
-            
+
             loadedMembers.push({
               userId: uid,
               email: m.publicUserData?.identifier || '',
@@ -332,7 +332,7 @@ export default function MemberPermissionsPage() {
     try {
       const clerkToken = await getToken();
       const isNew = !editingPool.id || editingPool.id === 'new';
-      
+
       const body = {
         orgId: orgId,
         name: editingPool.name,
@@ -355,7 +355,7 @@ export default function MemberPermissionsPage() {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.message || 'Failed to save pool');
       }
-      
+
       await loadData();
       setEditingPool(null);
       showToast(isNew ? 'Pool created successfully' : 'Pool updated', 'success');
@@ -367,16 +367,16 @@ export default function MemberPermissionsPage() {
 
   const handleDeletePool = async (id: string) => {
     if (!confirm('Are you sure you want to delete this pool? Locations will be unassigned but not deleted.')) return;
-    
+
     try {
       const token = await getToken();
       const res = await fetch(`${API_BASE}/api/pools/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (!res.ok) throw new Error('Failed to delete');
-      
+
       setPools(prev => prev.filter(p => p.id !== id));
       showToast('Pool deleted', 'success');
     } catch (e) {
@@ -391,9 +391,9 @@ export default function MemberPermissionsPage() {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-      
+
       if (!res.ok) throw new Error('Failed to trigger sync');
-      
+
       showToast('Sync started', 'info');
       // Update sync status optimistically
       const pool = pools.find(p => p.id === poolId);
@@ -420,29 +420,29 @@ export default function MemberPermissionsPage() {
   const handleReconnect = async (connectionId: string, platformType: string) => {
     try {
       const token = await getToken();
-      
+
       // For OAuth platforms, redirect to auth flow
       if (platformType === 'shopify' || platformType === 'square' || platformType === 'clover') {
         // Get the reconnect URL from backend
         const res = await fetch(`${API_BASE}/api/auth/${platformType}/reconnect?connectionId=${connectionId}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
-        
+
         if (res.ok) {
           const { authUrl } = await res.json();
           window.location.href = authUrl;
           return;
         }
       }
-      
+
       // Fallback: trigger a reconcile to refresh tokens if possible
       const res = await fetch(`${API_BASE}/api/sync/connection/${connectionId}/reconcile`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' }
       });
-      
+
       if (!res.ok) throw new Error('Failed to reconnect');
-      
+
       showToast('Reconnection initiated', 'success');
       setReconnectDialog(null);
       await loadData();
@@ -457,7 +457,7 @@ export default function MemberPermissionsPage() {
 
   const sendPartnerInvite = async () => {
     if (!inviteEmail || !inviteLocationId || !orgId) return;
-    
+
     setInviteLoading(true);
     try {
       const token = await getToken();
@@ -476,18 +476,18 @@ export default function MemberPermissionsPage() {
           }
         })
       });
-      
+
       if (!res.ok) {
         const err = await res.json().catch(() => ({}));
         throw new Error(err.message || 'Failed to send invite');
       }
-      
+
       const { inviteLink } = await res.json();
-      
+
       // Copy link to clipboard
       await navigator.clipboard.writeText(inviteLink);
       showToast('Invite link copied to clipboard!', 'success');
-      
+
       setInviteDialogOpen(false);
       setInviteEmail('');
       setInviteLocationId('');
@@ -505,12 +505,12 @@ export default function MemberPermissionsPage() {
 
   const toggleMemberPool = async (userId: string, poolId: string, checked: boolean) => {
     if (!orgId) return;
-    
+
     // Optimistic update
     setMembers(prev => prev.map(m => {
       if (m.userId !== userId) return m;
-      const newIds = checked 
-        ? [...m.assignedPoolIds, poolId] 
+      const newIds = checked
+        ? [...m.assignedPoolIds, poolId]
         : m.assignedPoolIds.filter(id => id !== poolId);
       return { ...m, assignedPoolIds: newIds };
     }));
@@ -520,8 +520,8 @@ export default function MemberPermissionsPage() {
       const member = members.find(m => m.userId === userId);
       if (!member) return;
 
-      const newIds = checked 
-        ? [...member.assignedPoolIds, poolId] 
+      const newIds = checked
+        ? [...member.assignedPoolIds, poolId]
         : member.assignedPoolIds.filter(id => id !== poolId);
 
       await fetch(`${API_BASE}/api/organizations/${orgId}/members/${userId}/permissions`, {
@@ -537,17 +537,17 @@ export default function MemberPermissionsPage() {
   };
 
   const toggleMemberPermission = async (
-    userId: string, 
-    poolId: string, 
-    feature: 'canRead' | 'canEdit' | 'canSync', 
+    userId: string,
+    poolId: string,
+    feature: 'canRead' | 'canEdit' | 'canSync',
     checked: boolean
   ) => {
     if (!orgId) return;
-    
+
     // Optimistic update
     setMembers(prev => prev.map(m => {
       if (m.userId !== userId) return m;
-      const poolPerms = m.poolPermissions[poolId] || { canRead: true, canEdit: false, canSync: false };
+      const poolPerms = m.poolPermissions[poolId] || { canRead: true, canEdit: true, canSync: true };
       return {
         ...m,
         poolPermissions: {
@@ -562,13 +562,13 @@ export default function MemberPermissionsPage() {
       const member = members.find(m => m.userId === userId);
       if (!member) return;
 
-      const currentPerms = member.poolPermissions[poolId] || { canRead: true, canEdit: false, canSync: false };
+      const currentPerms = member.poolPermissions[poolId] || { canRead: true, canEdit: true, canSync: true };
       const newPerms = { ...currentPerms, [feature]: checked };
 
       await fetch(`${API_BASE}/api/organizations/${orgId}/members/${userId}/permissions`, {
         method: 'PATCH',
         headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           poolPermissions: { [poolId]: newPerms }
         })
       });
@@ -696,7 +696,7 @@ export default function MemberPermissionsPage() {
                   {statusConfig.label}
                 </Badge>
               </div>
-              
+
               {pool.description && (
                 <p className="text-sm text-slate-500 mb-3">{pool.description}</p>
               )}
@@ -706,12 +706,12 @@ export default function MemberPermissionsPage() {
                   <MapPin className="w-4 h-4" />
                   <span>{locationCount} location{locationCount !== 1 ? 's' : ''}</span>
                 </div>
-                
+
                 <div className={`flex items-center gap-1.5 ${pool.syncInventory ? 'text-green-600' : 'text-slate-400'}`}>
                   {pool.syncInventory ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                   <span>Inventory</span>
                 </div>
-                
+
                 <div className={`flex items-center gap-1.5 ${pool.syncPricing ? 'text-green-600' : 'text-slate-400'}`}>
                   {pool.syncPricing ? <Check className="w-4 h-4" /> : <X className="w-4 h-4" />}
                   <span>Pricing</span>
@@ -744,8 +744,8 @@ export default function MemberPermissionsPage() {
               <TooltipProvider>
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="icon"
                       className="h-8 w-8"
                       onClick={() => triggerPoolSync(pool.id)}
@@ -757,11 +757,11 @@ export default function MemberPermissionsPage() {
                   <TooltipContent>Sync now</TooltipContent>
                 </Tooltip>
               </TooltipProvider>
-              
+
               {isAdmin && (
                 <>
-                  <Button 
-                    variant="ghost" 
+                  <Button
+                    variant="ghost"
                     size="icon"
                     className="h-8 w-8"
                     onClick={() => {
@@ -771,9 +771,9 @@ export default function MemberPermissionsPage() {
                   >
                     <Settings className="w-4 h-4" />
                   </Button>
-                  
-                  <Button 
-                    variant="ghost" 
+
+                  <Button
+                    variant="ghost"
                     size="icon"
                     className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50"
                     onClick={() => handleDeletePool(pool.id)}
@@ -810,7 +810,7 @@ export default function MemberPermissionsPage() {
             <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center text-white font-semibold">
               {member.firstName?.[0] || member.email[0].toUpperCase()}
             </div>
-            
+
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
                 <h4 className="font-semibold text-slate-900">
@@ -829,30 +829,29 @@ export default function MemberPermissionsPage() {
           {pools.length > 0 && (
             <div className="space-y-3">
               <div className="text-xs font-semibold text-slate-400 uppercase tracking-wider">Pool Access</div>
-              
+
               <div className="grid gap-2">
                 {pools.map(pool => {
                   const hasAccess = member.assignedPoolIds.includes(pool.id);
-                  const perms = member.poolPermissions[pool.id] || { canRead: true, canEdit: false, canSync: false };
+                  const perms = member.poolPermissions[pool.id] || { canRead: true, canEdit: true, canSync: true };
 
                   return (
-                    <div 
-                      key={pool.id} 
-                      className={`p-3 rounded-lg border transition-all ${
-                        hasAccess 
-                          ? 'bg-blue-50/50 border-blue-200' 
+                    <div
+                      key={pool.id}
+                      className={`p-3 rounded-lg border transition-all ${hasAccess
+                          ? 'bg-blue-50/50 border-blue-200'
                           : 'bg-slate-50/50 border-slate-200 opacity-60'
-                      }`}
+                        }`}
                     >
                       <div className="flex items-center justify-between mb-2">
                         <div className="flex items-center gap-2">
-                          <Checkbox 
+                          <Checkbox
                             id={`access-${member.userId}-${pool.id}`}
                             checked={hasAccess}
                             onCheckedChange={(checked) => toggleMemberPool(member.userId, pool.id, !!checked)}
                             disabled={!isAdmin}
                           />
-                          <label 
+                          <label
                             htmlFor={`access-${member.userId}-${pool.id}`}
                             className="text-sm font-medium cursor-pointer"
                           >
@@ -867,7 +866,7 @@ export default function MemberPermissionsPage() {
                       {hasAccess && isAdmin && (
                         <div className="flex gap-4 ml-6 pt-2 border-t border-slate-200/50">
                           <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
-                            <Checkbox 
+                            <Checkbox
                               checked={perms.canRead}
                               onCheckedChange={(checked) => toggleMemberPermission(member.userId, pool.id, 'canRead', !!checked)}
                               className="h-3.5 w-3.5"
@@ -875,7 +874,7 @@ export default function MemberPermissionsPage() {
                             <Eye className="w-3 h-3" /> View
                           </label>
                           <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
-                            <Checkbox 
+                            <Checkbox
                               checked={perms.canEdit}
                               onCheckedChange={(checked) => toggleMemberPermission(member.userId, pool.id, 'canEdit', !!checked)}
                               className="h-3.5 w-3.5"
@@ -883,7 +882,7 @@ export default function MemberPermissionsPage() {
                             <Edit className="w-3 h-3" /> Edit
                           </label>
                           <label className="flex items-center gap-1.5 text-xs text-slate-600 cursor-pointer">
-                            <Checkbox 
+                            <Checkbox
                               checked={perms.canSync}
                               onCheckedChange={(checked) => toggleMemberPermission(member.userId, pool.id, 'canSync', !!checked)}
                               className="h-3.5 w-3.5"
@@ -923,13 +922,13 @@ export default function MemberPermissionsPage() {
           <h1 className="text-2xl font-bold tracking-tight">Team & Locations</h1>
           <p className="text-slate-500 mt-1">Manage pools, team access, and partner sharing</p>
         </div>
-        
+
         <div className="flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={loadData} disabled={loading}>
             <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
             Refresh
           </Button>
-          
+
           {isAdmin && (
             <Button onClick={() => {
               setEditingPool({
@@ -983,17 +982,17 @@ export default function MemberPermissionsPage() {
                     </p>
                   </div>
                 </div>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
+                <Button
+                  variant="outline"
+                  size="sm"
                   className="border-amber-300 hover:bg-amber-100"
                   onClick={() => {
                     const firstBroken = Object.entries(allLocations).find(([, g]) => g.needsReauth);
                     if (firstBroken) {
-                      setReconnectDialog({ 
-                        open: true, 
-                        connectionId: firstBroken[0], 
-                        platformType: firstBroken[1].platformType 
+                      setReconnectDialog({
+                        open: true,
+                        connectionId: firstBroken[0],
+                        platformType: firstBroken[1].platformType
                       });
                     }
                   }}
@@ -1120,13 +1119,13 @@ export default function MemberPermissionsPage() {
               Group locations that should share inventory and pricing.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-5 py-4">
             {/* Name */}
             <div className="space-y-2">
               <Label>Pool Name</Label>
-              <Input 
-                placeholder="e.g. West Coast Stores" 
+              <Input
+                placeholder="e.g. West Coast Stores"
                 value={editingPool?.name || ''}
                 onChange={e => setEditingPool(prev => prev ? { ...prev, name: e.target.value } : null)}
               />
@@ -1135,14 +1134,14 @@ export default function MemberPermissionsPage() {
             {/* Sync Options */}
             <div className="flex gap-6">
               <label className="flex items-center gap-2 cursor-pointer">
-                <Switch 
+                <Switch
                   checked={editingPool?.syncInventory ?? true}
                   onCheckedChange={checked => setEditingPool(prev => prev ? { ...prev, syncInventory: checked } : null)}
                 />
                 <span className="text-sm">Sync Inventory</span>
               </label>
               <label className="flex items-center gap-2 cursor-pointer">
-                <Switch 
+                <Switch
                   checked={editingPool?.syncPricing ?? true}
                   onCheckedChange={checked => setEditingPool(prev => prev ? { ...prev, syncPricing: checked } : null)}
                 />
@@ -1157,7 +1156,7 @@ export default function MemberPermissionsPage() {
               <div className="flex items-center justify-between">
                 <Label>Locations ({selectedLocationIds.length})</Label>
               </div>
-              
+
               {selectedLocationIds.length > 0 ? (
                 <ScrollArea className="h-[150px]">
                   <div className="space-y-2 pr-4">
@@ -1205,7 +1204,7 @@ export default function MemberPermissionsPage() {
                             {isOpen ? <ChevronDown className="w-4 h-4" /> : <ChevronRight className="w-4 h-4" />}
                           </div>
                         </button>
-                        
+
                         {isOpen && (
                           <div className="bg-slate-50 p-2 space-y-1 border-t">
                             {availableLocs.length === 0 ? (
@@ -1250,13 +1249,13 @@ export default function MemberPermissionsPage() {
               Partners can view and edit inventory for the location you share.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="space-y-4 py-4">
             <div className="space-y-2">
               <Label>Partner Email</Label>
-              <Input 
+              <Input
                 type="email"
-                placeholder="partner@company.com" 
+                placeholder="partner@company.com"
                 value={inviteEmail}
                 onChange={e => setInviteEmail(e.target.value)}
               />
@@ -1264,7 +1263,7 @@ export default function MemberPermissionsPage() {
 
             <div className="space-y-2">
               <Label>Share Location</Label>
-              <select 
+              <select
                 className="w-full p-2 border rounded-md"
                 value={inviteLocationId}
                 onChange={e => setInviteLocationId(e.target.value)}
@@ -1285,8 +1284,8 @@ export default function MemberPermissionsPage() {
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setInviteDialogOpen(false)}>Cancel</Button>
-            <Button 
-              onClick={sendPartnerInvite} 
+            <Button
+              onClick={sendPartnerInvite}
               disabled={!inviteEmail || !inviteLocationId || inviteLoading}
             >
               {inviteLoading ? (
@@ -1312,17 +1311,17 @@ export default function MemberPermissionsPage() {
               Your {reconnectDialog?.platformType} connection needs to be re-authenticated.
             </DialogDescription>
           </DialogHeader>
-          
+
           <div className="py-4">
             <p className="text-sm text-slate-600">
-              This usually happens when access tokens expire or permissions change. 
+              This usually happens when access tokens expire or permissions change.
               Click below to reconnect your account.
             </p>
           </div>
 
           <DialogFooter>
             <Button variant="outline" onClick={() => setReconnectDialog(null)}>Later</Button>
-            <Button 
+            <Button
               onClick={() => reconnectDialog && handleReconnect(reconnectDialog.connectionId, reconnectDialog.platformType)}
             >
               <ExternalLink className="w-4 h-4 mr-2" />
