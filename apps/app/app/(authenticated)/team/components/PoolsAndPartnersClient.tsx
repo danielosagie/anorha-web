@@ -1150,7 +1150,7 @@ export default function PoolsAndPartnersClient() {
                           >
                             {/* Card Header / Main Row */}
                             <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                              <div className="flex items-center gap-4">
+                              <div className="flex items-center gap-8">
                                 <div className="relative">
                                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#647653] to-[#45523e] flex items-center justify-center text-white text-lg font-bold shadow-sm">
                                     {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
@@ -1158,12 +1158,12 @@ export default function PoolsAndPartnersClient() {
                                   <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
                                     <div className={cn(
                                       "w-2.5 h-2.5 rounded-full",
-                                      partner.isPaused ? "bg-amber-400" : "bg-green-500 animate-pulse"
+                                      partner.isPaused ? "bg-amber-400" : "bg-[#A7CE38] animate-pulse"
                                     )} />
                                   </div>
                                 </div>
 
-                                <div>
+                                <div className="flex flex-col">
                                   <div className="font-semibold text-gray-900 text-lg">
                                     {partner.partnerOrgName || partner.partnerEmail}
                                   </div>
@@ -1172,17 +1172,17 @@ export default function PoolsAndPartnersClient() {
                                       <MapPinIcon className="w-3.5 h-3.5" />
                                       {partner.poolName}
                                     </div>
-                                    <div className="w-1 h-1 rounded-full bg-gray-300" />
+                                    {/*<div className="w-1 h-1 rounded-full bg-gray-300" />*/}
                                     <div className="flex items-center gap-1.5">
                                       <Link2Icon className="w-3.5 h-3.5" />
                                       {partner.productCount} products synced
                                     </div>
-                                    <div className="w-1 h-1 rounded-full bg-gray-300" />
+                                    {/*<div className="w-1 h-1 rounded-full bg-gray-300" />*/}
                                     <Badge variant="outline" className={cn(
                                       "text-xs font-normal border-0",
                                       partner.direction === 'sent'
-                                        ? "bg-blue-50 text-blue-700 ring-1 ring-inset ring-blue-700/10"
-                                        : "bg-purple-50 text-purple-700 ring-1 ring-inset ring-purple-700/10"
+                                        ? "bg-[#FFFDEF] text-[#EABB4A] ring-1 ring-inset ring-[#EABB4A]/10"
+                                        : "bg-[#F1FFEF] text-[#91B91F] ring-1 ring-inset ring-[#91B91F]/10"
                                     )}>
                                       {partner.direction === 'sent' ? '↑ Sent' : '↓ Received'}
                                     </Badge>
