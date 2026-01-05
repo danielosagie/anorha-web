@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useAuth, useOrganizationList, CreateOrganization } from '@clerk/nextjs';
+import { useAuth, useOrganizationList, CreateOrganization, SignIn } from '@clerk/nextjs';
 import Link from 'next/link';
 import { TestFlightBanner } from '@/app/(authenticated)/components/testflight-banner';
 import { Button } from '@repo/design-system/components/ui/button';
@@ -227,22 +227,25 @@ export default function PartnerAcceptPage() {
 
         // Case: Not Signed In
         if (!isSignedIn) {
-            return (
-                <div className="flex flex-col space-y-6 text-center animate-in fade-in slide-in-from-bottom-4">
-                    <div className="mx-auto h-12 w-12 rounded-xl bg-blue-50 flex items-center justify-center text-xl mb-2 text-blue-600">🔐</div>
-                    <h2 className="text-xl font-semibold">Sign In Required</h2>
-                    <p className="text-sm text-muted-foreground">Please sign in or create an account to accept this invitation.</p>
+            const returnUrl = `/partner/accept/${token}?auth=success`;
 
-                    <Button
-                        onClick={() => {
-                            const returnUrl = `/partner/accept/${token}?auth=success`;
-                            router.push(`/sign-up?redirect_url=${encodeURIComponent(returnUrl)}`);
-                        }}
-                        className="w-full bg-blue-600 hover:bg-blue-700 text-white h-11"
-                    >
-                        Create Account / Sign In
-                    </Button>
-                    <Button onClick={() => setCurrentStep(1)} variant="ghost">Back</Button>
+            return (
+                <div className="flex flex-col items-center space-y-6 animate-in fade-in slide-in-from-bottom-4 pt-4">
+                    <div className="w-full max-w-[400px]">
+                        <SignIn
+                            afterSignInUrl={returnUrl}
+                            afterSignUpUrl={returnUrl}
+                            appearance={{
+                                elements: {
+                                    rootBox: "w-full mx-auto",
+                                    card: "shadow-none border-0 w-full bg-transparent p-0",
+                                    headerTitle: "text-xl font-semibold text-gray-900",
+                                    headerSubtitle: "text-sm text-gray-500",
+                                }
+                            }}
+                        />
+                    </div>
+                    <Button onClick={() => setCurrentStep(1)} variant="ghost" size="sm">Back to Review</Button>
                 </div>
             );
         }
