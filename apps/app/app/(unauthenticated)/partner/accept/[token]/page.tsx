@@ -216,10 +216,10 @@ export default function PartnerAcceptPage() {
 
     // Step 2: Authentication & Organization
     const renderStep2 = () => {
-        if (!isLoaded || !orgListLoaded) {
+        if (!isLoaded) {
             return (
                 <div className="flex flex-col items-center justify-center space-y-4 py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#5c9c00]" />
+                    <Loader2 className="h-6 w-6 animate-spin text-[#647653]" />
                     <p className="text-muted-foreground">Verifying account...</p>
                 </div>
             );
@@ -243,6 +243,15 @@ export default function PartnerAcceptPage() {
                         Create Account / Sign In
                     </Button>
                     <Button onClick={() => setCurrentStep(1)} variant="ghost">Back</Button>
+                </div>
+            );
+        }
+
+        if (!orgListLoaded) {
+            return (
+                <div className="flex flex-col items-center justify-center space-y-4 py-8">
+                    <Loader2 className="h-6 w-6 animate-spin text-[#647653]" />
+                    <p className="text-muted-foreground">Loading workspaces...</p>
                 </div>
             );
         }
