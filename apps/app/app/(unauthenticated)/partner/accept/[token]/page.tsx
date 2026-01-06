@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useAuth, useOrganizationList, CreateOrganization, SignIn } from '@clerk/nextjs';
+import { useAuth, useOrganization, useOrganizationList, CreateOrganization, SignIn, OrganizationSwitcher } from '@clerk/nextjs';
 import Link from 'next/link';
 import { TestFlightBanner } from '@/app/(authenticated)/components/testflight-banner';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
-import { Loader2, LayoutDashboard } from 'lucide-react';
+import { Loader2, LayoutDashboard, Building2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InviteDetails {
@@ -56,6 +56,7 @@ export default function PartnerAcceptPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { isLoaded, isSignedIn, getToken, orgId } = useAuth();
+    const { organization, isLoaded: orgLoaded } = useOrganization();
     const { userMemberships, isLoaded: orgListLoaded } = useOrganizationList({
         userMemberships: { infinite: true },
     });
@@ -296,6 +297,56 @@ export default function PartnerAcceptPage() {
                         />
                     </div>
                     <Button onClick={() => setCurrentStep(1)} variant="ghost">Back</Button>
+                </div>
+            );
+        }
+
+        // Case: Workspace or Personal Context -> Switch Org
+        // If user has orgs but is in Personal mode (organization is null) OR in a Workspace/Personal org
+        const isWorkspace = organization?.name?.toLowerCase().includes('workspace') ||
+            organization?.name?.toLowerCase().includes('personal');
+
+        if (hasOrgs && (!organization || isWorkspace)) {
+            return (
+                <div className="flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-4 pt-4">
+                    <div className="bg-amber-50 rounded-lg p-4 border border-amber-200 space-y-3">
+                        <div className="flex items-center gap-2 text-amber-800 font-semibold">
+                            <Building2 className="h-5 w-5" />
+                            <span>Wrong Organization Context</span>
+                        </div>
+                        <p className="text-sm text-amber-700 leading-relaxed">
+                            You are currently in <strong>{organization?.name || 'Personal Account'}</strong>.
+                            partnerships must be established with your main business organization.
+                        </p>
+                    </div>
+
+                    <div className="w-full space-y-2">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wider text-center">Switch Organization</p>
+                        <div className="flex justify-center">
+                            <OrganizationSwitcher
+                                afterSwitchOrganizationUrl={`/partner/accept/${token}?auth=success`}
+                                appearance={{
+                                    elements: {
+                                        rootBox: "w-full",
+                                        organizationSwitcherTrigger: "w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-gray-50 bg-white shadow-sm transition-all",
+                                        organizationPreviewTextContainer: "flex flex-col items-start gap-0.5",
+                                        organizationPreviewMainIdentifier: "font-semibold text-gray-900",
+                                        organizationPreviewSecondaryIdentifier: "text-xs text-muted-foreground",
+                                    }
+                                }}
+                            />
+                        </div>
+                    </div>
+
+                    <div className="pt-2">
+                        <Button
+                            onClick={() => window.location.reload()}
+                            variant="outline"
+                            className="w-full h-11 border-dashed"
+                        >
+                            I've Switched (Refresh)
+                        </Button>
+                    </div>
                 </div>
             );
         }

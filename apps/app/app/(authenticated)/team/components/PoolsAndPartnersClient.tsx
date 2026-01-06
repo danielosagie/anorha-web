@@ -1336,8 +1336,8 @@ export default function PoolsAndPartnersClient() {
                           >
                             {/* Card Header / Main Row */}
                             <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                              <div className="flex items-center gap-8">
-                                <div className="relative">
+                              <div className="flex items-center gap-4 flex-1 min-w-0">
+                                <div className="relative shrink-0">
                                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#647653] to-[#45523e] flex items-center justify-center text-white text-lg font-bold shadow-sm">
                                     {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
                                   </div>
@@ -1349,8 +1349,8 @@ export default function PoolsAndPartnersClient() {
                                   </div>
                                 </div>
 
-                                <div className="flex flex-col">
-                                  <div className="font-semibold text-gray-900 text-lg">
+                                <div className="flex flex-col min-w-0 flex-1">
+                                  <div className="font-semibold text-gray-900 text-lg truncate pr-2" title={partner.partnerOrgName || partner.partnerEmail}>
                                     {partner.partnerOrgName || partner.partnerEmail}
                                   </div>
                                   <div className="flex flex-col items-start gap-y-1 text-sm text-gray-500 mt-0.5">
@@ -1376,7 +1376,7 @@ export default function PoolsAndPartnersClient() {
                                 </div>
                               </div>
 
-                              <div className="flex items-center gap-3 sm:ml-auto">
+                              <div className="flex items-center gap-3 shrink-0 sm:ml-auto">
                                 <Button
                                   variant="outline"
                                   size="sm"
@@ -1569,7 +1569,7 @@ export default function PoolsAndPartnersClient() {
             </div>
 
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 flex items-center justify-between gap-3">
-              <code className="text-sm text-gray-600 break-all w-full h-full flex-1 font-mono bg-white px-2 py-1 rounded border border-gray-100">
+              <code className="text-sm text-gray-600 break-all w-full h-full flex-1 min-w-0 font-mono bg-white px-2 py-1 rounded border border-gray-100">
                 {createdInviteLink}
               </code>
               <Button
