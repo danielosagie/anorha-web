@@ -62,6 +62,16 @@ interface PendingInvite {
   inviteLink: string;
 }
 
+interface ReceivedInvite {
+  id: string;
+  sourceOrgName: string;
+  sourcePoolName: string;
+  shareType: 'consignment' | 'wholesale' | 'sync';
+  variantCount: number;
+  expiresAt: string;
+  token: string; // Token for accepting the invite
+}
+
 interface LinkedProduct {
   id: string;
   sourceVariantId: string;
@@ -100,6 +110,7 @@ export default function PoolsAndPartnersClient() {
   const [locations, setLocations] = useState<Location[]>([]);
   const [partnerships, setPartnerships] = useState<Partnership[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
+  const [receivedInvites, setReceivedInvites] = useState<ReceivedInvite[]>([]);
   const [members, setMembers] = useState<TeamMember[]>([]);
 
   // Editing State
@@ -225,6 +236,16 @@ export default function PoolsAndPartnersClient() {
       if (invitesRes?.ok) {
         const iData = await invitesRes.json();
         setPendingInvites(iData.sent || []);
+        // Received invites - invites where this org is the target
+        setReceivedInvites((iData.received || []).map((inv: any) => ({
+          id: inv.id,
+          sourceOrgName: inv.sourceOrgName || 'Unknown Organization',
+          sourcePoolName: inv.sourcePoolName || 'Unknown Pool',
+          shareType: inv.shareType || 'consignment',
+          variantCount: inv.variantCount || 0,
+          expiresAt: inv.expiresAt,
+          token: inv.token || inv.id, // Token for accepting
+        })));
       }
 
       // Load Team Members
@@ -397,6 +418,63 @@ export default function PoolsAndPartnersClient() {
         }
       }
     });
+  };
+
+  // Accept a received invite (for partners)
+  const [isAcceptingInvite, setIsAcceptingInvite] = useState<string | null>(null);
+
+  const acceptReceivedInvite = async (invite: ReceivedInvite) => {
+    setIsAcceptingInvite(invite.id);
+    try {
+      const token = await getToken();
+      const res = await fetch(`${API_BASE}/api/cross-org/invites/${invite.token}/accept`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({}),
+      });
+
+      if (res.ok) {
+        const result = await res.json();
+        // Remove from received invites
+        setReceivedInvites(prev => prev.filter(i => i.id !== invite.id));
+        // Refresh data to show new partnership
+        await loadData();
+        setAlertModal({
+          isOpen: true,
+          title: '🎉 Partnership Established!',
+          message: `Successfully connected with ${invite.sourceOrgName}. ${result.linkedCount || 0} products are now syncing.`
+        });
+      } else {
+        const errorData = await res.json().catch(() => ({ message: 'Failed to accept invite' }));
+
+        // Handle email mismatch error
+        if (errorData.code === 'EMAIL_MISMATCH') {
+          setAlertModal({
+            isOpen: true,
+            title: '⚠️ Wrong Account',
+            message: `This invite was sent to ${errorData.inviteeEmail}. You are logged in as ${errorData.currentEmail}. Please switch accounts.`
+          });
+        } else {
+          setAlertModal({
+            isOpen: true,
+            title: 'Error',
+            message: errorData.message || 'Failed to accept invite'
+          });
+        }
+      }
+    } catch (e: any) {
+      console.error('Failed to accept invite:', e);
+      setAlertModal({
+        isOpen: true,
+        title: 'Error',
+        message: e.message || 'Failed to accept invite'
+      });
+    } finally {
+      setIsAcceptingInvite(null);
+    }
   };
 
   const terminatePartnership = async (partnershipId: string, cleanup: boolean = true) => {
@@ -1118,6 +1196,61 @@ export default function PoolsAndPartnersClient() {
 
                 {/* Right Column: Lists */}
                 <div className="lg:col-span-2 space-y-8">
+
+                  {/* Received Invites Swimlane - For partners to accept */}
+                  {receivedInvites.length > 0 && (
+                    <section>
+                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                        Invitations to Accept
+                      </h3>
+
+                      <div className="space-y-3">
+                        {receivedInvites.map((invite) => (
+                          <div
+                            key={invite.id}
+                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                          >
+                            <div className="flex items-start gap-4 mb-3 sm:mb-0">
+                              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
+                                <Link2Icon className="w-5 h-5 text-emerald-600" />
+                              </div>
+                              <div>
+                                <div className="font-medium text-gray-900">{invite.sourceOrgName}</div>
+                                <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5 flex-wrap">
+                                  <Badge variant="outline" className="text-xs font-normal bg-white">
+                                    {invite.sourcePoolName}
+                                  </Badge>
+                                  <span>•</span>
+                                  <span>{invite.variantCount} products</span>
+                                  <span>•</span>
+                                  <Badge variant="outline" className="text-xs font-normal bg-amber-50 text-amber-700 border-amber-200">
+                                    {invite.shareType === 'consignment' ? '📦 Consignment' : '🤝 Partnership'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            </div>
+
+                            <div className="flex items-center gap-2 pl-14 sm:pl-0">
+                              <Button
+                                size="sm"
+                                onClick={() => acceptReceivedInvite(invite)}
+                                disabled={isAcceptingInvite === invite.id}
+                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                              >
+                                {isAcceptingInvite === invite.id ? (
+                                  <Loader2Icon className="w-4 h-4 animate-spin" />
+                                ) : (
+                                  <CheckIcon className="w-4 h-4" />
+                                )}
+                                <span className="ml-2">Accept</span>
+                              </Button>
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </section>
+                  )}
 
                   {/* Pending Invites Swimlane */}
                   <section>
