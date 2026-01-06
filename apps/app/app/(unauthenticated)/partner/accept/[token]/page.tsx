@@ -104,9 +104,15 @@ export default function PartnerAcceptPage() {
         fetchInvite();
     }, [token, justAuth]);
 
+    const [emailMismatchError, setEmailMismatchError] = useState<{
+        inviteeEmail: string;
+        currentEmail: string;
+    } | null>(null);
+
     const handleAcceptClick = async () => {
         setIsAccepting(true);
         setError(null);
+        setEmailMismatchError(null);
 
         try {
             const authToken = await getToken();
@@ -122,7 +128,20 @@ export default function PartnerAcceptPage() {
                 body: JSON.stringify({}),
             });
 
-            if (!res.ok) throw new Error(await res.text() || 'Failed to accept invite');
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({ message: 'Failed to accept invite' }));
+
+                // Handle EMAIL_MISMATCH error specially
+                if (errorData.code === 'EMAIL_MISMATCH') {
+                    setEmailMismatchError({
+                        inviteeEmail: errorData.inviteeEmail,
+                        currentEmail: errorData.currentEmail,
+                    });
+                    return;
+                }
+
+                throw new Error(errorData.message || 'Failed to accept invite');
+            }
 
             const result = await res.json();
             setLinkedCount(result.linkedCount || 0);
@@ -282,6 +301,49 @@ export default function PartnerAcceptPage() {
         }
 
         // Case: Signed In + Has Org -> Confirm & Accept
+
+        // Show email mismatch error if present
+        if (emailMismatchError) {
+            return (
+                <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4">
+                    <div className="text-center space-y-2">
+                        <div className="mx-auto h-12 w-12 rounded-xl bg-amber-100 flex items-center justify-center text-xl mb-2">⚠️</div>
+                        <h2 className="text-xl font-semibold text-amber-800">Wrong Account</h2>
+                        <p className="text-sm text-muted-foreground">
+                            This invite was sent to a different email address.
+                        </p>
+                    </div>
+
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3 text-sm">
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">Invite sent to:</span>
+                            <span className="font-medium text-amber-800">{emailMismatchError.inviteeEmail}</span>
+                        </div>
+                        <div className="flex justify-between items-center">
+                            <span className="text-muted-foreground">You&apos;re signed in as:</span>
+                            <span className="font-medium text-red-600">{emailMismatchError.currentEmail}</span>
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-center text-muted-foreground">
+                        Please sign out and log in with <strong>{emailMismatchError.inviteeEmail}</strong> to accept this invite.
+                    </p>
+
+                    <div className="space-y-3">
+                        <Button
+                            onClick={() => window.location.href = '/sign-out'}
+                            className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11"
+                        >
+                            Sign Out & Switch Account
+                        </Button>
+                        <Button onClick={() => setCurrentStep(1)} variant="ghost" className="w-full">
+                            Back
+                        </Button>
+                    </div>
+                </div>
+            );
+        }
+
         return (
             <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4">
                 <div className="text-center space-y-2">
