@@ -12,7 +12,7 @@ import { cn } from '@repo/design-system/lib/utils';
 import {
   MapPinIcon, UsersIcon, Link2Icon, PlusIcon, Trash2Icon,
   Loader2Icon, CheckIcon, SendIcon, CopyIcon,
-  SettingsIcon, ChevronRightIcon, ShieldIcon, EyeIcon, EyeOffIcon
+  SettingsIcon, ChevronRightIcon, ShieldIcon, EyeIcon, EyeOffIcon, AlertTriangleIcon
 } from 'lucide-react';
 
 // --- Interfaces ---
@@ -136,6 +136,23 @@ export default function PoolsAndPartnersClient() {
   const [expandedPartnership, setExpandedPartnership] = useState<string | null>(null);
   const [linkedProducts, setLinkedProducts] = useState<Record<string, LinkedProduct[]>>({});
   const [loadingLinkedProducts, setLoadingLinkedProducts] = useState<string | null>(null);
+
+  // Confirm Dialog State (replaces native confirm)
+  const [confirmDialog, setConfirmDialog] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+    confirmLabel?: string;
+    destructive?: boolean;
+    onConfirm: () => void;
+  } | null>(null);
+
+  // Alert Modal State (replaces native alert)
+  const [alertModal, setAlertModal] = useState<{
+    isOpen: boolean;
+    title: string;
+    message: string;
+  } | null>(null);
 
   const loadData = useCallback(async () => {
     if (!orgId) return;
@@ -292,17 +309,26 @@ export default function PoolsAndPartnersClient() {
   };
 
   const deletePool = async (poolId: string) => {
-    if (!confirm('Are you sure you want to delete this pool?')) return;
-    try {
-      const token = await getToken();
-      await fetch(`${API_BASE}/api/pools/${poolId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      loadData();
-    } catch (error) {
-      console.error('Failed to delete pool:', error);
-    }
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Delete Pool',
+      message: 'Are you sure you want to delete this pool?',
+      confirmLabel: 'Delete',
+      destructive: true,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const token = await getToken();
+          await fetch(`${API_BASE}/api/pools/${poolId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+          loadData();
+        } catch (error) {
+          console.error('Failed to delete pool:', error);
+        }
+      }
+    });
   };
 
   const sendPartnerInvite = async () => {
@@ -335,63 +361,84 @@ export default function PoolsAndPartnersClient() {
         loadData();
       } else {
         const errText = await res.text();
-        alert(`Failed to send invite: ${errText}`);
+        setAlertModal({ isOpen: true, title: 'Invite Failed', message: `Failed to send invite: ${errText}` });
       }
     } catch (e) {
       console.error('Failed to send invite:', e);
-      alert('Failed to send invite');
+      setAlertModal({ isOpen: true, title: 'Error', message: 'Failed to send invite' });
     } finally {
       setIsInviting(false);
     }
   };
 
   const revokeInvite = async (inviteId: string) => {
-    if (!confirm('Are you sure you want to revoke this invite?')) return;
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Revoke Invite',
+      message: 'Are you sure you want to revoke this invite?',
+      confirmLabel: 'Revoke',
+      destructive: true,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const token = await getToken();
+          const res = await fetch(`${API_BASE}/api/cross-org/invites/${inviteId}?orgId=${orgId}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          });
 
-    try {
-      const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/cross-org/invites/${inviteId}?orgId=${orgId}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (res.ok) {
-        setPendingInvites(prev => prev.filter(i => i.id !== inviteId));
-      } else {
-        alert('Failed to revoke invite');
+          if (res.ok) {
+            setPendingInvites(prev => prev.filter(i => i.id !== inviteId));
+          } else {
+            setAlertModal({ isOpen: true, title: 'Error', message: 'Failed to revoke invite' });
+          }
+        } catch (e) {
+          console.error('Failed to revoke invite:', e);
+        }
       }
-    } catch (e) {
-      console.error('Failed to revoke invite:', e);
-    }
+    });
   };
 
   const terminatePartnership = async (partnershipId: string, cleanup: boolean = true) => {
     const message = cleanup
-      ? 'Are you sure you want to end this partnership? This will remove all shared products from the partner\'s account.'
-      : 'Are you sure you want to end this partnership? Shared products will remain but sync will stop.';
-    if (!confirm(message)) return;
+      ? 'This will remove all shared products from the partner\'s account.'
+      : 'Shared products will remain but sync will stop.';
 
-    try {
-      const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}?cleanup=${cleanup}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${token}` }
-      });
+    setConfirmDialog({
+      isOpen: true,
+      title: 'End Partnership',
+      message,
+      confirmLabel: 'End Partnership',
+      destructive: true,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        try {
+          const token = await getToken();
+          const res = await fetch(`${API_BASE}/api/cross-org/partnerships/${partnershipId}?cleanup=${cleanup}`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          });
 
-      if (res.ok) {
-        const result = await res.json();
-        setPartnerships(prev => prev.filter(p => p.id !== partnershipId));
-        if (result.cleanedUp) {
-          alert(`Partnership ended. Cleaned up ${result.cleanedUp.variants} products.`);
+          if (res.ok) {
+            const result = await res.json();
+            setPartnerships(prev => prev.filter(p => p.id !== partnershipId));
+            if (result.cleanedUp) {
+              setAlertModal({
+                isOpen: true,
+                title: 'Partnership Ended',
+                message: `Partnership ended. Cleaned up ${result.cleanedUp.variants} products.`
+              });
+            }
+          } else {
+            const errText = await res.text();
+            setAlertModal({ isOpen: true, title: 'Error', message: `Failed to end partnership: ${errText}` });
+          }
+        } catch (e) {
+          console.error('Failed to end partnership:', e);
+          setAlertModal({ isOpen: true, title: 'Error', message: 'Failed to end partnership' });
         }
-      } else {
-        const errText = await res.text();
-        alert(`Failed to end partnership: ${errText}`);
       }
-    } catch (e) {
-      console.error('Failed to end partnership:', e);
-      alert('Failed to end partnership');
-    }
+    });
   };
 
   const togglePartnershipPause = async (partnershipId: string, currentlyPaused: boolean) => {
@@ -1389,7 +1436,7 @@ export default function PoolsAndPartnersClient() {
             </div>
 
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 flex items-center justify-between gap-3">
-              <code className="text-sm text-gray-600 text-wrap flex-1 font-mono bg-white px-2 py-1 rounded border border-gray-100">
+              <code className="text-sm text-gray-600 text-wrap w-full h-full flex-1 font-mono bg-white px-2 py-1 rounded border border-gray-100">
                 {createdInviteLink}
               </code>
               <Button
@@ -1449,6 +1496,68 @@ export default function PoolsAndPartnersClient() {
                 </Button>
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Confirm Dialog Modal */}
+      {confirmDialog?.isOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+            <div className="flex items-start gap-4 mb-4">
+              <div className={cn(
+                "w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0",
+                confirmDialog.destructive ? "bg-red-50" : "bg-amber-50"
+              )}>
+                <AlertTriangleIcon className={cn(
+                  "w-6 h-6",
+                  confirmDialog.destructive ? "text-red-500" : "text-amber-500"
+                )} />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold text-gray-900">{confirmDialog.title}</h3>
+                <p className="text-gray-600 mt-1 text-sm">{confirmDialog.message}</p>
+              </div>
+            </div>
+            <div className="flex gap-3 mt-6">
+              <Button
+                variant="outline"
+                className="flex-1"
+                onClick={() => setConfirmDialog(null)}
+              >
+                Cancel
+              </Button>
+              <Button
+                className={cn(
+                  "flex-1",
+                  confirmDialog.destructive
+                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    : "bg-[#647653] hover:bg-[#556145] text-white"
+                )}
+                onClick={confirmDialog.onConfirm}
+              >
+                {confirmDialog.confirmLabel || 'Confirm'}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Alert Modal */}
+      {alertModal?.isOpen && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+              <CheckIcon className="w-8 h-8 text-[#647653]" />
+            </div>
+            <h3 className="text-xl font-semibold text-gray-900">{alertModal.title}</h3>
+            <p className="text-gray-600 mt-2">{alertModal.message}</p>
+            <Button
+              className="w-full mt-6 bg-[#647653] hover:bg-[#556145] text-white"
+              onClick={() => setAlertModal(null)}
+            >
+              OK
+            </Button>
           </div>
         </div>
       )}

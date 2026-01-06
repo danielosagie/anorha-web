@@ -11,20 +11,16 @@ import { Loader2, LayoutDashboard } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InviteDetails {
-    Id: string;
+    id: string;
     sourceOrgId?: string;
-    InviteeEmail: string;
-    Status: string;
-    ShareType: string;
-    SyncDirection: string;
-    CanRevoke: boolean;
-    ExpiresAt: string;
-    sourceOrg?: {
-        Name: string;
-    };
-    pool?: {
-        name: string;
-    };
+    inviteeEmail: string;
+    status: string;
+    shareType: string;
+    syncDirection: string;
+    canRevoke: boolean;
+    expiresAt: string;
+    sourceOrgName?: string;
+    sourcePoolName?: string;
     variantCount?: number;
 }
 
@@ -93,7 +89,7 @@ export default function PartnerAcceptPage() {
                 setInvite(data);
 
                 // If already accepted or just authorized, move to step 2
-                if (data.Status?.toLowerCase() === 'accepted') {
+                if (data.status?.toLowerCase() === 'accepted') {
                     // If accepted, maybe jump to success? 
                     // But user wants explicit flow. Let's start at 1 usually, unless auth redirect.
                 }
@@ -166,8 +162,8 @@ export default function PartnerAcceptPage() {
 
     // Step 1: Review
     const renderStep1 = () => {
-        const senderName = invite?.sourceOrg?.Name || invite?.InviteeEmail || 'Partner';
-        const isConsignment = invite?.CanRevoke;
+        const senderName = invite?.sourceOrgName || invite?.inviteeEmail || 'Partner';
+        const isConsignment = invite?.canRevoke;
 
         return (
             <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-8 duration-500 fade-in">
@@ -306,7 +302,7 @@ export default function PartnerAcceptPage() {
                         />
                     </div>
                     <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
-                        I agree to enable inventory synchronization {invite?.ShareType === 'consignment' ? 'from' : 'with'} <strong>{invite?.sourceOrg?.Name || 'Partner'}</strong>.
+                        I agree to enable inventory synchronization {invite?.shareType === 'consignment' ? 'from' : 'with'} <strong>{invite?.sourceOrgName || 'Partner'}</strong>.
                     </label>
                 </div>
 
