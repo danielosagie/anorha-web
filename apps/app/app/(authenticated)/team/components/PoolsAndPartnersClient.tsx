@@ -1569,7 +1569,7 @@ export default function PoolsAndPartnersClient() {
             </div>
 
             <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 flex items-center justify-between gap-3">
-              <code className="text-sm text-gray-600 text-wrap w-full h-full flex-1 font-mono bg-white px-2 py-1 rounded border border-gray-100">
+              <code className="text-sm text-gray-600 break-all w-full h-full flex-1 font-mono bg-white px-2 py-1 rounded border border-gray-100">
                 {createdInviteLink}
               </code>
               <Button
