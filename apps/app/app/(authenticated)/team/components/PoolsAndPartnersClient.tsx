@@ -122,6 +122,15 @@ export default function PoolsAndPartnersClient() {
   const [invitePoolId, setInvitePoolId] = useState('');
   const [inviteCanRevoke, setInviteCanRevoke] = useState(true); // Default: consignment mode
   const [isInviting, setIsInviting] = useState(false);
+  const [emailTouched, setEmailTouched] = useState(false);
+
+  // Email validation helper
+  const isValidEmail = (email: string): boolean => {
+    if (!email) return false;
+    // Standard email regex
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    return emailRegex.test(email.trim());
+  };
 
   // Invite Success Modal State
   const [showInviteSuccess, setShowInviteSuccess] = useState(false);
@@ -1136,11 +1145,20 @@ export default function PoolsAndPartnersClient() {
                         <label className="block text-sm font-medium mb-1.5 text-gray-700">Partner Email</label>
                         <Input
                           type="email"
+                          name="email"
+                          autoComplete="email"
                           placeholder="partner@company.com"
                           value={inviteEmail}
                           onChange={(e) => setInviteEmail(e.target.value)}
-                          className="bg-gray-50 focus:bg-white transition-colors"
+                          onBlur={() => setEmailTouched(true)}
+                          className={cn(
+                            "bg-gray-50 focus:bg-white transition-colors",
+                            emailTouched && inviteEmail && !isValidEmail(inviteEmail) && "border-red-300 focus:border-red-500 focus:ring-red-500"
+                          )}
                         />
+                        {emailTouched && inviteEmail && !isValidEmail(inviteEmail) && (
+                          <p className="text-xs text-red-500 mt-1">Please enter a valid email address</p>
+                        )}
                       </div>
                       <div>
                         <label className="block text-sm font-medium mb-1.5 text-gray-700">Share Pool</label>
@@ -1180,7 +1198,7 @@ export default function PoolsAndPartnersClient() {
 
                       <Button
                         onClick={sendPartnerInvite}
-                        disabled={!inviteEmail || !invitePoolId || isInviting}
+                        disabled={!inviteEmail || !isValidEmail(inviteEmail) || !invitePoolId || isInviting}
                         className="w-full bg-[#647653] hover:bg-[#556145] text-white transition-all shadow-sm hover:shadow"
                       >
                         {isInviting ? (
