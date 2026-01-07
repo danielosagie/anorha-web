@@ -67,7 +67,8 @@ interface ReceivedInvite {
   sourceOrgName: string;
   sourcePoolName: string;
   shareType: 'consignment' | 'wholesale' | 'sync';
-  variantCount: number;
+  productCount: number;  // Grouped by ProductId
+  variantCount: number;  // Total variants
   expiresAt: string;
   token: string; // Token for accepting the invite
 }
@@ -82,6 +83,21 @@ interface LinkedProduct {
   visibilityStatus?: 'available' | 'out_of_stock' | 'hidden' | 'revoked';
   sharedQuantity?: number;
   lastSyncAt?: string;
+  // New grouped fields
+  productId?: string;
+  title?: string;
+  baseSku?: string;
+  primaryImageUrl?: string | null;
+  totalStock?: number;
+  variantCount?: number;
+  variants?: Array<{
+    variantId: string;
+    sku: string;
+    options?: Record<string, string>;
+    variantType?: string;
+    stock: number;
+  }>;
+  links?: Array<{ linkId: string; sourceVariantId: string; targetVariantId: string; status: string; }>;
 }
 
 type Tab = 'pools' | 'partners' | 'team';
@@ -251,6 +267,7 @@ export default function PoolsAndPartnersClient() {
           sourceOrgName: inv.sourceOrgName || 'Unknown Organization',
           sourcePoolName: inv.sourcePoolName || 'Unknown Pool',
           shareType: inv.shareType || 'consignment',
+          productCount: inv.productCount || inv.variantCount || 0,
           variantCount: inv.variantCount || 0,
           expiresAt: inv.expiresAt,
           token: inv.token || inv.id, // Token for accepting
@@ -1240,7 +1257,7 @@ export default function PoolsAndPartnersClient() {
                                     {invite.sourcePoolName}
                                   </Badge>
                                   <span>•</span>
-                                  <span>{invite.variantCount} products</span>
+                                  <span>{invite.productCount} products{invite.variantCount > invite.productCount ? ` (${invite.variantCount} variants)` : ''}</span>
                                   <span>•</span>
                                   <Badge variant="outline" className="text-xs font-normal bg-amber-50 text-amber-700 border-amber-200">
                                     {invite.shareType === 'consignment' ? '📦 Consignment' : '🤝 Partnership'}
@@ -1488,26 +1505,36 @@ export default function PoolsAndPartnersClient() {
                                         {linkedProducts[partner.id].map((product) => (
                                           <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
                                             <td className="px-4 py-3">
-                                              <div className="font-medium text-gray-900">{product.sourceVariantTitle}</div>
+                                              <div className="font-medium text-gray-900">
+                                                {product.title || product.sourceVariantTitle}
+                                                {(product.variantCount || 0) > 1 && (
+                                                  <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                                    {product.variantCount} variants
+                                                  </span>
+                                                )}
+                                              </div>
                                               <div className="text-xs text-gray-500 font-mono mt-0.5">
-                                                {product.sourceVariantSku || 'NO SKU'}
+                                                {product.baseSku || product.sourceVariantSku || 'NO SKU'}
                                               </div>
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                               <span className={cn(
                                                 "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
-                                                (product.sharedQuantity || 0) > 0
+                                                (product.totalStock || product.sharedQuantity || 0) > 0
                                                   ? "bg-green-50 text-green-700"
                                                   : "bg-gray-100 text-gray-500"
                                               )}>
-                                                {product.sharedQuantity || 0}
+                                                {product.totalStock ?? product.sharedQuantity ?? 0}
                                               </span>
                                             </td>
                                             <td className="px-4 py-3 text-center">
                                               <div className="flex justify-center">
                                                 <div
                                                   className="flex items-center gap-2 cursor-pointer group"
-                                                  onClick={() => toggleLinkSync(product.id, partner.id, product.status !== 'active')}
+                                                  onClick={() => {
+                                                    const linkId = product.links?.[0]?.linkId || product.id;
+                                                    toggleLinkSync(linkId, partner.id, product.status !== 'active');
+                                                  }}
                                                 >
                                                   <div className={cn(
                                                     "w-1.5 h-1.5 rounded-full",
@@ -1532,11 +1559,14 @@ export default function PoolsAndPartnersClient() {
                                                     ? "text-gray-400 hover:text-gray-600 bg-gray-50"
                                                     : "text-[#647653] hover:text-[#556145] hover:bg-[#647653]/5"
                                                 )}
-                                                onClick={() => toggleLinkVisibility(
-                                                  product.id,
-                                                  partner.id,
-                                                  product.visibilityStatus === 'hidden'
-                                                )}
+                                                onClick={() => {
+                                                  const linkId = product.links?.[0]?.linkId || product.id;
+                                                  toggleLinkVisibility(
+                                                    linkId,
+                                                    partner.id,
+                                                    product.visibilityStatus === 'hidden'
+                                                  );
+                                                }}
                                                 title={product.visibilityStatus === 'hidden' ? "Hidden from partner" : "Visible to partner"}
                                               >
                                                 {product.visibilityStatus === 'hidden' ? (

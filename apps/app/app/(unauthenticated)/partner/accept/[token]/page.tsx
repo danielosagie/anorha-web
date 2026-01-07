@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { TestFlightBanner } from '@/app/(authenticated)/components/testflight-banner';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
-import { Loader2, LayoutDashboard, Building2 } from 'lucide-react';
+import { Loader2, LayoutDashboard, Building2, XCircle, Handshake, Package, AlertTriangle, Link as LinkIcon, PartyPopper, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InviteDetails {
@@ -21,7 +21,8 @@ interface InviteDetails {
     expiresAt: string;
     sourceOrgName?: string;
     sourcePoolName?: string;
-    variantCount?: number;
+    productCount?: number;  // Grouped by ProductId
+    variantCount?: number;  // Total variants
 }
 
 // Stepper Component
@@ -169,7 +170,9 @@ export default function PartnerAcceptPage() {
         return (
             <Card className="w-full border-red-200 animate-in zoom-in-95 duration-500">
                 <CardHeader>
-                    <div className="text-4xl mb-2 text-center">❌</div>
+                    <div className="mx-auto mb-2 text-center">
+                        <XCircle className="h-10 w-10 text-red-500" />
+                    </div>
                     <CardTitle className="text-center text-red-700">Invite Issue</CardTitle>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
@@ -188,7 +191,9 @@ export default function PartnerAcceptPage() {
         return (
             <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-8 duration-500 fade-in">
                 <div className="flex flex-col space-y-2 text-center">
-                    <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center text-xl mb-2 shadow-sm">🤝</div>
+                    <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center mb-2 shadow-sm">
+                        <Handshake className="h-6 w-6 text-[#647653]" />
+                    </div>
                     <h1 className="text-2xl font-semibold tracking-tight">Accept Partner Invite</h1>
                     <p className="text-sm text-muted-foreground">from <span className="font-medium text-foreground">{senderName}</span></p>
                 </div>
@@ -196,12 +201,17 @@ export default function PartnerAcceptPage() {
                 <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-sm border border-border/50">
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Products Shared</span>
-                        <span className="font-medium bg-white px-2 py-0.5 rounded shadow-sm text-xs border">{invite?.variantCount || 0}</span>
+                        <span className="font-medium bg-white px-2 py-0.5 rounded shadow-sm text-xs border">
+                            {invite?.productCount || invite?.variantCount || 0}
+                            {(invite?.variantCount || 0) > (invite?.productCount || 0) && (
+                                <span className="text-gray-400 ml-1">({invite?.variantCount} variants)</span>
+                            )}
+                        </span>
                     </div>
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Mode</span>
                         <span className="font-medium capitalize flex items-center gap-1.5 bg-white px-2 py-0.5 rounded shadow-sm text-xs border">
-                            {isConsignment ? '📦 Consignment' : '🤝 Partnership'}
+                            {isConsignment ? <><Package className="h-3 w-3" /> Consignment</> : <><Handshake className="h-3 w-3" /> Partnership</>}
                         </span>
                     </div>
                 </div>
@@ -358,7 +368,9 @@ export default function PartnerAcceptPage() {
             return (
                 <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4">
                     <div className="text-center space-y-2">
-                        <div className="mx-auto h-12 w-12 rounded-xl bg-amber-100 flex items-center justify-center text-xl mb-2">⚠️</div>
+                        <div className="mx-auto h-12 w-12 rounded-xl bg-amber-100 flex items-center justify-center mb-2">
+                            <AlertTriangle className="h-6 w-6 text-amber-600" />
+                        </div>
                         <h2 className="text-xl font-semibold text-amber-800">Wrong Account</h2>
                         <p className="text-sm text-muted-foreground">
                             This invite was sent to a different email address.
@@ -398,7 +410,9 @@ export default function PartnerAcceptPage() {
         return (
             <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4">
                 <div className="text-center space-y-2">
-                    <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center text-xl mb-2 text-[#647653]">🔗</div>
+                    <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center mb-2">
+                        <LinkIcon className="h-6 w-6 text-[#647653]" />
+                    </div>
                     <h2 className="text-xl font-semibold">Ready to Connect</h2>
                     <p className="text-sm text-muted-foreground">
                         You are signed in as a member of an organization.
@@ -452,8 +466,8 @@ export default function PartnerAcceptPage() {
             {/* Success icon with glow effect */}
             <div className="relative mx-auto">
                 <div className="absolute inset-0 bg-[#647653]/20 rounded-full blur-xl scale-150 animate-pulse" />
-                <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-[#647653] to-[#4a5a3c] flex items-center justify-center text-4xl shadow-lg shadow-[#647653]/25">
-                    🎉
+                <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-[#647653] to-[#4a5a3c] flex items-center justify-center shadow-lg shadow-[#647653]/25">
+                    <PartyPopper className="h-10 w-10 text-white" />
                 </div>
             </div>
 
@@ -465,7 +479,7 @@ export default function PartnerAcceptPage() {
                 {linkedCount > 0 && (
                     <p className="text-sm text-muted-foreground">
                         <span className="inline-flex items-center gap-1.5 bg-[#647653]/10 text-[#647653] px-3 py-1 rounded-full font-medium">
-                            ✓ {linkedCount} products ready to sync
+                            <Check className="h-3 w-3" /> {linkedCount} products ready to sync
                         </span>
                     </p>
                 )}

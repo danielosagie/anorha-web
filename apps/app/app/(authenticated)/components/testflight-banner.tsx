@@ -11,6 +11,7 @@ import {
     DialogTrigger,
 } from '@repo/design-system/components/ui/dialog';
 import { env } from '@/env';
+import { Smartphone, Mail, Check, Copy, ExternalLink } from 'lucide-react';
 
 // Configuration - defaults provided if env vars are missing
 const TESTFLIGHT_URL = env.NEXT_PUBLIC_TESTFLIGHT_URL || 'https://testflight.apple.com/v1/app/6755371742?build=192233562';
@@ -97,10 +98,10 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
         return (
             <div className="bg-white rounded-2xl border border-gray-100 p-8 flex flex-col items-center text-center space-y-6 animate-in fade-in zoom-in-95 duration-500">
                 <div
-                    className="w-16 h-16 rounded-2xl flex items-center justify-center text-3xl shadow-sm mb-2"
+                    className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-sm mb-2"
                     style={{ backgroundColor: BRAND_GREEN_LIGHT }}
                 >
-                    📱
+                    <Smartphone className="h-8 w-8 text-[#647653]" />
                 </div>
 
                 <div className="space-y-2">
@@ -133,8 +134,8 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
                     </Button>
                 ) : (
                     <div className="w-full max-w-xs bg-gray-50 rounded-xl p-6 border border-gray-100 text-center">
-                        <p className="text-gray-600 text-sm">
-                            📧 Want to be notified when Android is available?
+                        <p className="text-gray-600 text-sm flex items-center justify-center gap-2">
+                            <Mail className="h-4 w-4" /> Want to be notified when Android is available?
                         </p>
                         <p className="text-xs text-gray-400 mt-2">
                             Contact us at hello@anorha.com
@@ -156,7 +157,7 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
                                     onClick={handleCopy}
                                     className="h-6 w-6 text-gray-400 hover:text-green-600"
                                 >
-                                    {copied ? '✓' : '⎘'}
+                                    {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                                 </Button>
                             </div>
                         </div>
@@ -170,7 +171,7 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
                         >
                             <a href={TESTFLIGHT_URL} target="_blank" rel="noopener noreferrer">
                                 Open TestFlight Link
-                                <span className="text-xs opacity-50">↗</span>
+                                <span className="text-xs opacity-50"><ExternalLink className="h-3 w-3 inline ml-1" /></span>
                             </a>
                         </Button>
                     )}
@@ -184,10 +185,10 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
         <div className="bg-white rounded-xl shadow-sm border border-gray-100 p-6 mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
                 <div
-                    className="w-12 h-12 rounded-xl flex items-center justify-center text-2xl"
+                    className="w-12 h-12 rounded-xl flex items-center justify-center"
                     style={{ backgroundColor: BRAND_GREEN_LIGHT }}
                 >
-                    📱
+                    <Smartphone className="h-6 w-6 text-[#647653]" />
                 </div>
                 <div>
                     <h3 className="font-semibold text-gray-900 text-lg">Get the Mobile App</h3>
@@ -242,10 +243,10 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
                                 href={TESTFLIGHT_URL}
                                 target="_blank"
                                 rel="noopener noreferrer"
-                                className="text-sm font-medium hover:underline"
+                                className="text-sm font-medium hover:underline flex items-center justify-center gap-1"
                                 style={{ color: BRAND_GREEN }}
                             >
-                                Open TestFlight Link Directly →
+                                Open TestFlight Link Directly <ExternalLink className="h-3 w-3" />
                             </a>
                         </div>
                     </div>
