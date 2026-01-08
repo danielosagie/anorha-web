@@ -79,6 +79,59 @@ export function SettingsClient({
   const [isLoadingConnections, setIsLoadingConnections] = React.useState(false);
   const [connectionsError, setConnectionsError] = React.useState<string | null>(null);
 
+  // Notification Preferences State
+  const [preferences, setPreferences] = React.useState({
+    jobCompletions: true,
+    inventorySharing: true,
+    sproutInsights: true,
+    syncAlerts: true,
+    marketingUpdates: false,
+  });
+  const [isLoadingPreferences, setIsLoadingPreferences] = React.useState(false);
+
+  const loadPreferences = React.useCallback(async () => {
+    try {
+      setIsLoadingPreferences(true);
+      const res = await fetch('/api/notifications/preferences');
+      if (res.ok) {
+        const data = await res.json();
+        setPreferences({
+          jobCompletions: data.jobCompletions ?? true,
+          inventorySharing: data.inventorySharing ?? true,
+          sproutInsights: data.sproutInsights ?? true,
+          syncAlerts: data.syncAlerts ?? true,
+          marketingUpdates: data.marketingUpdates ?? false,
+        });
+      }
+    } catch (err) {
+      console.error('Failed to load prefs', err);
+    } finally {
+      setIsLoadingPreferences(false);
+    }
+  }, []);
+
+  const togglePreference = async (key: keyof typeof preferences) => {
+    const newValue = !preferences[key];
+    setPreferences(prev => ({ ...prev, [key]: newValue }));
+
+    try {
+      await fetch('/api/notifications/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: newValue })
+      });
+    } catch (err) {
+      console.error('Failed to update preference:', err);
+      setPreferences(prev => ({ ...prev, [key]: !newValue })); // Revert
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeTab === 'notifications') {
+      loadPreferences();
+    }
+  }, [activeTab, loadPreferences]);
+
   React.useEffect(() => {
     let isMounted = true;
 
@@ -123,7 +176,7 @@ export function SettingsClient({
 
   return (
     <div className="flex flex-col lg:flex-row border-t-2 border-gray-100 gap-6 w-full">
-      
+
       {/* Sidebar Navigation - Responsive */}
       <div className="w-full lg:w-48 flex-shrink-0 h-full">
         <div className=" rounded-lg p-4 text-align-l lg:sticky lg:top-0">
@@ -182,7 +235,7 @@ export function SettingsClient({
                       <Calendar
                         mode="single"
                         selected={undefined}
-                        onSelect={() => {}}
+                        onSelect={() => { }}
                         initialFocus
                       />
                     </PopoverContent>
@@ -276,12 +329,12 @@ export function SettingsClient({
                               <div className="font-medium">{displayName}</div>
 
 
-                    
+
                               <Badge className={statusClasses}>
-                              {connection.Status
-                                ? connection.Status.charAt(0).toUpperCase() +
+                                {connection.Status
+                                  ? connection.Status.charAt(0).toUpperCase() +
                                   connection.Status.slice(1).replace('_', ' ')
-                                : 'Inactive'}
+                                  : 'Inactive'}
                               </Badge>
 
 
@@ -296,7 +349,7 @@ export function SettingsClient({
                           </div>
 
                           <div className="flex flex-col items-end gap-1">
-                          
+
                             <Button
                               variant="outline"
                               size="sm"
@@ -323,47 +376,110 @@ export function SettingsClient({
           <div className="space-y-4 h-full">
             <div>
               <h2 className="text-2xl font-bold">Notifications</h2>
-              <p className="text-gray-600">Configure how you receive notifications.</p>
+              <p className="text-gray-600">Configure how you receive alerts and updates.</p>
             </div>
 
             <Card className="border border-gray-200">
               <CardHeader>
-                <CardTitle>Email Notifications</CardTitle>
+                <CardTitle>Notification Preferences</CardTitle>
+                <CardDescription>Manage which events trigger notifications.</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                  <div>
-                    <div className="font-medium">Communication emails</div>
-                    <div className="text-sm text-gray-600">Receive emails about your account activity.</div>
-                  </div>
-                  <input type="checkbox" className="w-5 h-5" />
-                </div>
+                {isLoadingPreferences ? (
+                  <p className="text-sm text-gray-500">Loading preferences...</p>
+                ) : (
+                  <>
+                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-100 p-2 rounded-full">
+                          <NetworkIcon className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium">Job Completions</div>
+                          <div className="text-sm text-gray-600">Get notified when AI processing, matching, or scanning finishes.</div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 accent-[#647653]"
+                        checked={preferences.jobCompletions}
+                        onChange={() => togglePreference('jobCompletions')}
+                      />
+                    </div>
 
-                <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                  <div>
-                    <div className="font-medium">Marketing emails</div>
-                    <div className="text-sm text-gray-600">Receive emails about new products, features, and more.</div>
-                  </div>
-                  <input type="checkbox" className="w-5 h-5" />
-                </div>
+                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-100 p-2 rounded-full">
+                          <UsersIcon className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium">Inventory Sharing</div>
+                          <div className="text-sm text-gray-600">When partners share new inventory with you.</div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 accent-[#647653]"
+                        checked={preferences.inventorySharing}
+                        onChange={() => togglePreference('inventorySharing')}
+                      />
+                    </div>
 
-                <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                  <div>
-                    <div className="font-medium">Social emails</div>
-                    <div className="text-sm text-gray-600">Receive emails for friend requests, follows, and more.</div>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-5 h-5" />
-                </div>
+                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-100 p-2 rounded-full">
+                          <SettingsIcon className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium">Sprout Insights</div>
+                          <div className="text-sm text-gray-600">AI-driven insights and opportunities.</div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 accent-[#647653]"
+                        checked={preferences.sproutInsights}
+                        onChange={() => togglePreference('sproutInsights')}
+                      />
+                    </div>
 
-                <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                  <div>
-                    <div className="font-medium">Security emails</div>
-                    <div className="text-sm text-gray-600">Receive emails about your account activity and security.</div>
-                  </div>
-                  <input type="checkbox" defaultChecked className="w-5 h-5" />
-                </div>
+                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-100 p-2 rounded-full">
+                          <BellIcon className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium">Sync Alerts</div>
+                          <div className="text-sm text-gray-600">Critical issues with platform connections.</div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 accent-[#647653]"
+                        checked={preferences.syncAlerts}
+                        onChange={() => togglePreference('syncAlerts')}
+                      />
+                    </div>
 
-                <Button className="bg-[#647653] hover:bg-[#556145] text-white">Update notifications</Button>
+                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <div className="bg-gray-100 p-2 rounded-full">
+                          <ExternalLinkIcon className="w-5 h-5 text-gray-600" />
+                        </div>
+                        <div>
+                          <div className="font-medium">Marketing Updates</div>
+                          <div className="text-sm text-gray-600">News and updates about Anorha.</div>
+                        </div>
+                      </div>
+                      <input
+                        type="checkbox"
+                        className="w-5 h-5 accent-[#647653]"
+                        checked={preferences.marketingUpdates}
+                        onChange={() => togglePreference('marketingUpdates')}
+                      />
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>
