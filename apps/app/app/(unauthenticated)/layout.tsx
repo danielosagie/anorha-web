@@ -11,7 +11,7 @@ type AuthLayoutProps = {
 
 const AuthLayout = ({ children }: AuthLayoutProps) => (
   <div className="container relative grid h-dvh flex-col items-center justify-center lg:max-w-none lg:grid-cols-2 lg:px-0">
-    <div className="relative hidden h-full flex-col bg-muted p-10 text-white lg:flex dark:border-r">
+    <div className="relative hidden h-full flex-col p-10 text-white lg:flex dark:border-r">
       {/* Shader Gradient Background */}
       <div className="absolute inset-0 overflow-hidden">
         <ShaderGradientCanvas
@@ -51,7 +51,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
           <p className="text-lg text-white mix-blend-difference">
             &ldquo;We cut our listing time in half and I can just focus on selling. Anorha does all the hard work.&rdquo;
           </p>
-          <footer className="text-sm text-white/80 mix-blend-difference">Sofia Davis — Boutique Owner, LA</footer>
+          <footer className="text-sm text-white mix-blend-difference">Sofia Davis — Boutique Owner, LA</footer>
         </blockquote>
       </div>
     </div>

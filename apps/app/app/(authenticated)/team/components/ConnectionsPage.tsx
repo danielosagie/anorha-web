@@ -5,6 +5,16 @@ import { useOrganization, useAuth } from '@clerk/nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Badge } from '@repo/design-system/components/ui/badge';
+import { Checkbox } from '@repo/design-system/components/ui/checkbox';
+import { Label } from '@repo/design-system/components/ui/label';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from '@repo/design-system/components/ui/dialog';
 import { AlertCircle, Loader2, Plus, Trash2, RefreshCw } from 'lucide-react';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333').replace(/\/$/, '');
@@ -44,6 +54,11 @@ export default function ConnectionsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  // Disconnect State
+  const [disconnectId, setDisconnectId] = useState<string | null>(null);
+  const [disconnecting, setDisconnecting] = useState(false);
+  const [archiveProducts, setArchiveProducts] = useState(false);
+
   useEffect(() => {
     if (!orgLoaded || !authLoaded || !organization?.id) return;
 
@@ -74,6 +89,47 @@ export default function ConnectionsPage() {
       setError(err instanceof Error ? err.message : 'Failed to load connections');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDisconnectClick = (connectionId: string) => {
+    setDisconnectId(connectionId);
+    setArchiveProducts(false); // Default to unchecked? Or checked? User asked for option.
+  };
+
+  const confirmDisconnect = async () => {
+    if (!disconnectId) return;
+
+    try {
+      setDisconnecting(true);
+      const token = await getToken();
+      if (!token) throw new Error('No auth token');
+
+      // Call new disconnect endpoint with strategy
+      const cleanupStrategy = archiveProducts ? 'soft_delete' : 'keep';
+
+      const res = await fetch(`/api/connections/${disconnectId}/disconnect`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ cleanupStrategy }),
+      });
+
+      if (!res.ok) {
+        throw new Error(`Disconnect failed: ${res.status}`);
+      }
+
+      // Refresh connections list
+      await loadConnections();
+      setDisconnectId(null);
+    } catch (err) {
+      console.error('[ConnectionsPage] Error disconnecting:', err);
+      // Maybe show a toast error? Or set page error?
+      setError('Failed to disconnect platform. Please try again.');
+    } finally {
+      setDisconnecting(false);
     }
   };
 
@@ -144,7 +200,7 @@ export default function ConnectionsPage() {
                         <p className="text-xs text-muted-foreground mt-1">
                           {conn.PlatformType?.charAt(0).toUpperCase()}{conn.PlatformType?.slice(1)}
                         </p>
-                        
+
                         {/* Status Badge */}
                         <div className="flex items-center gap-2 mt-2">
                           <Badge className={statusColor} variant="secondary">
@@ -171,7 +227,12 @@ export default function ConnectionsPage() {
                       <Button variant="ghost" size="sm">
                         <RefreshCw className="w-4 h-4" />
                       </Button>
-                      <Button variant="ghost" size="sm" className="text-red-600 hover:text-red-700">
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() => handleDisconnectClick(conn.Id)}
+                      >
                         <Trash2 className="w-4 h-4" />
                       </Button>
                     </div>
@@ -192,6 +253,52 @@ export default function ConnectionsPage() {
           </Button>
         </div>
       )}
+
+      {/* Disconnect Dialog */}
+      <Dialog open={!!disconnectId} onOpenChange={(open) => !open && setDisconnectId(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Disconnect Platform</DialogTitle>
+            <DialogDescription>
+              Are you sure you want to disconnect this platform? This will stop inventory sync and updates.
+            </DialogDescription>
+          </DialogHeader>
+
+          <div className="py-4">
+            <div className="flex items-center space-x-2 border p-4 rounded-md bg-gray-50 border-gray-200">
+              <Checkbox
+                id="archive-products"
+                checked={archiveProducts}
+                onCheckedChange={(checked) => setArchiveProducts(checked as boolean)}
+              />
+              <div className="grid gap-1.5 leading-none">
+                <Label htmlFor="archive-products" className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                  Archive imported products?
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  If checked, products that were imported solely from this platform will be archived (hidden) in Anorha.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setDisconnectId(null)} disabled={disconnecting}>
+              Cancel
+            </Button>
+            <Button variant="destructive" onClick={confirmDisconnect} disabled={disconnecting}>
+              {disconnecting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  Disconnecting...
+                </>
+              ) : (
+                'Disconnect'
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
