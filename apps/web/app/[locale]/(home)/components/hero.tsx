@@ -191,7 +191,7 @@ export const Hero = async ({ dictionary }: HeroProps) => {
             <div className="rounded-3xl w-auto bg-amber-100 p-4 shadow-inner my-10" style={{background: "linear-gradient(158deg, #FFFBF1 -8.56%, #FAE1A2 100.33%)", borderRadius: "20px"}} >
               <div className="grid grid-cols-2 gap-1">
                 <div className="flex flex-col items-center">
-                  <div className="mb-2 rounded-lg bg-zinc-600  w-full max-w-[360px] px-4 py-2 text-center font-semibold text-white">5+ Mins of Manual Work</div>
+                  <div className="mb-2 rounded-lg bg-zinc-600  w-full max-w-[360px] px-4 py-2 text-center font-semibold text-white">20+ Mins of Manual Work</div>
                   <div className="flex w-full justify-center">
                     <div className="relative aspect-[7.5/16]  w-full max-w-[360px] rounded-4xl overflow-hidden bg-zinc-900 border-4 border-zinc-900">
                       {env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL ? (

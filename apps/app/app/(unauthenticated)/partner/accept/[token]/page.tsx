@@ -259,6 +259,7 @@ export default function PartnerAcceptPage() {
                 <div className="flex flex-col items-center space-y-6 animate-in fade-in slide-in-from-bottom-4 pt-4">
                     <div className="w-full max-w-[400px]">
                         <SignIn
+                            routing="virtual"
                             afterSignInUrl={returnUrl}
                             afterSignUpUrl={returnUrl}
                             appearance={{
