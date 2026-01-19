@@ -127,6 +127,7 @@ export default function PoolsAndPartnersClient() {
   const [partnerships, setPartnerships] = useState<Partnership[]>([]);
   const [pendingInvites, setPendingInvites] = useState<PendingInvite[]>([]);
   const [receivedInvites, setReceivedInvites] = useState<ReceivedInvite[]>([]);
+  const [rejectedInvites, setRejectedInvites] = useState<Array<{ id: string; email: string; poolName: string; rejectedAt: string }>>([]); // Ephemeral - cleared on action
   const [members, setMembers] = useState<TeamMember[]>([]);
 
   // Editing State
@@ -271,6 +272,13 @@ export default function PoolsAndPartnersClient() {
           variantCount: inv.variantCount || 0,
           expiresAt: inv.expiresAt,
           token: inv.token || inv.id, // Token for accepting
+        })));
+        // Rejected invites - ephemeral notifications for the sender
+        setRejectedInvites((iData.rejected || []).map((inv: any) => ({
+          id: inv.id,
+          email: inv.email || inv.inviteeEmail || 'Unknown',
+          poolName: inv.poolName || 'Unknown Pool',
+          rejectedAt: inv.rejectedAt || new Date().toISOString(),
         })));
       }
 
@@ -793,6 +801,40 @@ export default function PoolsAndPartnersClient() {
 
   return (
     <div className="max-w-6xl mx-auto p-6 space-y-6">
+
+      {/* Rejected Invite Notifications - Ephemeral, dismissible */}
+      {rejectedInvites.length > 0 && (
+        <div className="space-y-2">
+          {rejectedInvites.map((rejected) => (
+            <div
+              key={rejected.id}
+              className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start justify-between gap-4"
+            >
+              <div className="flex items-start gap-3">
+                <AlertTriangleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-sm font-medium text-amber-800">
+                    Invite Declined
+                  </p>
+                  <p className="text-sm text-amber-700">
+                    <span className="font-medium">{rejected.email}</span> declined your invite to <span className="font-medium">{rejected.poolName}</span>.
+                  </p>
+                </div>
+              </div>
+              <button
+                onClick={() => setRejectedInvites(prev => prev.filter(r => r.id !== rejected.id))}
+                className="text-amber-500 hover:text-amber-700 p-1"
+                aria-label="Dismiss"
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
+            </div>
+          ))}
+        </div>
+      )}
 
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200 pb-1">
