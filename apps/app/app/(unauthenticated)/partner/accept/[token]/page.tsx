@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useRouter, useSearchParams } from 'next/navigation';
-import { useAuth, useOrganization, useOrganizationList, CreateOrganization, SignIn, OrganizationSwitcher } from '@clerk/nextjs';
+import { useAuth, useOrganization, useOrganizationList, CreateOrganization, SignIn, OrganizationSwitcher, useClerk } from '@clerk/nextjs';
 import Link from 'next/link';
 import { TestFlightBanner } from '@/app/(authenticated)/components/testflight-banner';
 import { Button } from '@repo/design-system/components/ui/button';
@@ -57,6 +57,7 @@ export default function PartnerAcceptPage() {
     const router = useRouter();
     const searchParams = useSearchParams();
     const { isLoaded, isSignedIn, getToken, orgId } = useAuth();
+    const { signOut } = useClerk();
     const { organization, isLoaded: orgLoaded } = useOrganization();
     const { userMemberships, isLoaded: orgListLoaded } = useOrganizationList({
         userMemberships: { infinite: true },
@@ -395,7 +396,7 @@ export default function PartnerAcceptPage() {
 
                     <div className="space-y-3">
                         <Button
-                            onClick={() => window.location.href = '/sign-out'}
+                            onClick={() => signOut(() => window.location.reload())}
                             className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11"
                         >
                             Sign Out & Switch Account
