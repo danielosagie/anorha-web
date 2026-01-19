@@ -55,7 +55,7 @@ const STATUS_BADGE_CLASSES: Record<string, string> = {
   ready_to_sync: 'bg-lime-100 text-lime-800',
 };
 
-type SettingsTab = 'profile' | 'integrations' | 'notifications';
+type SettingsTab = 'profile' | 'business' | 'integrations' | 'notifications';
 
 interface SettingsClientProps {
   orgId: string;
@@ -88,6 +88,18 @@ export function SettingsClient({
     marketingUpdates: false,
   });
   const [isLoadingPreferences, setIsLoadingPreferences] = React.useState(false);
+
+  // Business Address State
+  const [businessAddress, setBusinessAddress] = React.useState({
+    street1: '',
+    street2: '',
+    city: '',
+    state: '',
+    postalCode: '',
+    country: 'US',
+  });
+  const [isLoadingAddress, setIsLoadingAddress] = React.useState(false);
+  const [addressSaved, setAddressSaved] = React.useState(false);
 
   const loadPreferences = React.useCallback(async () => {
     try {
@@ -130,7 +142,51 @@ export function SettingsClient({
     if (activeTab === 'notifications') {
       loadPreferences();
     }
+    if (activeTab === 'business') {
+      loadBusinessAddress();
+    }
   }, [activeTab, loadPreferences]);
+
+  const loadBusinessAddress = React.useCallback(async () => {
+    try {
+      setIsLoadingAddress(true);
+      const res = await fetch(`/api/organizations/${orgId}/address`);
+      if (res.ok) {
+        const data = await res.json();
+        if (data.address) {
+          setBusinessAddress({
+            street1: data.address.street1 || '',
+            street2: data.address.street2 || '',
+            city: data.address.city || '',
+            state: data.address.state || '',
+            postalCode: data.address.postalCode || '',
+            country: data.address.country || 'US',
+          });
+        }
+      }
+    } catch (err) {
+      console.error('Failed to load address', err);
+    } finally {
+      setIsLoadingAddress(false);
+    }
+  }, [orgId]);
+
+  const saveBusinessAddress = async () => {
+    try {
+      setIsLoadingAddress(true);
+      await fetch(`/api/organizations/${orgId}/address`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(businessAddress),
+      });
+      setAddressSaved(true);
+      setTimeout(() => setAddressSaved(false), 3000);
+    } catch (err) {
+      console.error('Failed to save address:', err);
+    } finally {
+      setIsLoadingAddress(false);
+    }
+  };
 
   React.useEffect(() => {
     let isMounted = true;
@@ -170,6 +226,7 @@ export function SettingsClient({
 
   const tabs: { id: SettingsTab; label: string }[] = [
     { id: 'profile', label: 'Profile' },
+    { id: 'business', label: 'Business' },
     { id: 'integrations', label: 'Integrations' },
     { id: 'notifications', label: 'Notifications' },
   ];
@@ -255,6 +312,112 @@ export function SettingsClient({
                 </div>
 
                 <Button className="bg-[#647653] hover:bg-[#556145] text-white">Update account</Button>
+              </CardContent>
+            </Card>
+          </div>
+        )}
+
+        {activeTab === 'business' && (
+          <div className="space-y-4">
+            <div>
+              <h2 className="text-2xl font-bold">Business</h2>
+              <p className="text-gray-600">Manage your business address for shipping, returns, and platform setup.</p>
+            </div>
+
+            <Card className="border border-gray-200">
+              <CardHeader>
+                <CardTitle>Business Address</CardTitle>
+                <CardDescription>This address is used for eBay locations, return policies, and shipping.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {isLoadingAddress ? (
+                  <p className="text-sm text-gray-500">Loading address...</p>
+                ) : (
+                  <>
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Street Address</label>
+                      <input
+                        type="text"
+                        placeholder="123 Main Street"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        value={businessAddress.street1}
+                        onChange={(e) => setBusinessAddress(prev => ({ ...prev, street1: e.target.value }))}
+                      />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Apt, Suite, Unit (optional)</label>
+                      <input
+                        type="text"
+                        placeholder="Suite 100"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        value={businessAddress.street2}
+                        onChange={(e) => setBusinessAddress(prev => ({ ...prev, street2: e.target.value }))}
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-4">
+                      <div className="col-span-2">
+                        <label className="block text-sm font-medium mb-2">City</label>
+                        <input
+                          type="text"
+                          placeholder="Los Angeles"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                          value={businessAddress.city}
+                          onChange={(e) => setBusinessAddress(prev => ({ ...prev, city: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">State</label>
+                        <input
+                          type="text"
+                          placeholder="CA"
+                          maxLength={2}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653] uppercase"
+                          value={businessAddress.state}
+                          onChange={(e) => setBusinessAddress(prev => ({ ...prev, state: e.target.value.toUpperCase() }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-sm font-medium mb-2">ZIP Code</label>
+                        <input
+                          type="text"
+                          placeholder="90001"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                          value={businessAddress.postalCode}
+                          onChange={(e) => setBusinessAddress(prev => ({ ...prev, postalCode: e.target.value }))}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-sm font-medium mb-2">Country</label>
+                        <input
+                          type="text"
+                          placeholder="US"
+                          maxLength={2}
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653] uppercase"
+                          value={businessAddress.country}
+                          onChange={(e) => setBusinessAddress(prev => ({ ...prev, country: e.target.value.toUpperCase() }))}
+                        />
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4 pt-2">
+                      <Button
+                        className="bg-[#647653] hover:bg-[#556145] text-white"
+                        onClick={saveBusinessAddress}
+                        disabled={isLoadingAddress}
+                      >
+                        {isLoadingAddress ? 'Saving...' : 'Save Address'}
+                      </Button>
+                      {addressSaved && (
+                        <span className="text-sm text-green-600">✓ Address saved!</span>
+                      )}
+                    </div>
+                  </>
+                )}
               </CardContent>
             </Card>
           </div>

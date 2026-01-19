@@ -658,6 +658,50 @@ export default function PoolsAndPartnersClient() {
   };
 
 
+  // Revoke/remove a product from a partnership (for consignment/revocable partnerships)
+  const [revokingLinkId, setRevokingLinkId] = useState<string | null>(null);
+
+  const revokeProductFromPartnership = async (linkId: string, partnershipId: string, productTitle: string) => {
+    setConfirmDialog({
+      isOpen: true,
+      title: 'Remove Product from Partner',
+      message: `Remove "${productTitle}" from this partnership? The partner will no longer have access to this product.`,
+      confirmLabel: 'Remove',
+      destructive: true,
+      onConfirm: async () => {
+        setConfirmDialog(null);
+        setRevokingLinkId(linkId);
+        try {
+          const token = await getToken();
+          const res = await fetch(`${API_BASE}/api/cross-org/links/${linkId}/revoke`, {
+            method: 'DELETE',
+            headers: { Authorization: `Bearer ${token}` }
+          });
+
+          if (res.ok) {
+            // Remove from local state
+            setLinkedProducts(prev => ({
+              ...prev,
+              [partnershipId]: prev[partnershipId]?.filter(p => {
+                // Remove the product if its id or any link's linkId matches
+                const linkIds = p.links?.map(l => l.linkId) || [];
+                return p.id !== linkId && !linkIds.includes(linkId);
+              }) || []
+            }));
+          } else {
+            const errText = await res.text();
+            setAlertModal({ isOpen: true, title: 'Error', message: `Failed to remove product: ${errText}` });
+          }
+        } catch (e) {
+          console.error('Error revoking product:', e);
+          setAlertModal({ isOpen: true, title: 'Error', message: 'Failed to remove product' });
+        } finally {
+          setRevokingLinkId(null);
+        }
+      }
+    });
+  };
+
   const copyToClipboard = async (text: string) => {
     try {
       await navigator.clipboard.writeText(text);
@@ -1499,6 +1543,9 @@ export default function PoolsAndPartnersClient() {
                                           <th className="px-4 py-3 text-center">Stock</th>
                                           <th className="px-4 py-3 text-center">Sync Status</th>
                                           <th className="px-4 py-3 text-center">Visibility</th>
+                                          {partner.direction === 'sent' && partner.shareType === 'consignment' && (
+                                            <th className="px-4 py-3 text-center w-16"></th>
+                                          )}
                                         </tr>
                                       </thead>
                                       <tbody className="divide-y divide-gray-100">
@@ -1582,6 +1629,31 @@ export default function PoolsAndPartnersClient() {
                                                 )}
                                               </Button>
                                             </td>
+                                            {partner.direction === 'sent' && partner.shareType === 'consignment' && (
+                                              <td className="px-4 py-3 text-center">
+                                                <Button
+                                                  variant="ghost"
+                                                  size="sm"
+                                                  className="h-7 px-2 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                  onClick={() => {
+                                                    const linkId = product.links?.[0]?.linkId || product.id;
+                                                    revokeProductFromPartnership(
+                                                      linkId,
+                                                      partner.id,
+                                                      product.title || product.sourceVariantTitle || 'this product'
+                                                    );
+                                                  }}
+                                                  disabled={revokingLinkId === (product.links?.[0]?.linkId || product.id)}
+                                                  title="Remove from partnership"
+                                                >
+                                                  {revokingLinkId === (product.links?.[0]?.linkId || product.id) ? (
+                                                    <Loader2Icon className="w-3.5 h-3.5 animate-spin" />
+                                                  ) : (
+                                                    <Trash2Icon className="w-3.5 h-3.5" />
+                                                  )}
+                                                </Button>
+                                              </td>
+                                            )}
                                           </tr>
                                         ))}
                                       </tbody>
