@@ -213,11 +213,27 @@ export default function PoolsAndPartnersClient() {
       }
 
       // Parallel Fetching
+      // Parallel Fetching with timed logging
+      console.log('Starting data load...');
+      const fetchWithLog = async (url: string, name: string) => {
+        console.time(name);
+        try {
+          const res = await fetch(url, { headers });
+          console.timeEnd(name);
+          if (!res.ok) console.error(`${name} failed:`, res.status, res.statusText);
+          return res;
+        } catch (e) {
+          console.timeEnd(name);
+          console.error(`${name} error:`, e);
+          return null;
+        }
+      };
+
       const [poolsRes, locsRes, partnersRes, invitesRes] = await Promise.all([
-        fetch(`${API_BASE}/api/pools/org/${orgId}`, { headers }),
-        fetch(`${API_BASE}/api/pools/locations/available?orgId=${orgId}`, { headers }),
-        fetch(`${API_BASE}/api/cross-org/partnerships?orgId=${orgId}`, { headers }).catch(() => null),
-        fetch(`${API_BASE}/api/cross-org/invites/pending?orgId=${orgId}`, { headers }).catch(() => null),
+        fetchWithLog(`${API_BASE}/api/pools/org/${orgId}`, 'pools'),
+        fetchWithLog(`${API_BASE}/api/pools/locations/available?orgId=${orgId}`, 'locations'),
+        fetchWithLog(`${API_BASE}/api/cross-org/partnerships?orgId=${orgId}`, 'partnerships'),
+        fetchWithLog(`${API_BASE}/api/cross-org/invites/pending?orgId=${orgId}`, 'invites'),
       ]);
 
       if (poolsRes.ok) setPools(await poolsRes.json());
