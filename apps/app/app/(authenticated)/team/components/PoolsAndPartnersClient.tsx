@@ -192,7 +192,12 @@ export default function PoolsAndPartnersClient() {
   } | null>(null);
 
   const loadData = useCallback(async () => {
-    if (!orgId) return;
+    if (!isOrgLoaded) return;
+
+    if (!orgId) {
+      setIsLoading(false);
+      return;
+    }
 
     // Only show full loading state on first load or org switch to prevent UI flashing
     if (loadedOrgIdRef.current !== orgId) {
@@ -321,13 +326,16 @@ export default function PoolsAndPartnersClient() {
       setIsLoading(false);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [orgId, getToken]); // Note: organization used inside but ref changes shouldn't trigger reload
+  }, [orgId, isOrgLoaded, getToken]); // Note: organization used inside but ref changes shouldn't trigger reload
 
+  // Initial load
   useEffect(() => {
-    if (isOrgLoaded && isAuthLoaded && orgId) {
+    if (isOrgLoaded && !orgId) {
+      setIsLoading(false);
+    } else if (orgId) {
       loadData();
     }
-  }, [isOrgLoaded, isAuthLoaded, orgId, loadData]);
+  }, [orgId, isOrgLoaded, loadData]);
 
   // --- Actions ---
 

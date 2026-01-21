@@ -431,7 +431,8 @@ export default function PartnerAcceptPage() {
                         />
                     </div>
                     <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
-                        I agree to enable inventory synchronization {invite?.shareType === 'consignment' ? 'from' : 'with'} <strong>{invite?.sourceOrgName || 'Partner'}</strong>.
+                        I agree to enable inventory sync {invite?.shareType === 'consignment' ? 'from' : 'with'} <strong>{invite?.sourceOrgName || 'Partner'}</strong>.
+                        
                     </label>
                 </div>
 
