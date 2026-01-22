@@ -8,13 +8,20 @@ if (release().startsWith('6.1')) app.disableHardwareAcceleration()
 
 // Set application name for Windows 10+ notifications
 if (process.platform === 'win32') app.setAppUserModelId(app.getName())
+app.setName('Anorha')
 
 if (!app.requestSingleInstanceLock()) {
     app.quit()
     process.exit(0)
 }
 
-let win: BrowserWindow | null = null
+export let win: BrowserWindow | null = null
+// Helper to send logs to renderer
+export function sendAgentLog(message: string, type: 'info' | 'error' | 'success' = 'info') {
+    if (win) {
+        win.webContents.send('agent-log', { message, type, timestamp: new Date().toISOString() })
+    }
+}
 // Dist path for production
 const distPath = join(__dirname, '../../.next/server/app')
 // Url for dev
@@ -24,19 +31,22 @@ const indexHtml = join(distPath, 'index.html')
 async function createWindow() {
     win = new BrowserWindow({
         title: 'Anorha',
+        icon: join(__dirname, '../../assets/logo.png'),
         width: 1200,
         height: 800,
+        titleBarStyle: 'hidden', // Frameless on Mac
+        trafficLightPosition: { x: 16, y: 16 }, // Adjusted traffic lights
         webPreferences: {
             preload: join(__dirname, '../preload/index.js'),
             nodeIntegration: false,
-            contextIsolation: true, // Switched to true as we implemented preload properly
+            contextIsolation: true,
         },
     })
 
     if (process.env.NODE_ENV === 'development' || process.env.DEBUG_PROD === 'true') {
         // Wait for Next.js to start
         await win.loadURL(url)
-        win.webContents.openDevTools()
+        // win.webContents.openDevTools() 
     } else {
         await win.loadURL(url)
         // win.loadFile(indexHtml)
@@ -76,7 +86,6 @@ app.on('activate', () => {
 ipcMain.handle('auth-worker-start', async (_, { userId }: { userId: string }) => {
     console.log('[IPC] auth-worker-start', userId)
     if (!userId) return { success: false, error: 'No userId provided' }
-
     try {
         convexWorker.start(userId)
         return { success: true }

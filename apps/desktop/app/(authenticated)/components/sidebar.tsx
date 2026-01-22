@@ -43,6 +43,7 @@ import {
   Settings2Icon,
   UsersIcon,
   BoxesIcon,
+  BotIcon,
 } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -80,6 +81,7 @@ const data: {
   navMain: [
     { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon },
     { title: 'Inventory', url: '/inventory', icon: BoxesIcon },
+    { title: 'Agent Operations', url: '/agent', icon: BotIcon },
   ],
   navSecondary: [
     { title: 'Billing/Usage', url: '/billing', icon: CreditCardIcon },
@@ -104,7 +106,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                   'h-[36px] overflow-hidden transition-all [&>div]:w-full',
                   sidebar.open ? '' : '-mx-1'
                 )}
-                style={{backgroundColor: "#FEF4DD"}}
+                style={{ backgroundColor: "#FEF4DD" }}
               >
                 <OrganizationSwitcher
                   hidePersonal
@@ -123,7 +125,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
           <Search />
         </div>
         <SidebarContent className='bg-[#FEF4DD]'>
-            <SidebarGroup className='bg-[#FEF4DD]'>
+          <SidebarGroup className='bg-[#FEF4DD]'>
             <SidebarGroupLabel>Platform</SidebarGroupLabel>
             <SidebarMenu>
               {data.navMain.map((item) => (
@@ -237,8 +239,11 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset className="flex flex-col h-full overflow-hidden">
+        <div className="flex-1 overflow-auto bg-background">
+          {children}
+        </div>
+      </SidebarInset>
     </>
   );
 };
-         

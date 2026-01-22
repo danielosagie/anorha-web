@@ -3,11 +3,14 @@ import { app } from "electron";
 import * as dotenv from "dotenv";
 import { join } from "path";
 import { agentRunner } from "./agent/runner";
+import { sendAgentLog } from "./index";
 
 // Load environment variables from .env.local if present
 dotenv.config({ path: join(__dirname, "../../.env.local") });
 
-const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "https://humorous-warthog-224.convex.cloud";
+const CONVEX_URL = "https://merry-buffalo-800.convex.cloud"; // Hardcoded for production verification
+console.log("[ConvexWorker] Hardcoded URL:", CONVEX_URL);
+sendAgentLog(`[ConvexWorker] Initialized with URL: ${CONVEX_URL}`);
 
 export class ConvexWorker {
     private client: any; // Using any to bypass strict API typing for now
@@ -28,6 +31,7 @@ export class ConvexWorker {
         }
         this.userId = userId;
         console.log("[ConvexWorker] Starting worker for user:", userId);
+        sendAgentLog(`[ConvexWorker] Starting worker for user: ${userId}`, 'success');
 
         this.unsubscribe = this.client.onUpdate(
             "browserJobs:getPending",
@@ -51,6 +55,7 @@ export class ConvexWorker {
 
         for (const job of jobs) {
             console.log("[ConvexWorker] Found job:", job._id, job.type);
+            sendAgentLog(`[ConvexWorker] Found job: ${job.type} (${job._id})`, 'info');
             await this.processJob(job);
         }
     }
@@ -58,6 +63,7 @@ export class ConvexWorker {
     private async processJob(job: any) {
         try {
             console.log("[ConvexWorker] Processing job...", job._id);
+            sendAgentLog(`[ConvexWorker] Processing job ${job._id}...`, 'info');
 
             // 1. Mark as processing
             await this.client.mutation("browserJobs:startJob", { jobId: job._id });
@@ -74,8 +80,10 @@ export class ConvexWorker {
             });
 
             console.log("[ConvexWorker] Job completed:", job._id);
+            sendAgentLog(`[ConvexWorker] Job completed: ${job._id}`, 'success');
         } catch (error: any) {
             console.error("[ConvexWorker] Job failed:", error);
+            sendAgentLog(`[ConvexWorker] Job failed: ${error.message}`, 'error');
             try {
                 await this.client.mutation("browserJobs:failJob", {
                     jobId: job._id,

@@ -10,6 +10,9 @@ import { PostHogIdentifier } from './components/posthog-identifier';
 import { GlobalSidebar } from './components/sidebar';
 import { OrgGuard } from './components/org-guard';
 
+import { BrowserToolbar } from '../../components/browser-toolbar';
+
+
 type AppLayoutProperties = {
   readonly children: ReactNode;
 };
@@ -40,18 +43,26 @@ const AppLayout = async ({ children }: AppLayoutProperties) => {
     }
   }
 
+
+
   return (
+
     <NotificationsProvider userId={user.id}>
       <OrgGuard>
         <SidebarProvider className="bg-[#FEF4DD]">
-          <GlobalSidebar>
-            {betaFeature && (
-              <div className="m-4 rounded-full bg-blue-500  text-center text-sm text-white">
-                Beta feature now available
-              </div>
-            )}
-            {children}
-          </GlobalSidebar>
+          <div className="flex flex-col h-screen w-full overflow-hidden">
+            <BrowserToolbar />
+            <div className="flex-1 min-h-0 relative flex">
+              <GlobalSidebar>
+                {betaFeature && (
+                  <div className="m-4 rounded-full bg-blue-500  text-center text-sm text-white">
+                    Beta feature now available
+                  </div>
+                )}
+                {children}
+              </GlobalSidebar>
+            </div>
+          </div>
           <PostHogIdentifier />
         </SidebarProvider>
       </OrgGuard>
@@ -60,4 +71,3 @@ const AppLayout = async ({ children }: AppLayoutProperties) => {
 };
 
 export default AppLayout;
-

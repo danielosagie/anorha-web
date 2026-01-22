@@ -1,1 +1,1 @@
-{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../electron/main/index.ts"],"names":[],"mappings":""}
+{"version":3,"file":"index.d.ts","sourceRoot":"","sources":["../../electron/main/index.ts"],"names":[],"mappings":"AAAA,OAAO,EAAO,aAAa,EAAkB,MAAM,UAAU,CAAA;AAiB7D,eAAO,IAAI,GAAG,EAAE,aAAa,GAAG,IAAW,CAAA;AAE3C,wBAAgB,YAAY,CAAC,OAAO,EAAE,MAAM,EAAE,IAAI,GAAE,MAAM,GAAG,OAAO,GAAG,SAAkB,QAIxF"}

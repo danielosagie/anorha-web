@@ -13,7 +13,7 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
         }
     },
     receive: (channel: string, func: any) => {
-        let validChannels = ['fromMain']
+        let validChannels = ['fromMain', 'agent-log']
         if (validChannels.includes(channel)) {
             // Deliberately strip event as it includes `sender` 
             ipcRenderer.on(channel, (event, ...args) => func(...args))

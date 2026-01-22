@@ -136,8 +136,8 @@ export default function TeamPage() {
             {/* @ts-ignore - OrganizationProfile.Page exists at runtime per Clerk docs */}
 
             <OrganizationProfile.Page
-              label="Pools/Permissions"
-              url="pp"
+              label="Pools/Partnerships"
+              url="pools-partnerships"
               labelIcon={<Settings className="w-4 h-4" />}
             >
               <PoolsAndPartnersClient />

@@ -47,9 +47,12 @@ const browser_1 = require("convex/browser");
 const dotenv = __importStar(require("dotenv"));
 const path_1 = require("path");
 const runner_1 = require("./agent/runner");
+const index_1 = require("./index");
 // Load environment variables from .env.local if present
 dotenv.config({ path: (0, path_1.join)(__dirname, "../../.env.local") });
-const CONVEX_URL = process.env.NEXT_PUBLIC_CONVEX_URL || "https://humorous-warthog-224.convex.cloud";
+const CONVEX_URL = "https://merry-buffalo-800.convex.cloud"; // Hardcoded for production verification
+console.log("[ConvexWorker] Hardcoded URL:", CONVEX_URL);
+(0, index_1.sendAgentLog)(`[ConvexWorker] Initialized with URL: ${CONVEX_URL}`);
 class ConvexWorker {
     constructor() {
         this.unsubscribe = null;
@@ -66,6 +69,7 @@ class ConvexWorker {
         }
         this.userId = userId;
         console.log("[ConvexWorker] Starting worker for user:", userId);
+        (0, index_1.sendAgentLog)(`[ConvexWorker] Starting worker for user: ${userId}`, 'success');
         this.unsubscribe = this.client.onUpdate("browserJobs:getPending", { userId }, (pendingJobs) => {
             this.handlePendingJobs(pendingJobs);
         });
@@ -83,6 +87,7 @@ class ConvexWorker {
                 return;
             for (const job of jobs) {
                 console.log("[ConvexWorker] Found job:", job._id, job.type);
+                (0, index_1.sendAgentLog)(`[ConvexWorker] Found job: ${job.type} (${job._id})`, 'info');
                 yield this.processJob(job);
             }
         });
@@ -91,6 +96,7 @@ class ConvexWorker {
         return __awaiter(this, void 0, void 0, function* () {
             try {
                 console.log("[ConvexWorker] Processing job...", job._id);
+                (0, index_1.sendAgentLog)(`[ConvexWorker] Processing job ${job._id}...`, 'info');
                 // 1. Mark as processing
                 yield this.client.mutation("browserJobs:startJob", { jobId: job._id });
                 // 2. Execute via Puppeteer Runner
@@ -103,9 +109,11 @@ class ConvexWorker {
                     result: result
                 });
                 console.log("[ConvexWorker] Job completed:", job._id);
+                (0, index_1.sendAgentLog)(`[ConvexWorker] Job completed: ${job._id}`, 'success');
             }
             catch (error) {
                 console.error("[ConvexWorker] Job failed:", error);
+                (0, index_1.sendAgentLog)(`[ConvexWorker] Job failed: ${error.message}`, 'error');
                 try {
                     yield this.client.mutation("browserJobs:failJob", {
                         jobId: job._id,

@@ -26,6 +26,8 @@ type RootLayoutProperties = {
 
 import { DesktopAgentManager } from '../components/desktop-agent-manager';
 
+import { AgentTabsProvider } from '../providers/agent-tabs-provider';
+
 const RootLayout = ({ children }: RootLayoutProperties) => (
   <html lang="en" className={fonts} suppressHydrationWarning>
     <body>
@@ -38,8 +40,10 @@ const RootLayout = ({ children }: RootLayoutProperties) => (
         termsUrl={new URL('/legal/terms', env.NEXT_PUBLIC_WEB_URL).toString()}
         helpUrl={env.NEXT_PUBLIC_DOCS_URL}
       >
-        <DesktopAgentManager />
-        {children}
+        <AgentTabsProvider>
+          <DesktopAgentManager />
+          {children}
+        </AgentTabsProvider>
       </DesignSystemProvider>
       <Toolbar />
     </body>

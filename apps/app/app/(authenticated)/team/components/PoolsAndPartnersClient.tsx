@@ -118,7 +118,7 @@ export default function PoolsAndPartnersClient() {
   const loadedOrgIdRef = useRef<string | null>(null);
 
   // View State
-  const [activeTab, setActiveTab] = useState<Tab>('pools');
+  const [activeTab, setActiveTab] = useState<Tab>('partners');
   const [isLoading, setIsLoading] = useState(true);
 
   // Data State
@@ -847,6 +847,14 @@ export default function PoolsAndPartnersClient() {
       {/* Navigation Tabs */}
       <div className="flex items-center gap-2 border-b border-gray-200 pb-1">
         <Button
+          variant={activeTab === 'partners' ? 'default' : 'ghost'}
+          onClick={() => setActiveTab('partners')}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'partners' ? "border-[#647653] bg-white text-[#647653] hover:bg-gray-50 hover:text-[#647653]" : "border-transparent text-gray-500")}
+        >
+          <Link2Icon className="w-4 h-4" />
+          Partners
+        </Button>
+        <Button
           variant={activeTab === 'pools' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('pools')}
           className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'pools' ? "border-[#647653] bg-white text-[#647653] hover:bg-gray-50 hover:text-[#647653]" : "border-transparent text-gray-500")}
@@ -862,14 +870,7 @@ export default function PoolsAndPartnersClient() {
           <UsersIcon className="w-4 h-4" />
           Team Access
         </Button>
-        <Button
-          variant={activeTab === 'partners' ? 'default' : 'ghost'}
-          onClick={() => setActiveTab('partners')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'partners' ? "border-[#647653] bg-white text-[#647653] hover:bg-gray-50 hover:text-[#647653]" : "border-transparent text-gray-500")}
-        >
-          <Link2Icon className="w-4 h-4" />
-          Partners
-        </Button>
+        
       </div>
 
       {isLoading ? (

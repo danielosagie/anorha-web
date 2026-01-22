@@ -19,6 +19,7 @@ const puppeteer_extra_plugin_stealth_1 = __importDefault(require("puppeteer-extr
 // Since we installed puppeteer-core, we need to point to a browser.
 // For dev, we can use the system browser or download one.
 // Let's assume user has Chrome or we use a utility to find it.
+const index_1 = require("../index");
 puppeteer_extra_1.default.use((0, puppeteer_extra_plugin_stealth_1.default)());
 class AgentRunner {
     constructor() {
@@ -27,6 +28,7 @@ class AgentRunner {
     runJob(job) {
         return __awaiter(this, void 0, void 0, function* () {
             console.log('[AgentRunner] Starting job:', job.type);
+            (0, index_1.sendAgentLog)(`[AgentRunner] Starting job: ${job.type}`, 'info');
             try {
                 yield this.ensureBrowser();
                 const page = yield this.browser.newPage();
@@ -53,6 +55,7 @@ class AgentRunner {
             }
             catch (error) {
                 console.error('[AgentRunner] Error:', error);
+                (0, index_1.sendAgentLog)(`[AgentRunner] Error: ${error.message}`, 'error');
                 throw error;
             }
         });
@@ -62,19 +65,48 @@ class AgentRunner {
             if (this.browser)
                 return;
             console.log('[AgentRunner] Launching browser...');
+            (0, index_1.sendAgentLog)('[AgentRunner] Launching browser...', 'info');
             // We need to find a chrome executable. 
-            // For macOS, common location:
-            const macPath = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome';
+            // Try common locations for macOS
+            const possiblePaths = [
+                '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
+                '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
+                '/Applications/Chromium.app/Contents/MacOS/Chromium',
+                '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
+                '/usr/bin/google-chrome',
+            ];
+            let executablePath = '';
+            for (const path of possiblePaths) {
+                try {
+                    // simple check if file exists (fs.accessSync equivalent or just try launch?) 
+                    // Since we don't have fs imported, let's just let puppeteer try the first one that works? 
+                    // No, that's slow. Let's rely on a helper or just try the standard Chrome one first.
+                    // Actually, let's use `fs` since we are in Electron Main process.
+                    const fs = require('fs');
+                    if (fs.existsSync(path)) {
+                        executablePath = path;
+                        break;
+                    }
+                }
+                catch (e) { }
+            }
+            if (!executablePath) {
+                const msg = '[AgentRunner] Could not find Chrome/Chromium installation. Please install Google Chrome.';
+                console.error(msg);
+                (0, index_1.sendAgentLog)(msg, 'error');
+                throw new Error("Chrome not found");
+            }
+            (0, index_1.sendAgentLog)(`[AgentRunner] Found browser at: ${executablePath}`, 'info');
             this.browser = yield puppeteer_extra_1.default.launch({
                 headless: false, // Visible for demo/debug
-                executablePath: macPath, // TODO: Make robust across OS
+                executablePath: executablePath,
                 args: [
                     '--no-sandbox',
                     '--disable-setuid-sandbox',
                     '--disable-infobars',
                     '--window-position=0,0',
-                    '--ignore-certifcate-errors',
-                    '--ignore-certifcate-errors-spki-list',
+                    '--ignore-certificate-errors',
+                    '--ignore-certificate-errors-spki-list',
                 ]
             });
             console.log('[AgentRunner] Browser launched');
