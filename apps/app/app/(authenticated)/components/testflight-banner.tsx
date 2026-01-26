@@ -138,7 +138,7 @@ export function TestFlightBanner({ mode = 'banner' }: { mode?: 'banner' | 'card'
                             <Mail className="h-4 w-4" /> Want to be notified when Android is available?
                         </p>
                         <p className="text-xs text-gray-400 mt-2">
-                            Contact us at hello@anorha.com
+                            Contact us at admin@anorha.app
                         </p>
                     </div>
                 )}

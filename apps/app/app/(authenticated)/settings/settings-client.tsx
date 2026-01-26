@@ -45,7 +45,7 @@ const PLATFORM_LOGOS: Record<string, PlatformLogo> = {
 };
 
 const STATUS_BADGE_CLASSES: Record<string, string> = {
-  active: 'bg-[#93C822] text-white',
+  active: 'bg-[#647653] text-white',
   inactive: 'bg-gray-100 text-gray-800',
   error: 'bg-red-100 text-red-800',
   syncing: 'bg-blue-100 text-blue-800',
@@ -274,7 +274,7 @@ export function SettingsClient({
                   <input
                     type="text"
                     placeholder="Your name"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822]"
+                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
                   />
                   <p className="text-xs text-gray-500 mt-1">This is the name that will be displayed on your profile and in emails.</p>
                 </div>
@@ -287,7 +287,7 @@ export function SettingsClient({
                       <input
                         type="date"
                         placeholder="Pick a date"
-                        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822]"
+                        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
                       />
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -304,7 +304,7 @@ export function SettingsClient({
 
                 <div>
                   <label className="block text-sm font-medium mb-2">Language</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822]">
+                  <select className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]">
                     <option>Select Language</option>
                     <option>English</option>
                     <option>Spanish</option>
@@ -313,7 +313,7 @@ export function SettingsClient({
                   <p className="text-xs text-gray-500 mt-1">This is the language that will be used in the dashboard.</p>
                 </div>
 
-                <Button className="bg-[#93C822] hover:bg-[#7aa81a] text-white">Update account</Button>
+                <Button className="bg-[#647653] hover:bg-[#647653] text-white">Update account</Button>
               </CardContent>
             </Card>
           </div>
@@ -341,7 +341,7 @@ export function SettingsClient({
                       <input
                         type="text"
                         placeholder="123 Main Street"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822]"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
                         value={businessAddress.street1}
                         onChange={(e) => setBusinessAddress(prev => ({ ...prev, street1: e.target.value }))}
                       />
@@ -352,7 +352,7 @@ export function SettingsClient({
                       <input
                         type="text"
                         placeholder="Suite 100"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822]"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
                         value={businessAddress.street2}
                         onChange={(e) => setBusinessAddress(prev => ({ ...prev, street2: e.target.value }))}
                       />
@@ -364,7 +364,7 @@ export function SettingsClient({
                         <input
                           type="text"
                           placeholder="Los Angeles"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822]"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
                           value={businessAddress.city}
                           onChange={(e) => setBusinessAddress(prev => ({ ...prev, city: e.target.value }))}
                         />
@@ -372,7 +372,7 @@ export function SettingsClient({
                       <div>
                         <label className="block text-sm font-medium mb-2">State</label>
                         <select
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822] bg-white"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653] bg-white"
                           value={businessAddress.state}
                           onChange={(e) => setBusinessAddress(prev => ({ ...prev, state: e.target.value }))}
                           autoComplete="address-level1"
@@ -439,7 +439,7 @@ export function SettingsClient({
                         <input
                           type="text"
                           placeholder="90001"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822]"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
                           value={businessAddress.postalCode}
                           onChange={(e) => setBusinessAddress(prev => ({ ...prev, postalCode: e.target.value }))}
                         />
@@ -447,7 +447,7 @@ export function SettingsClient({
                       <div>
                         <label className="block text-sm font-medium mb-2">Country</label>
                         <select
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822] bg-white"
+                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653] bg-white"
                           value={businessAddress.country}
                           onChange={(e) => setBusinessAddress(prev => ({ ...prev, country: e.target.value }))}
                           autoComplete="country"
@@ -473,14 +473,14 @@ export function SettingsClient({
 
                     <div className="flex items-center gap-4 pt-2">
                       <Button
-                        className="bg-[#93C822] hover:bg-[#7aa81a] text-white"
+                        className="bg-[#647653] hover:bg-[#647653] text-white"
                         onClick={saveBusinessAddress}
                         disabled={isLoadingAddress}
                       >
                         {isLoadingAddress ? 'Saving...' : 'Save Address'}
                       </Button>
                       {addressSaved && (
-                        <span className="text-sm text-green-600">✓ Address saved!</span>
+                        <span className="text-sm text-[#647653]">✓ Address saved!</span>
                       )}
                     </div>
                   </>
@@ -504,7 +504,7 @@ export function SettingsClient({
                   <CardDescription>Your active integrations</CardDescription>
                 </div>
                 <Button
-                  className="bg-[#93C822] hover:bg-[#7aa81a] text-white opacity-70 cursor-not-allowed"
+                  className="bg-[#647653] hover:bg-[#647653] text-white opacity-70 cursor-not-allowed"
                   disabled
                 >
                   + Connect New Platform
@@ -586,7 +586,7 @@ export function SettingsClient({
                               disabled
                               className={
                                 connection.IsEnabled
-                                  ? 'bg-[#93C822] text-white opacity-80 cursor-not-allowed'
+                                  ? 'bg-[#647653] text-white opacity-80 cursor-not-allowed'
                                   : 'bg-gray-100 text-gray-600 opacity-80 cursor-not-allowed'
                               }
                             >
@@ -631,7 +631,7 @@ export function SettingsClient({
                       </div>
                       <input
                         type="checkbox"
-                        className="w-5 h-5 accent-[#93C822]"
+                        className="w-5 h-5 accent-[#647653]"
                         checked={preferences.jobCompletions}
                         onChange={() => togglePreference('jobCompletions')}
                       />
@@ -649,7 +649,7 @@ export function SettingsClient({
                       </div>
                       <input
                         type="checkbox"
-                        className="w-5 h-5 accent-[#93C822]"
+                        className="w-5 h-5 accent-[#647653]"
                         checked={preferences.inventorySharing}
                         onChange={() => togglePreference('inventorySharing')}
                       />
@@ -667,7 +667,7 @@ export function SettingsClient({
                       </div>
                       <input
                         type="checkbox"
-                        className="w-5 h-5 accent-[#93C822]"
+                        className="w-5 h-5 accent-[#647653]"
                         checked={preferences.sproutInsights}
                         onChange={() => togglePreference('sproutInsights')}
                       />
@@ -685,7 +685,7 @@ export function SettingsClient({
                       </div>
                       <input
                         type="checkbox"
-                        className="w-5 h-5 accent-[#93C822]"
+                        className="w-5 h-5 accent-[#647653]"
                         checked={preferences.syncAlerts}
                         onChange={() => togglePreference('syncAlerts')}
                       />
@@ -703,7 +703,7 @@ export function SettingsClient({
                       </div>
                       <input
                         type="checkbox"
-                        className="w-5 h-5 accent-[#93C822]"
+                        className="w-5 h-5 accent-[#647653]"
                         checked={preferences.marketingUpdates}
                         onChange={() => togglePreference('marketingUpdates')}
                       />
