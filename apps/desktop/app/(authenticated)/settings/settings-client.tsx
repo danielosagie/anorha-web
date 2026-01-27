@@ -97,6 +97,7 @@ export function SettingsClient({
     state: '',
     postalCode: '',
     country: 'US',
+    phone: '',
   });
   const [isLoadingAddress, setIsLoadingAddress] = React.useState(false);
   const [addressSaved, setAddressSaved] = React.useState(false);
@@ -154,6 +155,7 @@ export function SettingsClient({
             state: data.address.state || '',
             postalCode: data.address.postalCode || '',
             country: data.address.country || 'US',
+            phone: data.address.phone || '',
           });
         }
       }
@@ -356,6 +358,18 @@ export function SettingsClient({
                         value={businessAddress.street2}
                         onChange={(e) => setBusinessAddress(prev => ({ ...prev, street2: e.target.value }))}
                       />
+                    </div>
+
+                    <div>
+                      <label className="block text-sm font-medium mb-2">Business Phone</label>
+                      <input
+                        type="tel"
+                        placeholder="+1 (555) 555-5555"
+                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#93C822]"
+                        value={businessAddress.phone}
+                        onChange={(e) => setBusinessAddress(prev => ({ ...prev, phone: e.target.value }))}
+                      />
+                      <p className="text-xs text-gray-500 mt-1">Required for eBay location creation.</p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">

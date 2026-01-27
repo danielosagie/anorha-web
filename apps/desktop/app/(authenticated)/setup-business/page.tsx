@@ -13,6 +13,7 @@ interface AddressForm {
     state: string;
     postalCode: string;
     country: string;
+    phone: string;
 }
 
 export default function OnboardingPage() {
@@ -25,6 +26,7 @@ export default function OnboardingPage() {
         state: '',
         postalCode: '',
         country: 'US',
+        phone: '',
     });
 
     const handleSave = async () => {
@@ -90,6 +92,18 @@ export default function OnboardingPage() {
                             value={address.street2}
                             onChange={(e) => setAddress(prev => ({ ...prev, street2: e.target.value }))}
                         />
+                    </div>
+
+                    <div>
+                        <label className="block text-sm font-medium mb-1.5">Business Phone</label>
+                        <input
+                            type="tel"
+                            placeholder="+1 (555) 555-5555"
+                            className="w-full px-4 py-2.5 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-[#647653] focus:border-transparent"
+                            value={address.phone}
+                            onChange={(e) => setAddress(prev => ({ ...prev, phone: e.target.value }))}
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Required for eBay location creation.</p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-3">
