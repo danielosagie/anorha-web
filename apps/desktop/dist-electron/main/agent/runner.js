@@ -66,71 +66,90 @@ class AgentRunner {
                 return;
             console.log('[AgentRunner] Launching browser...');
             (0, index_1.sendAgentLog)('[AgentRunner] Launching browser...', 'info');
-            // We need to find a chrome executable. 
-            // Try common locations for macOS
             const possiblePaths = [
                 '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
                 '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
                 '/Applications/Chromium.app/Contents/MacOS/Chromium',
                 '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
                 '/usr/bin/google-chrome',
+                '/usr/local/bin/google-chrome',
+                '/opt/google/chrome/google-chrome'
             ];
-            let executablePath = '';
+            let foundPath = '';
+            const fs = require('fs');
             for (const path of possiblePaths) {
                 try {
-                    // simple check if file exists (fs.accessSync equivalent or just try launch?) 
-                    // Since we don't have fs imported, let's just let puppeteer try the first one that works? 
-                    // No, that's slow. Let's rely on a helper or just try the standard Chrome one first.
-                    // Actually, let's use `fs` since we are in Electron Main process.
-                    const fs = require('fs');
                     if (fs.existsSync(path)) {
-                        executablePath = path;
+                        foundPath = path;
+                        console.log(`[AgentRunner] Found browser at: ${path}`);
                         break;
                     }
                 }
-                catch (e) { }
+                catch (e) {
+                    console.error(`Error checking path ${path}:`, e);
+                }
             }
-            if (!executablePath) {
-                const msg = '[AgentRunner] Could not find Chrome/Chromium installation. Please install Google Chrome.';
+            if (!foundPath) {
+                const msg = '[AgentRunner] CRITICAL: Could not find Chrome! Please make sure Google Chrome is installed in /Applications.';
                 console.error(msg);
                 (0, index_1.sendAgentLog)(msg, 'error');
-                throw new Error("Chrome not found");
+                throw new Error("Chrome executable not found. Please install Google Chrome.");
             }
-            (0, index_1.sendAgentLog)(`[AgentRunner] Found browser at: ${executablePath}`, 'info');
-            this.browser = yield puppeteer_extra_1.default.launch({
-                headless: false, // Visible for demo/debug
-                executablePath: executablePath,
-                args: [
-                    '--no-sandbox',
-                    '--disable-setuid-sandbox',
-                    '--disable-infobars',
-                    '--window-position=0,0',
-                    '--ignore-certificate-errors',
-                    '--ignore-certificate-errors-spki-list',
-                ]
-            });
-            console.log('[AgentRunner] Browser launched');
+            (0, index_1.sendAgentLog)(`[AgentRunner] Using browser: ${foundPath}`, 'success');
+            try {
+                this.browser = yield puppeteer_extra_1.default.launch({
+                    headless: false,
+                    executablePath: foundPath,
+                    defaultViewport: null, // Allows full size
+                    args: [
+                        '--no-sandbox',
+                        '--disable-setuid-sandbox',
+                        '--disable-infobars',
+                        '--window-position=0,0',
+                        '--start-maximized', // Try to start maximized
+                        // Security bypasses for testing
+                        '--ignore-certificate-errors',
+                        '--ignore-certificate-errors-spki-list',
+                        '--disable-web-security',
+                        '--disable-features=IsolateOrigins,site-per-process'
+                    ]
+                });
+                console.log('[AgentRunner] Browser process started');
+            }
+            catch (e) {
+                console.error('[AgentRunner] Failed to launch puppeteer:', e);
+                (0, index_1.sendAgentLog)(`[AgentRunner] Launch Failed: ${e.message}`, 'error');
+                throw e;
+            }
             this.browser.on('disconnected', () => {
+                console.log('[AgentRunner] Browser disconnected');
                 this.browser = null;
             });
         });
     }
     runCreateListing(page, payload) {
         return __awaiter(this, void 0, void 0, function* () {
+            (0, index_1.sendAgentLog)('[AgentRunner] specialized: create_listing', 'info');
             console.log('Running create listing for:', payload);
-            yield page.goto('https://facebook.com/marketplace');
-            // TODO: Real logic
-            yield new Promise(r => setTimeout(r, 5000));
+            (0, index_1.sendAgentLog)('[AgentRunner] Navigating to Facebook Marketplace...', 'info');
+            yield page.goto('https://www.facebook.com/marketplace', { waitUntil: 'networkidle2' });
+            (0, index_1.sendAgentLog)('[AgentRunner] Loaded Facebook. Waiting 30s for user to see...', 'success');
+            // Wait long enough for the user to see the window
+            yield new Promise(r => setTimeout(r, 30000));
         });
     }
     runCheckMessages(page, payload) {
         return __awaiter(this, void 0, void 0, function* () {
-            // TODO
+            (0, index_1.sendAgentLog)('[AgentRunner] specialized: check_messages', 'info');
+            yield page.goto('https://m.facebook.com/messages');
+            yield new Promise(r => setTimeout(r, 10000));
         });
     }
     runVerifyListing(page, payload) {
         return __awaiter(this, void 0, void 0, function* () {
-            // TODO
+            (0, index_1.sendAgentLog)('[AgentRunner] specialized: verify_listing', 'info');
+            yield page.goto('https://www.facebook.com/marketplace');
+            yield new Promise(r => setTimeout(r, 10000));
         });
     }
 }

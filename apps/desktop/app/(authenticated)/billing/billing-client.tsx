@@ -75,6 +75,8 @@ export function BillingClient({
       'ai_receipt_parsing': 'Receipt Processing',
       'ai_manifest_analysis': 'Manifest Analysis',
       'ai_liquidation_research': 'Liquidation Research',
+      'ebay_pricing_research': 'eBay Pricing Research',
+      'ai_shipping_vision': 'Shipping Vision',
       'match_serpapi_search': 'Product Search',
       'generation_firecrawl': 'Web Scraping',
       'sync': 'Inventory Sync',

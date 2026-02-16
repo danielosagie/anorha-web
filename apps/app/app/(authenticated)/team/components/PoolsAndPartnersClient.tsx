@@ -466,10 +466,14 @@ export default function PoolsAndPartnersClient() {
   const [isAcceptingInvite, setIsAcceptingInvite] = useState<string | null>(null);
 
   const acceptReceivedInvite = async (invite: ReceivedInvite) => {
+    if (!orgId) {
+      setAlertModal({ isOpen: true, title: 'Error', message: 'No organization selected. Switch to an organization to accept the invite.' });
+      return;
+    }
     setIsAcceptingInvite(invite.id);
     try {
       const token = await getToken();
-      const res = await fetch(`${API_BASE}/api/cross-org/invites/${invite.token}/accept`, {
+      const res = await fetch(`${API_BASE}/api/cross-org/invites/${invite.token}/accept?orgId=${encodeURIComponent(orgId)}`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

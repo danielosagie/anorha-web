@@ -73,6 +73,9 @@ export default function PartnerAcceptPage() {
     const [linkedCount, setLinkedCount] = useState<number>(0);
     const [termsAccepted, setTermsAccepted] = useState(false);
     const [isAccepting, setIsAccepting] = useState(false);
+    const [availableLocations, setAvailableLocations] = useState<Record<string, { connectionName: string; platformType: string; locations: { platformLocationId: string; locationName: string }[] }>>({});
+    const [availableLocationsLoading, setAvailableLocationsLoading] = useState(false);
+    const [selectedLocationIds, setSelectedLocationIds] = useState<string[]>([]);
 
     const hasOrgs = userMemberships?.data && userMemberships.data.length > 0;
     const isOwnOrg = invite && orgId && invite.sourceOrgId === orgId;
@@ -107,6 +110,33 @@ export default function PartnerAcceptPage() {
         fetchInvite();
     }, [token, justAuth]);
 
+    // Fetch available locations when on step 2 and signed in with org (for location picker)
+    useEffect(() => {
+        if (currentStep !== 2 || !isSignedIn || !orgId || !invite) return;
+        const fetchLocations = async () => {
+            setAvailableLocationsLoading(true);
+            try {
+                const authToken = await getToken();
+                let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
+                if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
+                const res = await fetch(`${apiBase}/pools/locations/available?orgId=${orgId}`, {
+                    headers: { Authorization: `Bearer ${authToken}` },
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setAvailableLocations(data || {});
+                } else {
+                    setAvailableLocations({});
+                }
+            } catch {
+                setAvailableLocations({});
+            } finally {
+                setAvailableLocationsLoading(false);
+            }
+        };
+        fetchLocations();
+    }, [currentStep, isSignedIn, orgId, invite, getToken]);
+
     const [emailMismatchError, setEmailMismatchError] = useState<{
         inviteeEmail: string;
         currentEmail: string;
@@ -122,13 +152,16 @@ export default function PartnerAcceptPage() {
             let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
             if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
 
+            const body: { partnerPoolName?: string; locationIdsToAddToPool?: string[] } = {};
+            if (selectedLocationIds.length > 0) body.locationIdsToAddToPool = selectedLocationIds;
+
             const res = await fetch(`${apiBase}/cross-org/invites/${token}/accept`, {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
                     'Authorization': `Bearer ${authToken}`,
                 },
-                body: JSON.stringify({}),
+                body: JSON.stringify(body),
             });
 
             if (!res.ok) {
@@ -409,6 +442,14 @@ export default function PartnerAcceptPage() {
             );
         }
 
+        const locationEntries = Object.entries(availableLocations);
+        const hasAnyLocations = locationEntries.some(([, g]) => (g.locations?.length ?? 0) > 0);
+        const toggleLocation = (id: string) => {
+            setSelectedLocationIds((prev) =>
+                prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]
+            );
+        };
+
         return (
             <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4">
                 <div className="text-center space-y-2">
@@ -419,6 +460,44 @@ export default function PartnerAcceptPage() {
                     <p className="text-sm text-muted-foreground">
                         You are signed in as a member of an organization.
                     </p>
+                </div>
+
+                <div className="space-y-2">
+                    <p className="text-sm font-medium text-gray-700">Which location(s) should sync with this partner?</p>
+                    {availableLocationsLoading ? (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Loading locations...
+                        </div>
+                    ) : !hasAnyLocations ? (
+                        <p className="text-sm text-muted-foreground bg-amber-50 border border-amber-100 rounded-lg p-3">
+                            Connect a platform to add locations; you can add them later in Locations.
+                        </p>
+                    ) : (
+                        <div className="border border-gray-200 rounded-lg p-3 space-y-3 max-h-48 overflow-y-auto bg-gray-50/50">
+                            {locationEntries.map(([connId, group]) => (
+                                <div key={connId} className="space-y-1.5">
+                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                        {group.connectionName || group.platformType}
+                                    </p>
+                                    {(group.locations || []).map((loc) => (
+                                        <label
+                                            key={loc.platformLocationId}
+                                            className="flex items-center gap-2 cursor-pointer text-sm"
+                                        >
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedLocationIds.includes(loc.platformLocationId)}
+                                                onChange={() => toggleLocation(loc.platformLocationId)}
+                                                className="h-4 w-4 rounded border-gray-300 text-[#647653] focus:ring-[#647653]"
+                                            />
+                                            <span>{loc.locationName}</span>
+                                        </label>
+                                    ))}
+                                </div>
+                            ))}
+                        </div>
+                    )}
                 </div>
 
                 <div className="flex items-start gap-2 pt-2 bg-gray-50 p-4 rounded-lg">
