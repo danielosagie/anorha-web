@@ -68,7 +68,7 @@ const ROLES = {
 };
 
 export default function TeamPage() {
-  const { organization, isLoaded, memberships, invites } = useOrganization({
+  const { organization, isLoaded, memberships, invitations } = useOrganization({
     memberships: {
       infinite: true,
       keepPreviousData: true,
@@ -123,7 +123,7 @@ export default function TeamPage() {
 
   const handleRevokeInvite = async (inviteId: string) => {
     try {
-      const invite = invites?.data?.find(i => i.id === inviteId);
+      const invite = invitations?.data?.find(i => i.id === inviteId);
       await invite?.revoke();
       toast.success("Invitation revoked");
     } catch (e) {
@@ -269,7 +269,7 @@ export default function TeamPage() {
               </Card>
 
               {/* Pending Invites Section */}
-              {invites?.data && invites.data.length > 0 && (
+              {invitations?.data && invitations.data.length > 0 && (
                 <Card className="border-2 border-gray-100 shadow-sm border-t-amber-200">
                   <CardHeader className="pb-2 border-b border-gray-50">
                     <CardTitle className="text-lg flex items-center gap-2">
@@ -279,7 +279,7 @@ export default function TeamPage() {
                   </CardHeader>
                   <CardContent className="p-0">
                     <div className="divide-y divide-gray-100">
-                      {invites.data.map((inv) => (
+                      {invitations.data.map((inv) => (
                         <div key={inv.id} className="flex items-center justify-between p-4">
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
