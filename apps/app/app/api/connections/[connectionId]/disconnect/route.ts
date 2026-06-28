@@ -17,7 +17,24 @@ export async function POST(
     const token = await getToken();
     if (!token) return Response.json({ error: 'No token' }, { status: 401 });
 
-    const body = await request.json().catch(() => ({}));
+    // Default to the SAFE, non-destructive strategy. Only archive products when
+    // the caller explicitly asks for it — never as a fallback for a malformed
+    // body (that could silently archive a user's imported inventory).
+    const rawBody = await request.text();
+    let cleanupStrategy: 'soft_delete' | 'keep' = 'keep';
+    if (rawBody) {
+      let parsed: unknown;
+      try {
+        parsed = JSON.parse(rawBody);
+      } catch {
+        return Response.json({ error: 'Invalid JSON body' }, { status: 400 });
+      }
+      const value = (parsed as { cleanupStrategy?: unknown })?.cleanupStrategy;
+      if (value === 'soft_delete' || value === 'keep') {
+        cleanupStrategy = value;
+      }
+    }
+
     const { connectionId } = await params;
     const res = await fetch(`${API_BASE}/api/platform-connections/${connectionId}/disconnect`, {
       method: 'POST',
@@ -25,7 +42,7 @@ export async function POST(
         Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ cleanupStrategy: body?.cleanupStrategy || 'soft_delete' }),
+      body: JSON.stringify({ cleanupStrategy }),
       cache: 'no-store',
     });
 

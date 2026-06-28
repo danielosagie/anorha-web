@@ -84,19 +84,23 @@ export default function ConnectionsPage() {
       .sort((a, b) => (b.CreatedAt || '').localeCompare(a.CreatedAt || ''))[0];
     if (!target) return;
 
+    // Set synchronously so a re-render mid-request can't fire a second scan.
     autoScanFired.current = true;
     (async () => {
       try {
         const token = await getToken();
-        if (!token) return;
-        await fetch(`/api/connections/${target.Id}/start-scan`, {
+        if (!token) throw new Error('No auth token');
+        const res = await fetch(`/api/connections/${target.Id}/start-scan`, {
           method: 'POST',
           headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
         });
-        // Reflect the scanning state and drop the one-shot query param.
+        if (!res.ok) throw new Error(`Start scan failed: ${res.status}`);
+        // Only on success: reflect the scanning state and drop the one-shot param.
         await loadConnections();
         window.history.replaceState(null, '', '/team/connections');
       } catch (err) {
+        // Keep the ?connected marker and release the guard so a later refresh retries.
+        autoScanFired.current = false;
         console.error('[ConnectionsPage] Auto start-scan failed:', err);
       }
     })();
