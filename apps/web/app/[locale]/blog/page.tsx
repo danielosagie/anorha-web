@@ -34,17 +34,17 @@ const BlogIndex = async ({ params }: BlogProps) => {
   return (
     <>
       <JsonLd code={jsonLd} />
-      <div className="w-full py-20 lg:py-40">
-        <div className="container mx-auto flex flex-col gap-14">
+      <div className="w-full min-h-[calc(100vh-80px)] bg-zinc-950 text-white selection:bg-[#A7CE38]/30 py-20 lg:py-40">
+        <div className="container mx-auto flex flex-col gap-14 px-4 relative z-10">
           <div className="flex w-full flex-col gap-8 sm:flex-row sm:items-center sm:justify-between">
-            <h4 className="max-w-xl font-regular text-3xl tracking-tighter md:text-5xl">
+            <h4 className="max-w-xl font-regular text-4xl tracking-tighter md:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-400">
               {dictionary.web.blog.meta.title}
             </h4>
           </div>
           <div className="grid grid-cols-1 gap-8 md:grid-cols-2">
-            <div className="rounded-lg border p-6">
-              <h3 className="text-xl font-semibold">Blog coming soon</h3>
-              <p className="text-muted-foreground">We’re working on it.</p>
+            <div className="rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8">
+              <h3 className="text-2xl font-medium mb-2">Blog coming soon</h3>
+              <p className="text-zinc-400">We’re working on it.</p>
             </div>
           </div>
         </div>

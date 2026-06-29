@@ -2,6 +2,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { release } from 'node:os'
 import { join } from 'node:path'
 import { convexWorker } from './convex-client'
+import { extensionBridge } from './extension-bridge'
 
 // Disable GPU Acceleration for Windows 7
 if (release().startsWith('6.1')) app.disableHardwareAcceleration()
@@ -59,7 +60,10 @@ async function createWindow() {
     })
 }
 
-app.whenReady().then(createWindow)
+app.whenReady().then(async () => {
+    extensionBridge.start()
+    await createWindow()
+})
 
 app.on('window-all-closed', () => {
     win = null
@@ -102,3 +106,25 @@ ipcMain.handle('auth-worker-stop', async () => {
 })
 
 ipcMain.handle('ping', () => 'pong')
+
+ipcMain.handle('extension-bridge-status', () => {
+    return extensionBridge.getStatus()
+})
+
+ipcMain.handle('extension-bridge-rotate-code', () => {
+    return extensionBridge.rotatePairCode()
+})
+
+ipcMain.handle('extension-bridge-unpair', () => {
+    return extensionBridge.unpair()
+})
+
+ipcMain.handle('open-extension-install', async () => {
+    const url = process.env.ANORHA_EXTENSION_INSTALL_URL || 'chrome://extensions'
+    try {
+        await shell.openExternal(url)
+        return { success: true, url }
+    } catch (error: any) {
+        return { success: false, error: error.message || 'Failed to open browser' }
+    }
+})

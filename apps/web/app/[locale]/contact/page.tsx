@@ -19,10 +19,9 @@ export const generateMetadata = async ({
 };
 
 const Contact = async ({ params }: ContactProps) => {
-  const { locale } = await params;
-  const dictionary = await getDictionary(locale);
+  await params; // silence unused warning
 
-  return <ContactForm dictionary={dictionary} />;
+  return <ContactForm />;
 };
 
 export default Contact;

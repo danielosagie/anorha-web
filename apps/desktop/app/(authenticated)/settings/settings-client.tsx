@@ -11,6 +11,7 @@ import { ExternalLinkIcon, SettingsIcon, UsersIcon, Building2Icon, CreditCardIco
 import { cn } from '@repo/design-system/lib/utils';
 import { NotificationSettings } from './components/NotificationSettings';
 import { SignOutControl } from './components/SignOutControl';
+import { ExtensionBridgeCard } from './components/ExtensionBridgeCard';
 import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from '@repo/design-system/components/ui/popover'
 import shopifyLogo from '../../assets/shopify.png';
 import squareLogo from '../../assets/square.png';
@@ -511,6 +512,8 @@ export function SettingsClient({
               <p className="text-gray-600">Manage your connected inventory sources/marketplaces</p>
             </div>
 
+            <ExtensionBridgeCard />
+
             <Card className="border border-gray-200">
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
@@ -732,4 +735,3 @@ export function SettingsClient({
     </div>
   );
 }
-

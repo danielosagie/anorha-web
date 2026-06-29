@@ -547,40 +547,42 @@ const LegalPage = async ({ params }: LegalPageProperties) => {
   const content = legalContent[slug];
 
   if (!content) {
-    return (
-      <div className="container max-w-4xl py-16">
+    <div className="w-full min-h-[calc(100vh-80px)] bg-zinc-950 text-white selection:bg-[#A7CE38]/30 flex items-center">
+      <div className="container max-w-4xl py-16 px-4">
         <Link
-          className="mb-4 inline-flex items-center gap-1 text-muted-foreground text-sm focus:underline focus:outline-none"
+          className="mb-8 inline-flex items-center gap-2 text-zinc-400 text-sm hover:text-white transition-colors focus:outline-none"
           href="/"
         >
           <ArrowLeftIcon className="h-4 w-4" />
           Back to Home
         </Link>
-        <h1 className="scroll-m-20 text-balance font-extrabold text-4xl tracking-tight lg:text-5xl">
+        <h1 className="scroll-m-20 text-balance font-medium text-4xl tracking-tighter lg:text-5xl text-white">
           Page Not Found
         </h1>
-        <p className="text-balance leading-7 [&:not(:first-child)]:mt-6">
+        <p className="text-balance leading-relaxed text-zinc-400 [&:not(:first-child)]:mt-6">
           The requested legal page could not be found.
         </p>
       </div>
-    );
+    </div>
   }
 
   return (
-    <div className="container max-w-4xl py-16">
-      <Link
-        className="mb-4 inline-flex items-center gap-1 text-muted-foreground text-sm focus:underline focus:outline-none"
-        href="/"
-      >
-        <ArrowLeftIcon className="h-4 w-4" />
-        Back to Home
-      </Link>
-      <h1 className="scroll-m-20 text-balance font-extrabold text-4xl tracking-tight lg:text-5xl mb-8">
-        {content.title}
-      </h1>
-      <article className="prose prose-slate dark:prose-invert max-w-none leading-7">
-        {content.content}
-      </article>
+    <div className="w-full min-h-[calc(100vh-80px)] bg-zinc-950 text-white selection:bg-[#A7CE38]/30">
+      <div className="container max-w-4xl py-20 lg:py-32 px-4 relative z-10">
+        <Link
+          className="mb-8 inline-flex items-center gap-2 text-zinc-400 text-sm hover:text-white transition-colors focus:outline-none"
+          href="/"
+        >
+          <ArrowLeftIcon className="h-4 w-4" />
+          Back to Home
+        </Link>
+        <h1 className="scroll-m-20 text-balance font-medium text-4xl tracking-tighter lg:text-6xl mb-12 text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-400">
+          {content.title}
+        </h1>
+        <article className="prose prose-slate prose-invert max-w-none leading-relaxed text-zinc-300 prose-headings:text-white prose-a:text-[#A7CE38] prose-strong:text-white prose-p:text-zinc-400 prose-li:text-zinc-400">
+          {content.content}
+        </article>
+      </div>
     </div>
   );
 };
