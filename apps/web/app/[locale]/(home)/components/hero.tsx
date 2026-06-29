@@ -52,35 +52,39 @@ export const Hero = ({ dictionary }: HeroProps) => {
                 className="lg:hidden"
               />
               {/* Mobile-only comparison under text */}
-              <div className="flex-1 w-full lg:w-auto lg:hidden justify-content: Center" style={{ background: "linear-gradient(158deg, #FFFBF1 -8.56%, #FAE1A2 100.33%)", borderRadius: "20px", boxShadow: "10px 12px 35px 3px rgba(0, 0, 0, 0.25)" }}>
+              <div className="flex-1 w-full lg:w-auto lg:hidden flex justify-center" style={{ background: "linear-gradient(158deg, #FFFBF1 -8.56%, #FAE1A2 100.33%)", borderRadius: "20px", boxShadow: "10px 12px 35px 3px rgba(0, 0, 0, 0.25)" }}>
                 <div className="rounded-3xl bg-amber-100 p-4 shadow-inner" style={{ background: "linear-gradient(158deg, #FFFBF1 -8.56%, #FAE1A2 100.33%)", borderRadius: "20px" }}>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <div className="mb-2 rounded-lg bg-zinc-600 px-4 py-2 text-center font-semibold text-white">Before</div>
                       <div className="relative aspect-[7.5/16] w-full rounded-4xl border-4 bg-zinc-900 border-zinc-900 overflow-hidden">
-                        <video
-                          src={env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL}
-                          className="absolute inset-0 h-full w-full object-cover rounded-4xl"
-                          autoPlay
-                          muted
-                          playsInline
-                          preload="metadata"
-                          loop
-                        />
+                        {env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL && (
+                          <video
+                            src={env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL}
+                            className="absolute inset-0 h-full w-full object-cover rounded-4xl"
+                            autoPlay
+                            muted
+                            playsInline
+                            preload="metadata"
+                            loop
+                          />
+                        )}
                       </div>
                     </div>
                     <div>
                       <div className="mb-2 rounded-lg bg-orange-500 px-4 py-2 text-center font-semibold text-white">After</div>
                       <div className="relative aspect-[7.5/16] border-4 border-zinc-900 w-full rounded-4xl bg-zinc-900 overflow-hidden">
-                        <video
-                          src={env.NEXT_PUBLIC_HERO_VIDEO_URL}
-                          className="absolute inset-0 h-full w-full object-cover rounded-4xl"
-                          autoPlay
-                          muted
-                          playsInline
-                          preload="metadata"
-                          loop
-                        />
+                        {env.NEXT_PUBLIC_HERO_VIDEO_URL && (
+                          <video
+                            src={env.NEXT_PUBLIC_HERO_VIDEO_URL}
+                            className="absolute inset-0 h-full w-full object-cover rounded-4xl"
+                            autoPlay
+                            muted
+                            playsInline
+                            preload="metadata"
+                            loop
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -203,15 +207,17 @@ export const Hero = ({ dictionary }: HeroProps) => {
                     <div className="mb-2 rounded-lg bg-zinc-600  w-full max-w-[360px] px-4 py-2 text-center font-semibold text-white">20+ Mins of Manual Work</div>
                     <div className="flex w-full justify-center">
                       <div className="relative aspect-[7.5/16]  w-full max-w-[360px] rounded-4xl overflow-hidden bg-zinc-900 border-4 border-zinc-900">
-                        <video
-                          src={env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL}
-                          className="absolute inset-0 h-full w-full object-cover rounded-4xl"
-                          autoPlay
-                          muted
-                          playsInline
-                          preload="metadata"
-                          loop
-                        />
+                        {env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL && (
+                          <video
+                            src={env.NEXT_PUBLIC_HERO_VIDEO_BEFORE_URL}
+                            className="absolute inset-0 h-full w-full object-cover rounded-4xl"
+                            autoPlay
+                            muted
+                            playsInline
+                            preload="metadata"
+                            loop
+                          />
+                        )}
                       </div>
                     </div>
                   </div>
@@ -219,15 +225,17 @@ export const Hero = ({ dictionary }: HeroProps) => {
                     <div className="mb-2 rounded-lg  w-full max-w-[360px] bg-orange-500 px-4 py-2 text-center font-semibold text-white">1 Min w/ Anorha</div>
                     <div className="flex w-full justify-center">
                       <div className="relative aspect-[7.5/16] w-full max-w-[360px] rounded-4xl overflow-hidden bg-zinc-900 border-4 border-zinc-900">
-                        <video
-                          src={env.NEXT_PUBLIC_HERO_VIDEO_URL}
-                          className="absolute inset-0 h-full w-full object-cover rounded-4xl"
-                          autoPlay
-                          muted
-                          playsInline
-                          preload="metadata"
-                          loop
-                        />
+                        {env.NEXT_PUBLIC_HERO_VIDEO_URL && (
+                          <video
+                            src={env.NEXT_PUBLIC_HERO_VIDEO_URL}
+                            className="absolute inset-0 h-full w-full object-cover rounded-4xl"
+                            autoPlay
+                            muted
+                            playsInline
+                            preload="metadata"
+                            loop
+                          />
+                        )}
                       </div>
                     </div>
                   </div>

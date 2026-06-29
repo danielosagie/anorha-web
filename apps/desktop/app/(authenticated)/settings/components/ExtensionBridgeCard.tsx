@@ -110,8 +110,7 @@ export function ExtensionBridgeCard() {
       </CardHeader>
       <CardContent className="space-y-4">
         {error && <p className="text-sm text-red-600">{error}</p>}
-        {!error && (
-          <div className="grid gap-3">
+        <div className="grid gap-3">
             <div className="rounded-lg border border-gray-200 bg-white p-4">
               <div className="text-xs uppercase tracking-wide text-gray-500">Pairing Code</div>
               <div className="mt-2 flex items-center justify-between">
@@ -156,8 +155,7 @@ export function ExtensionBridgeCard() {
                 ? `Paired extensions: ${status.connectedExtensions}`
                 : 'Not paired yet. Install the extension and it will auto-pair.'}
             </div>
-          </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );

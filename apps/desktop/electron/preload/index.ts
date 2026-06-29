@@ -35,9 +35,4 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
     }
 })
 
-// Also exposing simple version for trusted internal app usage if contextIsolation is false (which we set in main/index.ts for now)
-// But since we might move to contextIsolation: true, let's keep the window augmentation.
-// @ts-ignore
-window.ipcRenderer = ipcRenderer
-
 export { }

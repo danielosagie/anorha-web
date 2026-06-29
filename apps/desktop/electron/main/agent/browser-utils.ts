@@ -1,4 +1,5 @@
 import fs from 'node:fs';
+import path from 'node:path';
 
 export function findChromeExecutable(): string {
     const possiblePaths = [
@@ -10,6 +11,22 @@ export function findChromeExecutable(): string {
         '/usr/local/bin/google-chrome',
         '/opt/google/chrome/google-chrome'
     ];
+
+    const programFiles = process.env.PROGRAMFILES;
+    const programFilesX86 = process.env['PROGRAMFILES(X86)'];
+    const localAppData = process.env.LOCALAPPDATA;
+    const windowsCandidates: Array<[string | undefined, string[]]> = [
+        [programFiles, ['Google', 'Chrome', 'Application', 'chrome.exe']],
+        [programFilesX86, ['Google', 'Chrome', 'Application', 'chrome.exe']],
+        [localAppData, ['Google', 'Chrome', 'Application', 'chrome.exe']],
+        [programFiles, ['Microsoft', 'Edge', 'Application', 'msedge.exe']],
+        [programFilesX86, ['Microsoft', 'Edge', 'Application', 'msedge.exe']]
+    ];
+    for (const [base, segments] of windowsCandidates) {
+        if (base) {
+            possiblePaths.push(path.join(base, ...segments));
+        }
+    }
 
     for (const path of possiblePaths) {
         try {

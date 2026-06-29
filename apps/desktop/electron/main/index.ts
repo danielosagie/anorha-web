@@ -107,20 +107,45 @@ ipcMain.handle('auth-worker-stop', async () => {
 
 ipcMain.handle('ping', () => 'pong')
 
-ipcMain.handle('extension-bridge-status', () => {
+// Only the app's own main window may invoke the privileged bridge IPCs.
+function isTrustedSender(event: Electron.IpcMainInvokeEvent): boolean {
+    return !!win && event.senderFrame === win.webContents.mainFrame
+}
+
+ipcMain.handle('extension-bridge-status', (event) => {
+    if (!isTrustedSender(event)) return { error: 'Untrusted sender' }
     return extensionBridge.getStatus()
 })
 
-ipcMain.handle('extension-bridge-rotate-code', () => {
+ipcMain.handle('extension-bridge-rotate-code', (event) => {
+    if (!isTrustedSender(event)) return { error: 'Untrusted sender' }
     return extensionBridge.rotatePairCode()
 })
 
-ipcMain.handle('extension-bridge-unpair', () => {
+ipcMain.handle('extension-bridge-unpair', (event) => {
+    if (!isTrustedSender(event)) return { error: 'Untrusted sender' }
     return extensionBridge.unpair()
 })
 
+function resolveExtensionInstallUrl(): string {
+    const fallback = 'chrome://extensions'
+    const raw = process.env.ANORHA_EXTENSION_INSTALL_URL
+    if (!raw) return fallback
+    if (raw === 'chrome://extensions') return raw
+    try {
+        const parsed = new URL(raw)
+        // Only allow the Chrome Web Store over HTTPS.
+        if (parsed.protocol === 'https:' && parsed.hostname === 'chromewebstore.google.com') {
+            return parsed.toString()
+        }
+    } catch {
+        // Fall through to the safe default on any parse failure.
+    }
+    return fallback
+}
+
 ipcMain.handle('open-extension-install', async () => {
-    const url = process.env.ANORHA_EXTENSION_INSTALL_URL || 'chrome://extensions'
+    const url = resolveExtensionInstallUrl()
     try {
         await shell.openExternal(url)
         return { success: true, url }

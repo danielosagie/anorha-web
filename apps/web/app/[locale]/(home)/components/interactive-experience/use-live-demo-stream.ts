@@ -101,6 +101,7 @@ export const subscribeDemoEvents = (
   onSnapshot: (snapshot: LiveSnapshot) => void,
 ) => {
   let isDisposed = false;
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
   const baseUrl = process.env.NEXT_PUBLIC_SSSYNC_API_BASE_URL || '';
 
   const poll = async () => {
@@ -109,6 +110,8 @@ export const subscribeDemoEvents = (
       const response = await fetch(endpointFor(baseUrl, sessionOrJobId), {
         cache: 'no-store',
       });
+
+      if (isDisposed) return;
 
       if (!response.ok) {
         onSnapshot({
@@ -119,21 +122,26 @@ export const subscribeDemoEvents = (
       }
 
       const payload = await response.json();
+      if (isDisposed) return;
       onSnapshot(normalizeLiveSnapshot(payload));
     } catch {
+      if (isDisposed) return;
       onSnapshot({
         status: 'failed',
         error: 'Network error while subscribing to live updates.',
       });
+    } finally {
+      if (!isDisposed) {
+        timeoutId = setTimeout(poll, pollIntervalMs);
+      }
     }
   };
 
   poll();
-  const intervalId = setInterval(poll, pollIntervalMs);
 
   return () => {
     isDisposed = true;
-    clearInterval(intervalId);
+    if (timeoutId) clearTimeout(timeoutId);
   };
 };
 
@@ -173,6 +181,9 @@ export const useLiveDemoStream = () => {
     const unsubscribe = subscribeDemoEvents(session, (snapshot) => {
       if (snapshot.status === 'failed') {
         setMode('scripted');
+        // Disengage live mode: clearing the session unmounts this effect and
+        // triggers unsubscribe, stopping the poll loop against a failed job.
+        setSession(null);
       }
       setLiveSnapshot(snapshot);
     });

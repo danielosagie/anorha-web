@@ -39,10 +39,10 @@ const RootLayout = async ({ children, params }: RootLayoutProperties) => {
       className={cn(fonts, 'scroll-smooth')}
       suppressHydrationWarning
     >
-       <body className="bg-[#FAF7EC">
+       <body className="bg-[#FAF7EC]">
         <DesignSystemProvider>
           {/* Main Content: This slides UP to reveal what's underneath */}
-          <div className="relative z-20 min-h-fit h-hug bg-gradient-to-b from-white to-[#FAF7EC]">
+          <div className="relative z-20 min-h-fit bg-gradient-to-b from-white to-[#FAF7EC]">
             <Header dictionary={dictionary} />
             <main className="flex-grow">
               {children}

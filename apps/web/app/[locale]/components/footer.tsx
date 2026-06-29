@@ -9,7 +9,6 @@ export const Footer = () => {
     {
       title: 'Home',
       items: [
-        { title: 'Download', href: '#' },
         { title: 'Pricing', href: '/pricing' },
       ],
     },
@@ -67,24 +66,26 @@ export const Footer = () => {
 
             {/* Social Icons */}
             <div className="flex items-center gap-3">
-              <Link 
-                href="https://linkedin.com" 
+              <Link
+                href="https://linkedin.com"
                 className="p-2 rounded-full bg-black text-white hover:bg-black/80 transition-colors"
                 target="_blank"
+                aria-label="LinkedIn"
               >
                 <Linkedin size={16} />
               </Link>
-              <Link 
-                href="https://x.com" 
+              <Link
+                href="https://x.com"
                 className="p-2 rounded-full bg-black text-white hover:bg-black/80 transition-colors"
                 target="_blank"
+                aria-label="X (Twitter)"
               >
                 <Twitter size={16} />
               </Link>
             </div>
 
             <p className="text-muted-foreground text-xs mt-4">
-              Made by inirha (© 2025)
+              Made by inirha (© {new Date().getFullYear()})
             </p>
           </div>
 

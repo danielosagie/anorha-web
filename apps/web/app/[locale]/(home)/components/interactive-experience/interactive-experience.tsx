@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { CandidateCards } from './candidate-cards';
 import { EventLog } from './event-log';
 import { SourcePane } from './source-pane';
 import { StageRail } from './stage-rail';
+import type { DemoCandidate } from './types';
 import { useDemoStateMachine } from './use-demo-state-machine';
 import { submitCandidateOrder, useLiveDemoStream } from './use-live-demo-stream';
 
@@ -24,9 +25,23 @@ export const InteractiveExperience = ({
   const { state, setIsDragging, onCandidatesReordered, onLaneDrop, restartScript } =
     useDemoStateMachine({ mode, liveSnapshot });
 
+  // Holds the latest reordered candidates so we persist once on drag end
+  // rather than on every onReorder tick during the gesture.
+  const pendingOrderRef = useRef<DemoCandidate[] | null>(null);
+
   useEffect(() => {
     void connectToLive();
   }, [connectToLive]);
+
+  const handleDragStateChange = (dragging: boolean) => {
+    setIsDragging(dragging);
+    if (!dragging && pendingOrderRef.current) {
+      if (mode === 'live' && session?.jobId) {
+        void submitCandidateOrder(session.jobId, pendingOrderRef.current);
+      }
+      pendingOrderRef.current = null;
+    }
+  };
 
   return (
     <section
@@ -75,12 +90,10 @@ export const InteractiveExperience = ({
         <div className="space-y-3">
           <CandidateCards
             candidates={state.candidates}
-            onDragStateChange={setIsDragging}
+            onDragStateChange={handleDragStateChange}
             onChange={(next) => {
               onCandidatesReordered(next);
-              if (mode === 'live' && session?.jobId) {
-                void submitCandidateOrder(session.jobId, next);
-              }
+              pendingOrderRef.current = next;
             }}
           />
           <EventLog events={state.events} />

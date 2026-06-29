@@ -126,13 +126,16 @@ const Pricing = () => (
               Market Pricing Data
             </div>
             <div className="flex justify-center items-center px-4 py-4 md:px-6 border-t border-zinc-800">
-              <Minus className="h-5 w-5 text-zinc-700" />
+              <Minus className="h-5 w-5 text-zinc-700" aria-hidden="true" />
+              <span className="sr-only">Not included</span>
             </div>
             <div className="flex justify-center items-center px-4 py-4 md:px-6 border-t border-zinc-800 bg-[#A7CE38]/5">
-              <Check className="h-5 w-5 text-[#A7CE38]" />
+              <Check className="h-5 w-5 text-[#A7CE38]" aria-hidden="true" />
+              <span className="sr-only">Included</span>
             </div>
             <div className="flex justify-center items-center px-4 py-4 md:px-6 border-t border-zinc-800">
-              <Check className="h-5 w-5 text-[#A7CE38]" />
+              <Check className="h-5 w-5 text-[#A7CE38]" aria-hidden="true" />
+              <span className="sr-only">Included</span>
             </div>
 
             <div className="col-span-3 px-6 py-4 lg:col-span-4 bg-zinc-900/80 border-t border-zinc-800">
@@ -156,13 +159,16 @@ const Pricing = () => (
               Real-Time Stock Sync
             </div>
             <div className="flex justify-center items-center px-4 py-4 md:px-6 border-t border-zinc-800">
-              <Minus className="h-5 w-5 text-zinc-700" />
+              <Minus className="h-5 w-5 text-zinc-700" aria-hidden="true" />
+              <span className="sr-only">Not included</span>
             </div>
             <div className="flex justify-center items-center px-4 py-4 md:px-6 border-t border-zinc-800 bg-[#A7CE38]/5">
-              <Check className="h-5 w-5 text-[#A7CE38]" />
+              <Check className="h-5 w-5 text-[#A7CE38]" aria-hidden="true" />
+              <span className="sr-only">Included</span>
             </div>
             <div className="flex justify-center items-center px-4 py-4 md:px-6 border-t border-zinc-800">
-              <Check className="h-5 w-5 text-[#A7CE38]" />
+              <Check className="h-5 w-5 text-[#A7CE38]" aria-hidden="true" />
+              <span className="sr-only">Included</span>
             </div>
 
             <div className="col-span-3 px-6 py-4 lg:col-span-4 bg-zinc-900/80 border-t border-zinc-800">
@@ -186,13 +192,16 @@ const Pricing = () => (
               <span className="text-zinc-300">Priority Support</span>
             </div>
             <div className="flex justify-center items-center px-4 py-4 md:px-6 border-t border-zinc-800">
-              <Minus className="h-5 w-5 text-zinc-700" />
+              <Minus className="h-5 w-5 text-zinc-700" aria-hidden="true" />
+              <span className="sr-only">Not included</span>
             </div>
             <div className="flex justify-center items-center px-4 py-4 md:px-6 border-t border-zinc-800 bg-[#A7CE38]/5">
-              <Check className="h-5 w-5 text-[#A7CE38]" />
+              <Check className="h-5 w-5 text-[#A7CE38]" aria-hidden="true" />
+              <span className="sr-only">Included</span>
             </div>
             <div className="flex justify-center items-center px-4 py-4 md:px-6 border-t border-zinc-800 rounded-br-3xl">
-              <Check className="h-5 w-5 text-[#A7CE38]" />
+              <Check className="h-5 w-5 text-[#A7CE38]" aria-hidden="true" />
+              <span className="sr-only">Included</span>
             </div>
 
           </div>
