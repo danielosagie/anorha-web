@@ -2,24 +2,26 @@
 
 import type { Dictionary } from '@repo/internationalization';
 import { Sparkles, RefreshCw, BarChart3, Truck } from 'lucide-react';
-import { motion, useInView } from 'framer-motion';
-import { useRef } from 'react';
+import { motion, useReducedMotion } from 'framer-motion';
 
 type FeaturesProps = {
   dictionary: Dictionary;
 };
 
-const DrawStar = () => (
-  <motion.svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[#A7CE38] opacity-30">
-    <motion.path
-      d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
-      initial={{ pathLength: 0, opacity: 0 }}
-      whileInView={{ pathLength: 1, opacity: 1 }}
-      transition={{ duration: 2, ease: "easeInOut", repeat: Infinity, repeatType: "reverse" }}
-      viewport={{ once: false, margin: "-50px" }}
-    />
-  </motion.svg>
-);
+const DrawStar = () => {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" className="text-[#A7CE38] opacity-30">
+      <motion.path
+        d="M12 2L15.09 8.26L22 9.27L17 14.14L18.18 21.02L12 17.77L5.82 21.02L7 14.14L2 9.27L8.91 8.26L12 2Z"
+        initial={reduceMotion ? { pathLength: 1, opacity: 1 } : { pathLength: 0, opacity: 0 }}
+        whileInView={{ pathLength: 1, opacity: 1 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 2, ease: "easeInOut", repeat: Infinity, repeatType: "reverse" }}
+        viewport={{ once: false, margin: "-50px" }}
+      />
+    </motion.svg>
+  );
+};
 
 const DrawSyncLine = () => (
   <motion.svg width="100%" height="60" viewBox="0 0 200 60" fill="none" stroke="currentColor" strokeWidth="2" className="text-[#A7CE38]">
@@ -53,44 +55,55 @@ const DrawChart = () => (
   </div>
 );
 
-const DrawRoute = () => (
-  <motion.svg width="100%" height="80" viewBox="0 0 300 80" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
-    <motion.path
-      d="M20 60 Q 80 20, 150 40 T 280 20"
-      initial={{ pathLength: 0 }}
-      whileInView={{ pathLength: 1 }}
-      transition={{ duration: 2, ease: "easeInOut" }}
-      viewport={{ once: true }}
-      strokeDasharray="6 6"
-    />
-    <motion.g initial={{ scale: 0, opacity: 0 }} whileInView={{ scale: 1, opacity: 1 }} transition={{ delay: 2, type: "spring" }}>
-      <circle cx="280" cy="20" r="8" fill="#A7CE38" />
-      <circle cx="280" cy="20" r="4" fill="#18181b" />
-    </motion.g>
-  </motion.svg>
-);
+const DrawRoute = () => {
+  const reduceMotion = useReducedMotion();
+  return (
+    <motion.svg width="100%" height="80" viewBox="0 0 300 80" fill="none" stroke="currentColor" strokeWidth="2" className="text-zinc-500">
+      <motion.path
+        d="M20 60 Q 80 20, 150 40 T 280 20"
+        initial={reduceMotion ? { pathLength: 1 } : { pathLength: 0 }}
+        whileInView={{ pathLength: 1 }}
+        transition={reduceMotion ? { duration: 0 } : { duration: 2, ease: "easeInOut" }}
+        viewport={{ once: true }}
+        strokeDasharray="6 6"
+      />
+      <motion.g
+        initial={reduceMotion ? { scale: 1, opacity: 1 } : { scale: 0, opacity: 0 }}
+        whileInView={{ scale: 1, opacity: 1 }}
+        transition={reduceMotion ? { duration: 0 } : { delay: 2, type: "spring" }}
+      >
+        <circle cx="280" cy="20" r="8" fill="#A7CE38" />
+        <circle cx="280" cy="20" r="4" fill="#18181b" />
+      </motion.g>
+    </motion.svg>
+  );
+};
 
 
 export const Features = ({ dictionary }: FeaturesProps) => {
+  const reduceMotion = useReducedMotion();
+
   const container = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.15 }
+      transition: { staggerChildren: reduceMotion ? 0 : 0.15 }
     }
   };
 
   const item = {
-    hidden: { opacity: 0, y: 30 },
-    show: { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, damping: 20 } }
+    hidden: reduceMotion ? { opacity: 0, y: 0 } : { opacity: 0, y: 30 },
+    show: reduceMotion
+      ? { opacity: 1, y: 0, transition: { duration: 0 } }
+      : { opacity: 1, y: 0, transition: { type: "spring" as const, stiffness: 200, damping: 20 } }
   };
 
   return (
     <div className="w-full py-20 lg:py-40 bg-zinc-950 text-white overflow-hidden relative">
       <motion.div
         className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-[#A7CE38] opacity-5 rounded-full blur-[100px] pointer-events-none"
-        animate={{ scale: [1, 1.1, 1] }}
-        transition={{ duration: 8, repeat: Infinity, ease: "easeInOut" }}
+        animate={reduceMotion ? undefined : { scale: [1, 1.1, 1] }}
+        transition={reduceMotion ? undefined : { duration: 8, repeat: Infinity, ease: "easeInOut" }}
       />
       <div className="container mx-auto relative z-10 px-4">
         <div className="flex flex-col gap-16">

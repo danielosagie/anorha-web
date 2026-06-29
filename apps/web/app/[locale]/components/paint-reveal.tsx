@@ -22,6 +22,8 @@ interface PaintRevealProps {
   waveAmplitude?: number;
   /** Animate the wave (default true) */
   waveAnimate?: boolean;
+  /** Show the customization controls toggle overlay (default false) */
+  showControlsToggle?: boolean;
 }
 
 const CHAR_MAP = [' ', '·', '░', '▒', '▓', '█'];
@@ -74,6 +76,7 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
   blendTopHeight = 100,
   waveAmplitude = 20,
   waveAnimate = true,
+  showControlsToggle = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const displayCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -431,7 +434,7 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
       const { width, height } = sizeRef.current;
       if (width <= 0 || height <= 0) return;
 
-      if (!living && !dirtyFrameRef.current) return;
+      if (!living && !waveAnimate && !dirtyFrameRef.current) return;
       renderPattern(width, height);
       compositeFrame(width, height);
       dirtyFrameRef.current = false;
@@ -439,7 +442,7 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
 
     rafId = requestAnimationFrame(loop);
     return () => cancelAnimationFrame(rafId);
-  }, [targetFps, renderPattern, compositeFrame]);
+  }, [targetFps, renderPattern, compositeFrame, living, waveAnimate]);
 
   const flushPendingDraw = useCallback(() => {
     const pending = pendingDrawRef.current;
@@ -506,6 +509,7 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
         className={`w-full h-full cursor-crosshair pointer-events-auto touch-none transition-opacity duration-1000 z-0 ${isInitialized ? 'opacity-100' : 'opacity-0'}`}
       />
 
+      {showControlsToggle && (
       <div className="absolute top-6 right-6 z-50 flex flex-col items-end gap-3 pointer-events-auto">
         <button
           onClick={(e) => {
@@ -674,6 +678,7 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
           </div>
         )}
       </div>
+      )}
     </div>
   );
 }

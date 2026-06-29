@@ -62,6 +62,15 @@ const createEvent = (
   progress,
 });
 
+const INITIAL_EVENT: DemoEvent = {
+  id: 'init',
+  ts: 0,
+  stage: 'analyze',
+  type: 'info',
+  message: 'Demo initialized in hybrid mode.',
+  progress: 0,
+};
+
 const clampProgress = (value: number): number => {
   if (!Number.isFinite(value)) return 0;
   return Math.max(0, Math.min(100, Math.round(value)));
@@ -83,13 +92,13 @@ type UseDemoStateMachineProps = {
 export const useDemoStateMachine = ({ mode, liveSnapshot }: UseDemoStateMachineProps) => {
   const [currentStage, setCurrentStage] = useState<DemoStage>('analyze');
   const [progress, setProgress] = useState<number>(0);
-  const [events, setEvents] = useState<DemoEvent[]>([
-    createEvent('analyze', 'Demo initialized in hybrid mode.', 0, 'info'),
-  ]);
+  const [events, setEvents] = useState<DemoEvent[]>([INITIAL_EVENT]);
   const [candidates, setCandidates] = useState<DemoCandidate[]>(INITIAL_CANDIDATES);
   const [isDragging, setIsDragging] = useState<boolean>(false);
 
   const timersRef = useRef<Array<ReturnType<typeof setTimeout>>>([]);
+  const progressRef = useRef<number>(0);
+  progressRef.current = progress;
 
   const addEvent = (event: DemoEvent) => {
     setEvents((prev) => [event, ...prev].slice(0, 20));
@@ -124,8 +133,13 @@ export const useDemoStateMachine = ({ mode, liveSnapshot }: UseDemoStateMachineP
   useEffect(() => {
     if (mode !== 'live' || !liveSnapshot) return;
 
+    // Live mode takes over — stop any scripted timers from continuing to
+    // overwrite stage/progress/events.
+    timersRef.current.forEach(clearTimeout);
+    timersRef.current = [];
+
     const nextStage = normalizeStage(liveSnapshot.currentStage);
-    const nextProgress = clampProgress(liveSnapshot.progress ?? progress);
+    const nextProgress = clampProgress(liveSnapshot.progress ?? progressRef.current);
     const status = String(liveSnapshot.status || 'processing').toLowerCase();
 
     setCurrentStage(nextStage);
@@ -148,7 +162,7 @@ export const useDemoStateMachine = ({ mode, liveSnapshot }: UseDemoStateMachineP
     }
 
     addEvent(createEvent(nextStage, `Live update: ${status} (${nextProgress}%).`, nextProgress, 'info'));
-  }, [liveSnapshot, mode, progress]);
+  }, [liveSnapshot, mode]);
 
   const onCandidatesReordered = (ordered: DemoCandidate[]) => {
     const ranked = ordered.map((candidate, index) => ({
@@ -160,9 +174,11 @@ export const useDemoStateMachine = ({ mode, liveSnapshot }: UseDemoStateMachineP
   };
 
   const onLaneDrop = (action: StageDropAction) => {
+    const floor = action.stage === 'analyze' ? 15 : action.stage === 'match' ? 50 : 80;
+    const nextProgress = clampProgress(Math.max(progress, floor));
     setCurrentStage(action.stage);
-    setProgress((prev) => clampProgress(Math.max(prev, action.stage === 'analyze' ? 15 : action.stage === 'match' ? 50 : 80)));
-    addEvent(createEvent(action.stage, `Moved source into ${action.stage.toUpperCase()} lane.`, progress, 'info'));
+    setProgress(nextProgress);
+    addEvent(createEvent(action.stage, `Moved source into ${action.stage.toUpperCase()} lane.`, nextProgress, 'info'));
   };
 
   const state = useMemo<DemoSessionState>(

@@ -1,5 +1,5 @@
 import http from 'node:http';
-import { randomBytes } from 'node:crypto';
+import { randomBytes, randomInt } from 'node:crypto';
 import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { app } from 'electron';
@@ -18,6 +18,9 @@ export type BridgeStatus = {
     lastSeenAt?: number | null;
 };
 
+// Public status exposed over untrusted HTTP/WS — never includes the pairing secret.
+export type PublicBridgeStatus = Omit<BridgeStatus, 'pairCode'>;
+
 type BridgeState = {
     deviceId: string;
     pairCode: string;
@@ -34,6 +37,7 @@ type BridgeClient = {
 };
 
 type PendingRpc = {
+    clientId: string;
     resolve: (value: any) => void;
     reject: (reason?: any) => void;
     timeout: NodeJS.Timeout;
@@ -44,7 +48,7 @@ function generateId(length = 16): string {
 }
 
 function generatePairCode(): string {
-    return Math.floor(100000 + Math.random() * 900000).toString();
+    return randomInt(100000, 1000000).toString();
 }
 
 function loadState(storagePath: string): BridgeState {
@@ -78,13 +82,26 @@ function saveState(storagePath: string, state: BridgeState) {
     }
 }
 
+const MAX_BODY_BYTES = 64 * 1024;
+
 function parseJsonBody(req: http.IncomingMessage): Promise<any> {
     return new Promise((resolve, reject) => {
         let data = '';
+        let size = 0;
+        let aborted = false;
         req.on('data', (chunk) => {
+            if (aborted) return;
+            size += chunk.length;
+            if (size > MAX_BODY_BYTES) {
+                aborted = true;
+                reject(new Error('request_body_too_large'));
+                req.destroy();
+                return;
+            }
             data += chunk.toString('utf-8');
         });
         req.on('end', () => {
+            if (aborted) return;
             if (!data) {
                 resolve({});
                 return;
@@ -136,6 +153,19 @@ export class ExtensionBridge {
         this.wss = new WebSocketServer({ server: this.server, path: '/ws' });
         this.wss.on('connection', (socket) => this.handleSocket(socket));
 
+        this.server.on('error', (error: NodeJS.ErrnoException) => {
+            console.error('[ExtensionBridge] Server error:', error);
+            sendAgentLog(`[ExtensionBridge] Server error: ${error.message}`, 'error');
+            this.server = undefined;
+        });
+
+        if (!Number.isInteger(this.port) || this.port < 1 || this.port > 65535) {
+            console.error(`[ExtensionBridge] Invalid port: ${this.port}`);
+            sendAgentLog(`[ExtensionBridge] Invalid port: ${this.port}`, 'error');
+            this.server = undefined;
+            return;
+        }
+
         this.server.listen(this.port, '127.0.0.1', () => {
             console.log(`[ExtensionBridge] Listening on http://127.0.0.1:${this.port}`);
             sendAgentLog(`[ExtensionBridge] Listening on 127.0.0.1:${this.port}`, 'success');
@@ -151,6 +181,12 @@ export class ExtensionBridge {
             connectedExtensions: [...this.clients.values()].filter((c) => c.authed).length,
             lastSeenAt: this.state.lastSeenAt ?? null,
         };
+    }
+
+    // Redacted status for untrusted HTTP/WS callers — omits the pairing secret.
+    getPublicStatus(): PublicBridgeStatus {
+        const { pairCode: _pairCode, ...rest } = this.getStatus();
+        return rest;
     }
 
     rotatePairCode(): BridgeStatus {
@@ -194,7 +230,7 @@ export class ExtensionBridge {
                 reject(new Error(`Extension RPC timeout for ${method}`));
             }, 15_000);
 
-            this.pendingRpcs.set(rpcId, { resolve, reject, timeout });
+            this.pendingRpcs.set(rpcId, { clientId: client.id, resolve, reject, timeout });
 
             try {
                 client.socket.send(payload);
@@ -216,7 +252,7 @@ export class ExtensionBridge {
         const url = new URL(req.url, `http://127.0.0.1:${this.port}`);
         if (req.method === 'GET' && url.pathname === '/status') {
             res.writeHead(200, { 'Content-Type': 'application/json' });
-            res.end(JSON.stringify(this.getStatus()));
+            res.end(JSON.stringify(this.getPublicStatus()));
             return;
         }
 
@@ -231,6 +267,8 @@ export class ExtensionBridge {
             if (!this.state.token) {
                 this.state.token = generateId(24);
                 this.state.pairedAt = Date.now();
+                // Burn the pairing secret once it has been used to mint a token.
+                this.state.pairCode = generatePairCode();
             }
 
             this.state.lastSeenAt = Date.now();
@@ -302,7 +340,7 @@ export class ExtensionBridge {
             client.socket.send(
                 JSON.stringify({
                     type: 'status',
-                    payload: this.getStatus(),
+                    payload: this.getPublicStatus(),
                     authed: client.authed,
                 })
             );
@@ -318,6 +356,8 @@ export class ExtensionBridge {
             if (!this.state.token) {
                 this.state.token = generateId(24);
                 this.state.pairedAt = Date.now();
+                // Burn the pairing secret once it has been used to mint a token.
+                this.state.pairCode = generatePairCode();
             }
 
             this.state.lastSeenAt = Date.now();
@@ -338,8 +378,10 @@ export class ExtensionBridge {
         }
 
         if (message.type === 'rpc_response') {
+            // Only the authed client the RPC was dispatched to may resolve it.
+            if (!client.authed) return;
             const pending = this.pendingRpcs.get(message.id);
-            if (!pending) return;
+            if (!pending || pending.clientId !== client.id) return;
             clearTimeout(pending.timeout);
             this.pendingRpcs.delete(message.id);
             if (message.error) {

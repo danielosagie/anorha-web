@@ -1,7 +1,21 @@
+import { resolve, relative, isAbsolute, sep } from 'node:path';
+import { app } from 'electron';
 import { chromium, type Browser, type Page } from 'playwright-core';
 import { sendAgentLog } from '../index';
 import { findChromeExecutable } from './browser-utils';
 import type { BrowserRecipe } from './recipe-store';
+
+// Constrain any recipe-supplied file path (storage state, uploads) to the
+// app-owned userData directory so a crafted recipe cannot read arbitrary files.
+function assertAppOwnedPath(filePath: string, label: string): string {
+    const root = resolve(app.getPath('userData'));
+    const resolved = resolve(root, filePath);
+    const rel = relative(root, resolved);
+    if (rel === '' || rel.startsWith('..') || isAbsolute(rel) || rel.split(sep)[0] === '..') {
+        throw new Error(`[PlaywrightRunner] ${label} must be inside the app data directory`);
+    }
+    return resolved;
+}
 
 export class PlaywrightRecipeRunner {
     private browser: Browser | null = null;
@@ -9,36 +23,48 @@ export class PlaywrightRecipeRunner {
     async run(recipe: BrowserRecipe, inputs?: Record<string, any>) {
         sendAgentLog(`[PlaywrightRunner] Running recipe ${recipe.id}`, 'info');
 
+        const resolveValue = (value: string) => {
+            if (!inputs) return value;
+            return value.replace(/\{\{(.*?)\}\}/g, (_, key) => {
+                const trimmed = String(key).trim();
+                return inputs[trimmed] !== undefined ? String(inputs[trimmed]) : '';
+            });
+        };
+
         const browser = await this.ensureBrowser();
         const context = await browser.newContext({
-            storageState: recipe.storageStateRef || undefined,
+            storageState: recipe.storageStateRef
+                ? assertAppOwnedPath(recipe.storageStateRef, 'storageStateRef')
+                : undefined,
         });
         const page = await context.newPage();
 
         try {
             for (const step of recipe.steps) {
-                await this.executeStep(page, step, inputs);
+                await this.executeStep(page, step, resolveValue);
             }
 
             if (recipe.expectedChecks?.length) {
                 for (const check of recipe.expectedChecks) {
+                    const expectedValue = resolveValue(check.value);
+                    const selector = check.selector ? resolveValue(check.selector) : undefined;
                     if (check.type === 'url_contains') {
                         const url = page.url();
-                        if (!url.includes(check.value)) {
-                            throw new Error(`Expected URL to contain ${check.value}`);
+                        if (!url.includes(expectedValue)) {
+                            throw new Error(`Expected URL to contain ${expectedValue}`);
                         }
                     }
                     if (check.type === 'text') {
-                        if (check.selector) {
-                            await page.waitForSelector(check.selector, { timeout: 5000 });
-                            const text = await page.locator(check.selector).innerText();
-                            if (!text.includes(check.value)) {
-                                throw new Error(`Expected text '${check.value}' in ${check.selector}`);
+                        if (selector) {
+                            await page.waitForSelector(selector, { timeout: 5000 });
+                            const text = await page.locator(selector).innerText();
+                            if (!text.includes(expectedValue)) {
+                                throw new Error(`Expected text '${expectedValue}' in ${selector}`);
                             }
                         } else {
                             const content = await page.content();
-                            if (!content.includes(check.value)) {
-                                throw new Error(`Expected page to include text '${check.value}'`);
+                            if (!content.includes(expectedValue)) {
+                                throw new Error(`Expected page to include text '${expectedValue}'`);
                             }
                         }
                     }
@@ -52,47 +78,46 @@ export class PlaywrightRecipeRunner {
         }
     }
 
-    private async executeStep(page: Page, step: BrowserRecipe['steps'][number], inputs?: Record<string, any>) {
-        const resolveValue = (value: string) => {
-            if (!inputs) return value;
-            return value.replace(/\{\{(.*?)\}\}/g, (_, key) => {
-                const trimmed = String(key).trim();
-                return inputs[trimmed] !== undefined ? String(inputs[trimmed]) : '';
-            });
-        };
-
+    private async executeStep(
+        page: Page,
+        step: BrowserRecipe['steps'][number],
+        resolveValue: (value: string) => string,
+    ) {
         switch (step.action) {
             case 'goto':
-                await page.goto(step.url, { waitUntil: 'domcontentloaded' });
+                await page.goto(resolveValue(step.url), { waitUntil: 'domcontentloaded' });
                 return;
             case 'click':
-                await page.click(step.selector);
+                await page.click(resolveValue(step.selector));
                 return;
             case 'fill':
-                await page.fill(step.selector, resolveValue(step.value));
+                await page.fill(resolveValue(step.selector), resolveValue(step.value));
                 return;
             case 'press':
-                await page.press(step.selector, step.key);
+                await page.press(resolveValue(step.selector), resolveValue(step.key));
                 return;
             case 'wait_for':
-                await page.waitForSelector(step.selector, { timeout: step.timeoutMs || 10_000 });
+                await page.waitForSelector(resolveValue(step.selector), { timeout: step.timeoutMs || 10_000 });
                 return;
             case 'expect_text':
                 if (step.selector) {
-                    await page.waitForSelector(step.selector, { timeout: 5000 });
-                    const text = await page.locator(step.selector).innerText();
-                    if (!text.includes(step.text)) {
-                        throw new Error(`Expected '${step.text}' in ${step.selector}`);
+                    const selector = resolveValue(step.selector);
+                    await page.waitForSelector(selector, { timeout: 5000 });
+                    const text = await page.locator(selector).innerText();
+                    const expected = resolveValue(step.text);
+                    if (!text.includes(expected)) {
+                        throw new Error(`Expected '${expected}' in ${selector}`);
                     }
                 } else {
                     const content = await page.content();
-                    if (!content.includes(step.text)) {
-                        throw new Error(`Expected '${step.text}' in page content`);
+                    const expected = resolveValue(step.text);
+                    if (!content.includes(expected)) {
+                        throw new Error(`Expected '${expected}' in page content`);
                     }
                 }
                 return;
             case 'upload':
-                await page.setInputFiles(step.selector, resolveValue(step.path));
+                await page.setInputFiles(resolveValue(step.selector), assertAppOwnedPath(resolveValue(step.path), 'upload.path'));
                 return;
             default:
                 throw new Error(`Unsupported recipe step: ${(step as any).action}`);

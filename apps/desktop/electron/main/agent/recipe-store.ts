@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, writeFileSync, mkdirSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync, mkdirSync, renameSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { app } from 'electron';
 
@@ -32,27 +32,28 @@ export class RecipeStore {
     }
 
     private loadStore(): Record<string, BrowserRecipe> {
+        if (!existsSync(this.storePath)) return {};
         try {
-            if (!existsSync(this.storePath)) return {};
             const raw = readFileSync(this.storePath, 'utf-8');
             const parsed = JSON.parse(raw) as Record<string, BrowserRecipe>;
             return parsed || {};
         } catch (error) {
-            console.warn('[RecipeStore] Failed to load store:', error);
-            return {};
+            // Surface read/parse failures instead of silently returning {},
+            // which would cause the next save to overwrite existing recipes.
+            throw new Error(`[RecipeStore] Failed to load store at ${this.storePath}: ${(error as Error).message}`);
         }
     }
 
     private saveStore(store: Record<string, BrowserRecipe>) {
-        try {
-            const dir = dirname(this.storePath);
-            if (!existsSync(dir)) {
-                mkdirSync(dir, { recursive: true });
-            }
-            writeFileSync(this.storePath, JSON.stringify(store, null, 2));
-        } catch (error) {
-            console.warn('[RecipeStore] Failed to save store:', error);
+        const dir = dirname(this.storePath);
+        if (!existsSync(dir)) {
+            mkdirSync(dir, { recursive: true });
         }
+        // Write atomically: write to a temp file then rename, so a crash or
+        // failure mid-write cannot leave a truncated/corrupt store behind.
+        const tmpPath = `${this.storePath}.${process.pid}.tmp`;
+        writeFileSync(tmpPath, JSON.stringify(store, null, 2));
+        renameSync(tmpPath, this.storePath);
     }
 
     save(recipe: BrowserRecipe) {

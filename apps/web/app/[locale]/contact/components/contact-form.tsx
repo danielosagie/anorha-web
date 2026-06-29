@@ -5,8 +5,35 @@ import { Input } from '@repo/design-system/components/ui/input';
 import { Label } from '@repo/design-system/components/ui/label';
 import { MoveRight, Mail, MessageSquare } from 'lucide-react';
 import { Textarea } from '@repo/design-system/components/ui/textarea';
+import { useState, useTransition } from 'react';
+import { contact } from '../actions/contact';
 
 export const ContactForm = () => {
+  const [name, setName] = useState('');
+  const [email, setEmail] = useState('');
+  const [message, setMessage] = useState('');
+  const [isPending, startTransition] = useTransition();
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+
+  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setStatus(null);
+
+    startTransition(async () => {
+      const { error } = await contact(name, email, message);
+
+      if (error) {
+        setStatus({ ok: false, msg: error });
+        return;
+      }
+
+      setStatus({ ok: true, msg: "Message sent. We'll get back to you within 24 hours." });
+      setName('');
+      setEmail('');
+      setMessage('');
+    });
+  };
+
   return (
     <div className="w-full min-h-screen bg-zinc-950 text-white selection:bg-[#A7CE38]/30">
       <div className="w-full py-20 lg:py-40 relative overflow-hidden">
@@ -51,7 +78,7 @@ export const ContactForm = () => {
                   <p className="text-zinc-400 text-sm">We'll get back to you within 24 hours.</p>
                 </div>
 
-                <form className="flex flex-col gap-4 mt-2" onSubmit={(e) => e.preventDefault()}>
+                <form className="flex flex-col gap-4 mt-2" onSubmit={handleSubmit}>
                   <div className="grid w-full items-center gap-2">
                     <Label htmlFor="name" className="text-zinc-300">
                       Full Name
@@ -60,6 +87,9 @@ export const ContactForm = () => {
                       id="name"
                       type="text"
                       placeholder="Jane Doe"
+                      required
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
                       className="bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-[#A7CE38]/50"
                     />
                   </div>
@@ -72,6 +102,9 @@ export const ContactForm = () => {
                       id="email"
                       type="email"
                       placeholder="jane@company.com"
+                      required
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
                       className="bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-[#A7CE38]/50"
                     />
                   </div>
@@ -83,13 +116,25 @@ export const ContactForm = () => {
                     <Textarea
                       id="message"
                       placeholder="Tell us about your inventory needs..."
+                      required
+                      value={message}
+                      onChange={(e) => setMessage(e.target.value)}
                       className="min-h-[120px] bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-[#A7CE38]/50 resize-none"
                     />
                   </div>
 
-                  <Button className="w-full mt-4 bg-[#A7CE38] hover:bg-[#96BB32] text-zinc-950 font-medium h-12 rounded-xl text-base">
-                    Send Message
+                  <Button
+                    type="submit"
+                    disabled={isPending}
+                    className="w-full mt-4 bg-[#A7CE38] hover:bg-[#96BB32] text-zinc-950 font-medium h-12 rounded-xl text-base"
+                  >
+                    {isPending ? 'Sending...' : 'Send Message'}
                   </Button>
+                  {status && (
+                    <p className={`text-sm ${status.ok ? 'text-[#A7CE38]' : 'text-red-400'}`}>
+                      {status.msg}
+                    </p>
+                  )}
                 </form>
               </div>
             </div>

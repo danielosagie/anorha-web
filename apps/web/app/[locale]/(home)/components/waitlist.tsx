@@ -15,7 +15,7 @@ export function Waitlist({ className }: WaitlistProps) {
         <div>
           <p className="text-sm text-black font-medium">We are in private beta</p>
           <p className="text-gray-700 text-xs mt-1">
-            Download the app and we will send you an invite to get started.
+            Download the app to get started.
           </p>
         </div>
         <div className="flex flex-col sm:flex-row gap-3">
