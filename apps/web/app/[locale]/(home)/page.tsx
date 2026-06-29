@@ -1,4 +1,6 @@
-import { showBetaFeature } from '@repo/feature-flags';
+import {
+  showBetaFeature,
+} from '@repo/feature-flags';
 import { getDictionary } from '@repo/internationalization';
 import { createMetadata } from '@repo/seo/metadata';
 import type { Metadata } from 'next';
@@ -65,9 +67,10 @@ const Home = async ({ params }: HomeProps) => {
         </div>
       )}
       <Hero dictionary={dictionary} />
+      
       {/*
-      <Cases dictionary={dictionary} />
       <Features dictionary={dictionary} />
+      <Cases dictionary={dictionary} />
       <Stats dictionary={dictionary} />
       <Testimonials dictionary={dictionary} />
       <FAQ dictionary={dictionary} />

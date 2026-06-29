@@ -1,11 +1,7 @@
 import puppeteer from 'puppeteer-extra';
 import StealthPlugin from 'puppeteer-extra-plugin-stealth';
-import { executablePath } from 'puppeteer-core'; // Or rely on installed chrome? 
-// For desktop apps, we often bundle or use a local chrome. 
-// Since we installed puppeteer-core, we need to point to a browser.
-// For dev, we can use the system browser or download one.
-// Let's assume user has Chrome or we use a utility to find it.
 import { sendAgentLog } from "../index";
+import { findChromeExecutable } from "./browser-utils";
 
 puppeteer.use(StealthPlugin());
 
@@ -56,36 +52,15 @@ export class AgentRunner {
         console.log('[AgentRunner] Launching browser...');
         sendAgentLog('[AgentRunner] Launching browser...', 'info');
 
-        const possiblePaths = [
-            '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
-            '/Applications/Google Chrome Canary.app/Contents/MacOS/Google Chrome Canary',
-            '/Applications/Chromium.app/Contents/MacOS/Chromium',
-            '/Applications/Microsoft Edge.app/Contents/MacOS/Microsoft Edge',
-            '/usr/bin/google-chrome',
-            '/usr/local/bin/google-chrome',
-            '/opt/google/chrome/google-chrome'
-        ];
-
         let foundPath = '';
-        const fs = require('fs');
-
-        for (const path of possiblePaths) {
-            try {
-                if (fs.existsSync(path)) {
-                    foundPath = path;
-                    console.log(`[AgentRunner] Found browser at: ${path}`);
-                    break;
-                }
-            } catch (e) {
-                console.error(`Error checking path ${path}:`, e);
-            }
-        }
-
-        if (!foundPath) {
-            const msg = '[AgentRunner] CRITICAL: Could not find Chrome! Please make sure Google Chrome is installed in /Applications.';
+        try {
+            foundPath = findChromeExecutable();
+            console.log(`[AgentRunner] Found browser at: ${foundPath}`);
+        } catch (error: any) {
+            const msg = `[AgentRunner] CRITICAL: ${error.message}`;
             console.error(msg);
             sendAgentLog(msg, 'error');
-            throw new Error("Chrome executable not found. Please install Google Chrome.");
+            throw error;
         }
 
         sendAgentLog(`[AgentRunner] Using browser: ${foundPath}`, 'success');

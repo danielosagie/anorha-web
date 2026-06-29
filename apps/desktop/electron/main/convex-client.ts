@@ -3,6 +3,9 @@ import { app } from "electron";
 import * as dotenv from "dotenv";
 import { join } from "path";
 import { agentRunner } from "./agent/runner";
+import { extensionBridge } from "./extension-bridge";
+import { recipeStore, type BrowserRecipe } from "./agent/recipe-store";
+import { playwrightRunner } from "./agent/playwright-runner";
 import { sendAgentLog } from "./index";
 
 // Load environment variables from .env.local if present
@@ -68,10 +71,37 @@ export class ConvexWorker {
             // 1. Mark as processing
             await this.client.mutation("browserJobs:startJob", { jobId: job._id });
 
-            // 2. Execute via Puppeteer Runner
-            console.log("[ConvexWorker] Executing job via AgentRunner...");
-            const result = await agentRunner.runJob(job);
-            console.log("[ConvexWorker] AgentRunner execution done");
+            // 2. Execute job
+            let result: any = null;
+            if (job.type === 'explore_session') {
+                console.log("[ConvexWorker] Executing explore_session via ExtensionBridge...");
+                const activeTab = await extensionBridge.sendRpc('get_active_tab', {});
+                const screenshot = await extensionBridge.sendRpc('capture_screenshot', { tabId: activeTab?.id });
+                const domSummary = await extensionBridge.sendRpc('get_dom_summary', { tabId: activeTab?.id, maxElements: 200 });
+                result = { status: 'success', activeTab, screenshot, domSummary };
+            } else if (job.type === 'generate_recipe') {
+                const recipe = this.buildRecipe(job);
+                recipeStore.save(recipe);
+                result = { status: 'success', recipeId: recipe.id };
+            } else if (job.type === 'run_recipe') {
+                const recipeId = String(job.payload?.recipeId || '');
+                const recipe = recipeStore.get(recipeId);
+                if (!recipe) throw new Error(`Recipe not found: ${recipeId}`);
+                result = await playwrightRunner.run(recipe, job.payload?.inputs || {});
+            } else if (job.type === 'report_results') {
+                result = { status: 'recorded', payload: job.payload || null };
+            } else if (job.type === 'await_human') {
+                await extensionBridge.sendRpc('request_consent', {
+                    reason: job.payload?.reason || 'Action requires approval',
+                    tabId: job.payload?.tabId,
+                });
+                result = { status: 'awaiting_human' };
+            } else {
+                // Default to existing puppeteer runner
+                console.log("[ConvexWorker] Executing job via AgentRunner...");
+                result = await agentRunner.runJob(job);
+                console.log("[ConvexWorker] AgentRunner execution done");
+            }
 
             // 3. Mark as complete
             await this.client.mutation("browserJobs:completeJob", {
@@ -93,6 +123,21 @@ export class ConvexWorker {
                 console.error("Failed to report error to Convex:", e);
             }
         }
+    }
+
+    private buildRecipe(job: any): BrowserRecipe {
+        const payload = job.payload || {};
+        const now = Date.now();
+        return {
+            id: payload.recipeId || `recipe_${now}`,
+            site: payload.site,
+            inputs: payload.inputs || {},
+            steps: Array.isArray(payload.steps) ? payload.steps : [],
+            expectedChecks: payload.expectedChecks || [],
+            requiresAuth: payload.requiresAuth ?? true,
+            storageStateRef: payload.storageStateRef,
+            createdAt: now,
+        };
     }
 }
 

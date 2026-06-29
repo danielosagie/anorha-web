@@ -4,7 +4,7 @@ import type { NextMiddleware, NextRequest } from 'next/server';
 export const config = {
   // exclude api routes and static assets from i18n middleware
   matcher: [
-    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|\.well-known|ingest).*)',
+    '/((?!api|_next/static|_next/image|favicon.ico|manifest.json|logo.png|assets|\.well-known|ingest).*)',
   ],
 };
 

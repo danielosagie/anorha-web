@@ -20,7 +20,15 @@ contextBridge.exposeInMainWorld('ipcRenderer', {
         }
     },
     invoke: (channel: string, data: any) => {
-        let validChannels = ['auth-worker-start', 'auth-worker-stop', 'ping']
+        let validChannels = [
+            'auth-worker-start',
+            'auth-worker-stop',
+            'ping',
+            'extension-bridge-status',
+            'extension-bridge-rotate-code',
+            'extension-bridge-unpair',
+            'open-extension-install'
+        ]
         if (validChannels.includes(channel)) {
             return ipcRenderer.invoke(channel, data)
         }

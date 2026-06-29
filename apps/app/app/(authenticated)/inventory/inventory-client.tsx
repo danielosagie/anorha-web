@@ -339,6 +339,33 @@ export function InventoryClient({
     [connectionMap]
   );
 
+  const platformConnectionCounts = React.useMemo(() => {
+    const result: Record<string, number> = {};
+    connections.forEach((conn) => {
+      const key = normalizePlatform(conn.platformType);
+      result[key] = (result[key] ?? 0) + 1;
+    });
+    return result;
+  }, [connections]);
+
+  const platformHasMappings = React.useMemo(() => {
+    const result: Record<string, boolean> = {};
+    items.forEach((item) => {
+      const keys = itemPlatformKeys(item);
+      keys.forEach((key) => {
+        result[key] = true;
+      });
+    });
+    return result;
+  }, [items, itemPlatformKeys]);
+
+  const shouldShowAllForPlatform = React.useCallback(
+    (platformKey: string) =>
+      Boolean(platformConnectionCounts[platformKey]) &&
+      !platformHasMappings[platformKey],
+    [platformConnectionCounts, platformHasMappings]
+  );
+
   const counts = React.useMemo(() => {
     const result: Record<string, number> = { all: items.length };
     items.forEach((item) => {
@@ -347,8 +374,13 @@ export function InventoryClient({
         result[key] = (result[key] ?? 0) + 1;
       });
     });
+    Object.keys(platformConnectionCounts).forEach((key) => {
+      if (shouldShowAllForPlatform(key)) {
+        result[key] = items.length;
+      }
+    });
     return result;
-  }, [items, itemPlatformKeys]);
+  }, [items, itemPlatformKeys, platformConnectionCounts, shouldShowAllForPlatform]);
 
   const visibleConnections = React.useMemo(() => {
     const base =
@@ -425,7 +457,9 @@ export function InventoryClient({
     return items.filter((item) => {
       if (platform !== 'all') {
         const keys = itemPlatformKeys(item);
-        if (!keys.has(platform)) return false;
+        if (!shouldShowAllForPlatform(platform) && !keys.has(platform)) {
+          return false;
+        }
       }
       if (selectedConnectionIds.length > 0) {
         const hasConn = item.connectionIds?.some((id) =>
