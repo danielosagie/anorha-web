@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useOrganization, useAuth } from '@clerk/nextjs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
 import { Button } from '@repo/design-system/components/ui/button';
@@ -59,11 +59,52 @@ export default function ConnectionsPage() {
   const [disconnecting, setDisconnecting] = useState(false);
   const [archiveProducts, setArchiveProducts] = useState(false);
 
+  // Auto-scan-on-connect (matches mobile): fire once after the OAuth redirect.
+  const autoScanFired = useRef(false);
+
   useEffect(() => {
     if (!orgLoaded || !authLoaded || !organization?.id) return;
 
     loadConnections();
   }, [orgLoaded, authLoaded, organization?.id]);
+
+  // The moment we land back from OAuth (?connected=<platform>), kick the scan for
+  // the freshly-connected account so the user doesn't have to tap "Start Scan".
+  // The backend then auto-pilots a clean import straight to sync.
+  useEffect(() => {
+    if (typeof window === 'undefined' || autoScanFired.current || loading) return;
+    if (!connections || connections.length === 0) return;
+
+    const connectedPlatform = new URLSearchParams(window.location.search).get('connected');
+    if (!connectedPlatform) return;
+
+    const target = connections
+      .filter((c) => c.PlatformType?.toLowerCase() === connectedPlatform.toLowerCase())
+      .filter((c) => !['active', 'syncing', 'reconciling', 'review'].includes((c.Status || '').toLowerCase()))
+      .sort((a, b) => (b.CreatedAt || '').localeCompare(a.CreatedAt || ''))[0];
+    if (!target) return;
+
+    // Set synchronously so a re-render mid-request can't fire a second scan.
+    autoScanFired.current = true;
+    (async () => {
+      try {
+        const token = await getToken();
+        if (!token) throw new Error('No auth token');
+        const res = await fetch(`/api/connections/${target.Id}/start-scan`, {
+          method: 'POST',
+          headers: { Authorization: `Bearer ${token}`, 'Content-Type': 'application/json' },
+        });
+        if (!res.ok) throw new Error(`Start scan failed: ${res.status}`);
+        // Only on success: reflect the scanning state and drop the one-shot param.
+        await loadConnections();
+        window.history.replaceState(null, '', '/team/connections');
+      } catch (err) {
+        // Keep the ?connected marker and release the guard so a later refresh retries.
+        autoScanFired.current = false;
+        console.error('[ConnectionsPage] Auto start-scan failed:', err);
+      }
+    })();
+  }, [connections, loading, getToken]);
 
   const loadConnections = async () => {
     try {
