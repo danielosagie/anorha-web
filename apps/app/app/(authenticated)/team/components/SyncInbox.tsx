@@ -64,6 +64,10 @@ export function SyncInbox({ connectionId, onChanged }: { connectionId: string; o
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [resolving, setResolving] = useState<string | null>(null);
+  // Resolve-action failures surface as a non-destructive banner — they must NOT
+  // reuse `error` (which short-circuits the whole render and would hide the list
+  // that refresh() just restored).
+  const [actionError, setActionError] = useState<string | null>(null);
 
   const refresh = useCallback(async () => {
     try {
@@ -89,6 +93,7 @@ export function SyncInbox({ connectionId, onChanged }: { connectionId: string; o
 
   const resolve = async (platformId: string, choice: 'link' | 'create' | 'ignore', canonicalId?: string) => {
     setResolving(platformId);
+    setActionError(null);
     // Optimistic removal — the item drops immediately; we refetch on failure.
     setResult((prev) =>
       prev ? { ...prev, needsAttention: prev.needsAttention.filter((i) => i.platformId !== platformId) } : prev,
@@ -105,8 +110,8 @@ export function SyncInbox({ connectionId, onChanged }: { connectionId: string; o
       if (!res.ok && res.status !== 409) throw new Error(`Resolve failed: ${res.status}`);
       onChanged?.();
     } catch (err) {
-      await refresh(); // roll back to the true server state
-      setError(err instanceof Error ? err.message : 'Failed to resolve');
+      await refresh(); // roll back to the true server state (keeps the list visible)
+      setActionError(err instanceof Error ? err.message : 'Failed to resolve');
     } finally {
       setResolving(null);
     }
@@ -128,6 +133,11 @@ export function SyncInbox({ connectionId, onChanged }: { connectionId: string; o
 
   return (
     <div className="space-y-3">
+      {actionError && (
+        <p className="text-sm text-red-600" role="alert">
+          {actionError} — the item was restored; try again.
+        </p>
+      )}
       <div className="flex items-center gap-2 text-xs text-muted-foreground">
         <Sparkles className="w-3.5 h-3.5" />
         <span>
