@@ -23,7 +23,8 @@ interface SyncItem {
   attention?: string;
   reason?: string | null;
   candidates?: CanonicalRef[];
-  recommended?: string | null;
+  // A hint at which candidate to default the Link action to — NOT a candidate id.
+  recommended?: 'primary' | 'secondary' | null;
   groupId?: string | null;
   groupTitle?: string | null;
 }
@@ -151,7 +152,12 @@ export function SyncInbox({ connectionId, onChanged }: { connectionId: string; o
         <div className="space-y-2">
           {needsAttention.map((item) => {
             const hasCandidates = (item.candidates?.length ?? 0) > 0;
-            const linkTarget = item.recommended || item.candidates?.[0]?.id;
+            // `recommended` is a 'primary'/'secondary' hint, not an id — resolve
+            // it to the actual candidate id the backend will accept.
+            const linkTarget =
+              item.recommended === 'secondary'
+                ? item.candidates?.[1]?.id ?? item.candidates?.[0]?.id
+                : item.candidates?.[0]?.id;
             return (
               <Card key={item.platformId} className="border-amber-200 bg-amber-50/40">
                 <CardContent className="flex items-center gap-3 py-3">
