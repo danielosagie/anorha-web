@@ -290,10 +290,12 @@ export default function ConnectionsPage() {
                     </div>
                   </div>
 
-                  {/* Async inbox — non-blocking; sync already started on connect. */}
+                  {/* Async inbox — non-blocking; sync already started on connect.
+                      The inbox keeps its own resolution state per decision — no
+                      full-page refetch per resolve. */}
                   {openInboxId === conn.Id && (
                     <div className="mt-4 border-t pt-4">
-                      <SyncInbox connectionId={conn.Id} onChanged={loadConnections} />
+                      <SyncInbox connectionId={conn.Id} />
                     </div>
                   )}
                 </CardContent>
