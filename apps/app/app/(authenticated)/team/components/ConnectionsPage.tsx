@@ -15,7 +15,8 @@ import {
   DialogTitle,
   DialogFooter,
 } from '@repo/design-system/components/ui/dialog';
-import { AlertCircle, Loader2, Plus, Trash2, RefreshCw } from 'lucide-react';
+import { AlertCircle, Loader2, Plus, Trash2, RefreshCw, Inbox } from 'lucide-react';
+import { SyncInbox } from './SyncInbox';
 
 const API_BASE = (process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333').replace(/\/$/, '');
 
@@ -53,6 +54,8 @@ export default function ConnectionsPage() {
   const [connections, setConnections] = useState<Connection[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  // Which connection's async inbox is expanded inline (SYNC_REBUILD stage 3).
+  const [openInboxId, setOpenInboxId] = useState<string | null>(null);
 
   // Disconnect State
   const [disconnectId, setDisconnectId] = useState<string | null>(null);
@@ -265,6 +268,14 @@ export default function ConnectionsPage() {
 
                     {/* Right: Actions */}
                     <div className="flex items-center gap-2 ml-4">
+                      <Button
+                        variant={openInboxId === conn.Id ? 'secondary' : 'ghost'}
+                        size="sm"
+                        onClick={() => setOpenInboxId((id) => (id === conn.Id ? null : conn.Id))}
+                      >
+                        <Inbox className="w-4 h-4 mr-1" />
+                        Review
+                      </Button>
                       <Button variant="ghost" size="sm">
                         <RefreshCw className="w-4 h-4" />
                       </Button>
@@ -278,6 +289,15 @@ export default function ConnectionsPage() {
                       </Button>
                     </div>
                   </div>
+
+                  {/* Async inbox — non-blocking; sync already started on connect.
+                      The inbox keeps its own resolution state per decision — no
+                      full-page refetch per resolve. */}
+                  {openInboxId === conn.Id && (
+                    <div className="mt-4 border-t pt-4">
+                      <SyncInbox connectionId={conn.Id} />
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             );
