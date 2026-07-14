@@ -3,23 +3,24 @@ import { Input } from '@repo/design-system/components/ui/input';
 import { ArrowRightIcon, SearchIcon } from 'lucide-react';
 
 export const Search = () => (
-  <form action="/search" className="flex items-center w-full gap-2 px-4">
+  <form action="/search" className="flex w-full items-center gap-2 px-3">
     <div className="relative w-full">
-      <div className="absolute top-px bottom-px left-px flex h-8 w-8 items-center justify-center">
-        <SearchIcon size={16} className="text-muted-foreground" />
+      <div className="pointer-events-none absolute inset-y-0 left-0 flex w-10 items-center justify-center">
+        <SearchIcon className="size-4 text-muted-foreground" />
       </div>
       <Input
         type="text"
         name="q"
-        placeholder="Search"
-        className="h-auto bg-background py-1.5 pr-3 pl-8 text-xs"
+        placeholder="Search Anorha"
+        className="h-10 border-transparent bg-muted/80 py-2 pr-10 pl-10 text-sm shadow-none focus-visible:border-ring"
       />
       <Button
         variant="ghost"
         size="icon"
-        className="absolute top-px right-px bottom-px h-8 w-8"
+        className="absolute inset-y-0 right-0 size-10"
+        aria-label="Search"
       >
-        <ArrowRightIcon size={16} className="text-muted-foreground" />
+        <ArrowRightIcon className="text-muted-foreground" />
       </Button>
     </div>
   </form>

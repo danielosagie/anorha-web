@@ -1,6 +1,6 @@
 'use client';
 
-import { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { Header } from '../components/header';
 
 interface PageWrapperProps {
@@ -11,42 +11,35 @@ interface PageWrapperProps {
   backButtonText?: string;
 }
 
-export function PageWrapper({ 
-  children, 
-  title, 
-  description, 
+export function PageWrapper({
+  children,
+  title,
+  description,
   onBack,
-  backButtonText = 'Back'
+  backButtonText = 'Back',
 }: PageWrapperProps) {
   return (
-    <div 
-      className="flex flex-col border-2 border-[#AFAFAF] align-center rounded-lg w-full p-2 min-h-0 min-h-[99vh]"
-      style={{ backgroundColor: '#FFFCF5' }}
-    >
-    <Header 
-      page={title || ''} 
-      onBack={onBack}
-      backButtonText={backButtonText}
-    />
-      <div 
-        className="flex flex-col flex-1 bg-white rounded-lg border-2 p-4 md:p-6 lg:p-8 overflow-auto "
- 
-      >
+    <div className="flex min-h-svh w-full flex-col bg-background">
+      <Header
+        page={title || ''}
+        onBack={onBack}
+        backButtonText={backButtonText}
+      />
+      <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 pt-3 pb-10 md:px-8 md:pb-12 lg:px-10">
         {title && (
-          <div className="mb-4 md:mb-6 flex-shrink-0">
-            <div>
-            <h1 className="text-2xl md:text-3xl font-bold">{title}</h1>
+          <div className="mb-6 flex shrink-0 flex-col gap-1 md:mb-8">
+            <h1 className="font-extrabold text-2xl tracking-[-0.025em] md:text-[1.875rem]">
+              {title}
+            </h1>
             {description && (
-              <p className="text-gray-600 text-sm md:text-base mt-1 md:mt-2">{description}</p>
+              <p className="max-w-[70ch] font-medium text-muted-foreground text-sm md:text-[0.9375rem]">
+                {description}
+              </p>
             )}
-            </div>
           </div>
         )}
-        <div className="flex-1 overflow-auto">
-          {children}
-        </div>
-      </div>
+        <div className="min-h-0 flex-1">{children}</div>
+      </main>
     </div>
   );
 }
-

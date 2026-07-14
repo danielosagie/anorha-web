@@ -1,18 +1,38 @@
 'use client';
 
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@repo/design-system/components/ui/card';
-import { Progress } from '@repo/design-system/components/ui/progress';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@repo/design-system/components/ui/table';
+import { useAuth } from '@clerk/nextjs';
 import { Badge } from '@repo/design-system/components/ui/badge';
 import { Button } from '@repo/design-system/components/ui/button';
-import { TrendingUpIcon, CalendarIcon, ExternalLinkIcon, RefreshCwIcon, CreditCardIcon, AlertCircleIcon, PlusCircleIcon } from 'lucide-react';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@repo/design-system/components/ui/card';
+import { Input } from '@repo/design-system/components/ui/input';
+import { Progress } from '@repo/design-system/components/ui/progress';
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from '@repo/design-system/components/ui/table';
+import {
+  AlertCircleIcon,
+  CreditCardIcon,
+  ExternalLinkIcon,
+  PlusCircleIcon,
+  RefreshCwIcon,
+  TrendingUpIcon,
+} from 'lucide-react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { PageWrapper } from '../components/page-wrapper';
 import { BillingActions } from './billing-actions';
 import { TierSelector } from './tier-selector';
-import { PageWrapper } from '../components/page-wrapper';
-import { useState, useEffect } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import { useAuth } from '@clerk/nextjs';
-import { Input } from '@repo/design-system/components/ui/input';
 
 interface BillingClientProps {
   summary: any;
@@ -43,14 +63,20 @@ export function BillingClient({
   const [summary, setSummary] = useState(initialSummary);
   const [invoices, setInvoices] = useState(initialInvoices);
   const [upcoming, setUpcoming] = useState(initialUpcoming);
-  const [hasActiveSubscription, setHasActiveSubscription] = useState(initialHasActiveSubscription);
+  const [hasActiveSubscription, setHasActiveSubscription] = useState(
+    initialHasActiveSubscription
+  );
   const [isRefreshing, setIsRefreshing] = useState(false);
-  const [partnerPaymentMethod, setPartnerPaymentMethod] = useState(initialPartnerPaymentMethod);
+  const [partnerPaymentMethod, setPartnerPaymentMethod] = useState(
+    initialPartnerPaymentMethod
+  );
   const [isAddingPaymentMethod, setIsAddingPaymentMethod] = useState(false);
   const [actionError, setActionError] = useState<string | null>(null);
   const [isTopUpLoading, setIsTopUpLoading] = useState(false);
   const [showCreditsModal, setShowCreditsModal] = useState(false);
-  const [selectedCreditAmount, setSelectedCreditAmount] = useState<number | null>(50);
+  const [selectedCreditAmount, setSelectedCreditAmount] = useState<
+    number | null
+  >(50);
 
   // Check if user is a partner (needs their own payment method for AI scans)
   const isPartner = userRole === 'partner';
@@ -67,23 +93,29 @@ export function BillingClient({
   // Map technical feature keys to user-friendly display names
   const getFeatureDisplayName = (key: string): string => {
     const displayNames: Record<string, string> = {
-      'ai_quick_scan': 'Photo Scan',
-      'ai_recognize_match': 'Auto-Match',
-      'ai_generate_groq': 'AI Generation',
-      'ai_generate_scrape_credits': 'Web Research',
-      'ai_insight_generation': 'Insights',
-      'ai_receipt_parsing': 'Receipt Processing',
-      'ai_manifest_analysis': 'Manifest Analysis',
-      'ai_liquidation_research': 'Liquidation Research',
-      'ebay_pricing_research': 'eBay Pricing Research',
-      'ai_shipping_vision': 'Shipping Vision',
-      'match_serpapi_search': 'Product Search',
-      'generation_firecrawl': 'Web Scraping',
-      'sync': 'Inventory Sync',
-      'import': 'Product Import',
-      'export': 'Product Export',
+      ai_quick_scan: 'Photo Scan',
+      ai_recognize_match: 'Auto-Match',
+      ai_generate_groq: 'AI Generation',
+      ai_generate_scrape_credits: 'Web Research',
+      ai_insight_generation: 'Insights',
+      ai_receipt_parsing: 'Receipt Processing',
+      ai_manifest_analysis: 'Manifest Analysis',
+      ai_liquidation_research: 'Liquidation Research',
+      ebay_pricing_research: 'eBay Pricing Research',
+      ai_shipping_vision: 'Shipping Vision',
+      match_serpapi_search: 'Product Search',
+      generation_firecrawl: 'Web Scraping',
+      sync: 'Inventory Sync',
+      import: 'Product Import',
+      export: 'Product Export',
     };
-    return displayNames[key] || key.replace(/^ai_/, '').replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    return (
+      displayNames[key] ||
+      key
+        .replace(/^ai_/, '')
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase())
+    );
   };
 
   const planFromSummary =
@@ -143,13 +175,16 @@ export function BillingClient({
       if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
 
       const headers = {
-        'Authorization': `Bearer ${token}`,
+        Authorization: `Bearer ${token}`,
         'Content-Type': 'application/json',
       };
 
       const [summaryRes, invoicesRes, upcomingRes] = await Promise.all([
         fetch(`${apiBase}/billing/summary`, { headers, cache: 'no-store' }),
-        fetch(`${apiBase}/billing/invoices?limit=12`, { headers, cache: 'no-store' }),
+        fetch(`${apiBase}/billing/invoices?limit=12`, {
+          headers,
+          cache: 'no-store',
+        }),
         fetch(`${apiBase}/billing/upcoming`, { headers, cache: 'no-store' }),
       ]);
 
@@ -176,13 +211,14 @@ export function BillingClient({
     }
   };
 
-  const planName = (planFromSummary as 'Growth' | 'Teams' | undefined) || undefined;
+  const planName =
+    (planFromSummary as 'Growth' | 'Teams' | undefined) || undefined;
 
   // AI usage - prefer credit counts with overage cost
   const aiScansUsed = safeNumber(summary?.ai_scans_used);
   const aiScansLimit = safeNumber(
     summary?.ai_scans_limit,
-    planName === 'Teams' ? 80 : 40,
+    planName === 'Teams' ? 80 : 40
   );
   const aiCreditsUsed = safeNumber(summary?.ai_credits_used, aiScansUsed);
   const aiCreditsLimit = safeNumber(summary?.ai_credits_limit, aiScansLimit);
@@ -190,7 +226,7 @@ export function BillingClient({
   const aiOverageDollars = aiOverageCents / 100;
   const aiUnitCents = safeNumber(
     summary?.ai_credit_unit_cents,
-    planName === 'Teams' ? 15 : 20,
+    planName === 'Teams' ? 15 : 20
   );
   const onDemandUsed = safeNumber(summary?.on_demand_usage_this_month);
   const onDemandLimit = safeNumber(summary?.on_demand_limit, 0);
@@ -225,7 +261,8 @@ export function BillingClient({
   const featureEntries = Object.entries(featureUsage || {});
   const hasFeatureUsage = featureEntries.some(
     ([, value]: [string, any]) =>
-      (value.totalQuantity || value.count || 0) > 0 || (value.totalCost || 0) > 0,
+      (value.totalQuantity || value.count || 0) > 0 ||
+      (value.totalCost || 0) > 0
   );
 
   const hasAiUsage = aiCreditsUsed > 0 || aiScansUsed > 0;
@@ -294,13 +331,16 @@ export function BillingClient({
       if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
 
       // Create a Polar customer session for partner to add payment method
-      const response = await fetch(`${apiBase}/billing/partner/payment-method`, {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json',
-        },
-      });
+      const response = await fetch(
+        `${apiBase}/billing/partner/payment-method`,
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -320,7 +360,7 @@ export function BillingClient({
 
   if (showTierSelector) {
     return (
-      <div className="flex items-center justify-center min-h-screen p-4" style={{ backgroundColor: '#FEF4DD' }}>
+      <div className="flex min-h-svh items-center justify-center bg-background p-4">
         <div className="w-full">
           <TierSelector
             onSelectTier={handleTierSelected}
@@ -332,127 +372,155 @@ export function BillingClient({
   }
 
   return (
-    <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
-      <PageWrapper title="Billing" description="Manage your subscription, usage, and billing information">
-        {/* Actions & Refresh Button */}
-        <div className="mb-6 flex items-center justify-between gap-3">
-          <div className="flex-1">
-            <BillingActions
-              hasActiveSubscription={hasActiveSubscription}
-              onSubscribeClick={() => setShowTierSelector(true)}
-              onManageSubscription={handleManageSubscription}
-            />
-          </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={refreshBillingData}
-            disabled={isRefreshing}
-            className="gap-2"
-            title="Refresh billing data"
-          >
-            <RefreshCwIcon className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-            {isRefreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
+    <PageWrapper
+      title="Billing"
+      description="Subscription, usage, payment details, and invoices."
+    >
+      {/* Actions & Refresh Button */}
+      <div className="mb-6 flex items-center justify-between gap-3">
+        <div className="flex-1">
+          <BillingActions
+            hasActiveSubscription={hasActiveSubscription}
+            onSubscribeClick={() => setShowTierSelector(true)}
+            onManageSubscription={handleManageSubscription}
+          />
         </div>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={refreshBillingData}
+          disabled={isRefreshing}
+          className="gap-2"
+          title="Refresh billing data"
+        >
+          <RefreshCwIcon
+            className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`}
+          />
+          {isRefreshing ? 'Refreshing...' : 'Refresh'}
+        </Button>
+      </div>
 
-        {actionError && (
-          <div className="mb-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-            <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0" />
-            <span>{actionError}</span>
-          </div>
-        )}
-        {!hasSummaryData && (
-          <div className="mb-4 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
-            Billing data is temporarily unavailable. Use Refresh to retry.
-          </div>
-        )}
+      {actionError && (
+        <div className="mb-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-sm">
+          <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0" />
+          <span>{actionError}</span>
+        </div>
+      )}
+      {!hasSummaryData && (
+        <div className="mb-4 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+          Billing data is temporarily unavailable. Use Refresh to retry.
+        </div>
+      )}
 
-        <div className="flex flex-1 flex-col gap-6">
-          {/* Main Plan Summary Card */}
-          <Card className="border-2 shadow-none">
-            <CardHeader className="pb-2">
-              <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-2">
-                <div>
-                  <CardTitle className="text-lg font-semibold mb-0">
-                    {planTitle}
-                  </CardTitle>
-                  <p className="text-xs mt-1 text-muted-foreground">
-                    {planDescription}
-                  </p>
-                </div>
-                <div className="flex flex-col gap-3 items-end">
-                  <span className="text-xs text-muted-foreground">
-                    {summary?.subscription?.CurrentPeriodEnd
-                      ? new Date(summary.subscription.CurrentPeriodEnd).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })
-                      : 'No active subscription'}
-                  </span>
-                  <Badge variant={subscriptionStatus === 'active' ? 'default' : 'secondary'}>
-                    {subscriptionStatus === 'active' ? 'Active' : 'Inactive'}
-                  </Badge>
-                </div>
+      <div className="flex flex-1 flex-col gap-6">
+        {/* Main Plan Summary Card */}
+        <Card className="border-2 shadow-none">
+          <CardHeader className="pb-2">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+              <div>
+                <CardTitle className="mb-0 font-semibold text-lg">
+                  {planTitle}
+                </CardTitle>
+                <p className="mt-1 text-muted-foreground text-xs">
+                  {planDescription}
+                </p>
               </div>
-            </CardHeader>
-            <CardContent>
-              <div className="overflow-x-auto">
-                <Table className="text-xs">
-                  <TableHeader>
-                    <TableRow className="border-b">
-                      <TableHead className="w-1/4 font-semibold text-muted-foreground">Items</TableHead>
-                      <TableHead className="w-1/4 text-right font-semibold text-muted-foreground">Usage</TableHead>
-                      <TableHead className="w-1/4 text-right font-semibold text-muted-foreground">Cost</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {/* Team members row (always shown, backed by DB) */}
+              <div className="flex flex-col items-end gap-3">
+                <span className="text-muted-foreground text-xs">
+                  {summary?.subscription?.CurrentPeriodEnd
+                    ? new Date(
+                        summary.subscription.CurrentPeriodEnd
+                      ).toLocaleDateString('en-US', {
+                        month: 'short',
+                        day: 'numeric',
+                        year: 'numeric',
+                      })
+                    : 'No active subscription'}
+                </span>
+                <Badge
+                  variant={
+                    subscriptionStatus === 'active' ? 'default' : 'secondary'
+                  }
+                >
+                  {subscriptionStatus === 'active' ? 'Active' : 'Inactive'}
+                </Badge>
+              </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <div className="overflow-x-auto">
+              <Table className="text-xs">
+                <TableHeader>
+                  <TableRow className="border-b">
+                    <TableHead className="w-1/4 font-semibold text-muted-foreground">
+                      Items
+                    </TableHead>
+                    <TableHead className="w-1/4 text-right font-semibold text-muted-foreground">
+                      Usage
+                    </TableHead>
+                    <TableHead className="w-1/4 text-right font-semibold text-muted-foreground">
+                      Cost
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {/* Team members row (always shown, backed by DB) */}
+                  <TableRow>
+                    <TableCell>Team members</TableCell>
+                    <TableCell className="text-right">
+                      {teamMembersCount}{' '}
+                      {teamMembersIncluded ? (
+                        <span className="text-muted-foreground">
+                          / {teamMembersIncluded} included
+                          {teamMembersExtra > 0
+                            ? ` (+${teamMembersExtra} extra)`
+                            : ''}
+                        </span>
+                      ) : null}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      {displayedTeamMembersCost > 0
+                        ? `$${displayedTeamMembersCost.toFixed(2)}`
+                        : 'Included'}
+                    </TableCell>
+                  </TableRow>
+
+                  {/* AI credits row (only if there was any AI usage or configured limit) */}
+                  {hasAiUsage && (
                     <TableRow>
-                      <TableCell>Team members</TableCell>
+                      <TableCell>AI Credits Used</TableCell>
                       <TableCell className="text-right">
-                        {teamMembersCount}{' '}
-                        {teamMembersIncluded
-                          ? (
-                            <span className="text-muted-foreground">
-                              / {teamMembersIncluded} included
-                              {teamMembersExtra > 0 ? ` (+${teamMembersExtra} extra)` : ''}
-                            </span>
-                          )
-                          : null}
+                        {aiCreditsUsed} / {aiCreditsLimit} credits
                       </TableCell>
                       <TableCell className="text-right">
-                        {displayedTeamMembersCost > 0 ? `$${displayedTeamMembersCost.toFixed(2)}` : 'Included'}
+                        {aiOverageDollars > 0
+                          ? `$${aiOverageDollars.toFixed(2)}`
+                          : 'Included'}
                       </TableCell>
                     </TableRow>
+                  )}
 
-                    {/* AI credits row (only if there was any AI usage or configured limit) */}
-                    {hasAiUsage && (
-                      <TableRow>
-                        <TableCell>AI Credits Used</TableCell>
-                        <TableCell className="text-right">
-                          {aiCreditsUsed} / {aiCreditsLimit} credits
-                        </TableCell>
-                        <TableCell className="text-right">
-                          {aiOverageDollars > 0 ? `$${aiOverageDollars.toFixed(2)}` : 'Included'}
-                        </TableCell>
-                      </TableRow>
-                    )}
+                  {/* Import/Sync row (only if any usage) */}
+                  {hasOnDemandUsage && (
+                    <TableRow>
+                      <TableCell>Import/Sync Operations</TableCell>
+                      <TableCell className="text-right">
+                        {onDemandUsed}{' '}
+                        <span className="text-muted-foreground">
+                          / {onDemandLimit || 'unlimited'}
+                        </span>
+                      </TableCell>
+                      <TableCell className="text-right font-medium text-[#647653]">
+                        Included
+                      </TableCell>
+                    </TableRow>
+                  )}
 
-                    {/* Import/Sync row (only if any usage) */}
-                    {hasOnDemandUsage && (
-                      <TableRow>
-                        <TableCell>Import/Sync Operations</TableCell>
-                        <TableCell className="text-right">
-                          {onDemandUsed}{' '}
-                          <span className="text-muted-foreground">
-                            / {onDemandLimit || 'unlimited'}
-                          </span>
-                        </TableCell>
-                        <TableCell className="text-right text-[#647653] font-medium">Included</TableCell>
-                      </TableRow>
-                    )}
-
-                    {/* Per-feature usage rows (only if we have any) */}
-                    {hasFeatureUsage &&
-                      featureEntries.slice(0, 3).map(([key, value]: [string, any]) => (
+                  {/* Per-feature usage rows (only if we have any) */}
+                  {hasFeatureUsage &&
+                    featureEntries
+                      .slice(0, 3)
+                      .map(([key, value]: [string, any]) => (
                         <TableRow key={key}>
                           <TableCell className="text-sm">
                             {getFeatureDisplayName(key)}
@@ -466,363 +534,447 @@ export function BillingClient({
                         </TableRow>
                       ))}
 
-                    {/* Fallback row only when there is truly no usage this month */}
-                    {!hasAnyUsage && (
-                      <TableRow>
-                        <TableCell colSpan={3} className="text-center text-muted-foreground">
-                          No usage this month
-                        </TableCell>
-                      </TableRow>
-                    )}
-                    <TableRow className="border-t">
-                      <TableCell className="font-semibold">Total This Month</TableCell>
-                      <TableCell />
-                      <TableCell className="text-right font-semibold">
-                        ${displayedTotal.toFixed(2)}
+                  {/* Fallback row only when there is truly no usage this month */}
+                  {!hasAnyUsage && (
+                    <TableRow>
+                      <TableCell
+                        colSpan={3}
+                        className="text-center text-muted-foreground"
+                      >
+                        No usage this month
                       </TableCell>
                     </TableRow>
-                  </TableBody>
-                </Table>
-              </div>
-            </CardContent>
-          </Card>
+                  )}
+                  <TableRow className="border-t">
+                    <TableCell className="font-semibold">
+                      Total This Month
+                    </TableCell>
+                    <TableCell />
+                    <TableCell className="text-right font-semibold">
+                      ${displayedTotal.toFixed(2)}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </div>
+          </CardContent>
+        </Card>
 
-          {/* Current Usage - Match image's two usage bars style */}
-          <Card className="border-2 shadow-none mt-4">
-            <CardHeader className="pb-2">
-              <CardTitle className="flex items-center gap-2 text-base">
-                {/*<TrendingUpIcon className="size-5" />*/}
-                Current Usage
-              </CardTitle>
-              <CardDescription>Usage for the current billing period</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-col gap-4">
-                {/* "AI Scans" progress bar */}
+        {/* Current Usage - Match image's two usage bars style */}
+        <Card className="mt-4 border-2 shadow-none">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              {/*<TrendingUpIcon className="size-5" />*/}
+              Current Usage
+            </CardTitle>
+            <CardDescription>
+              Usage for the current billing period
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col gap-4">
+              {/* "AI Scans" progress bar */}
+              <div>
+                <div className="mb-1 flex items-baseline justify-between text-xs">
+                  <span className="font-semibold">AI Credits</span>
+                  <span className="font-mono">
+                    {aiCreditsUsed} / {aiCreditsLimit} credits
+                    {aiOverageDollars > 0 && (
+                      <span className="ml-2 text-muted-foreground">
+                        (${aiOverageDollars.toFixed(2)} overage)
+                      </span>
+                    )}
+                  </span>
+                </div>
+                <Progress
+                  value={
+                    aiCreditsLimit > 0
+                      ? (aiCreditsUsed / aiCreditsLimit) * 100
+                      : 0
+                  }
+                  className="h-3 bg-gray-200 bg-yellow-500"
+                  indicatorClassName="bg-yellow-500"
+                />
+              </div>
+              {/* On-Demand Usage progress bar (hidden per request) */}
+              {showOnDemandUsage && (
                 <div>
-                  <div className="flex justify-between items-baseline mb-1 text-xs">
-                    <span className="font-semibold">AI Credits</span>
+                  <div className="mb-1 flex items-baseline justify-between text-xs">
+                    <span className="font-semibold">
+                      On-Demand Usage This Month
+                    </span>
                     <span className="font-mono">
-                      {aiCreditsUsed} / {aiCreditsLimit} credits
-                      {aiOverageDollars > 0 && (
-                        <span className="text-muted-foreground ml-2">(${aiOverageDollars.toFixed(2)} overage)</span>
-                      )}
+                      {onDemandUsed} / {onDemandLimit || 'unlimited'}
                     </span>
                   </div>
                   <Progress
-                    value={aiCreditsLimit > 0 ? (aiCreditsUsed / aiCreditsLimit) * 100 : 0}
-                    className="h-3 bg-yellow-500 bg-gray-200"
-                    indicatorClassName="bg-yellow-500"
+                    value={
+                      onDemandLimit && onDemandLimit > 0
+                        ? (onDemandUsed / onDemandLimit) * 100
+                        : 0
+                    }
+                    className="h-3 bg-gray-200"
+                    indicatorClassName="bg-[#647653]"
                   />
                 </div>
-                {/* On-Demand Usage progress bar (hidden per request) */}
-                {showOnDemandUsage && (
-                  <div>
-                    <div className="flex justify-between items-baseline mb-1 text-xs">
-                      <span className="font-semibold">On-Demand Usage This Month</span>
-                      <span className="font-mono">
-                        {onDemandUsed} / {onDemandLimit || 'unlimited'}
-                      </span>
+              )}
+              {/* Add more credits button */}
+              <div className="mt-2 flex flex-col gap-3">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="w-fit rounded-md border-2 border-[#647653] bg-[#647653] px-4 py-2 font-normal text-sm text-white transition-all hover:border-[#647653] hover:bg-[#647653] hover:text-white"
+                  onClick={() => setShowCreditsModal(true)}
+                >
+                  <PlusCircleIcon className="mr-2 size-4" />
+                  Add Credits
+                </Button>
+
+                {/* Credits Modal */}
+                {showCreditsModal && (
+                  <Card className="border-2 border-gray-200 bg-white p-4 shadow-lg">
+                    <div className="space-y-3">
+                      <div>
+                        <h3 className="font-semibold text-gray-900">
+                          Add Credits
+                        </h3>
+                        <p className="text-muted-foreground text-xs">
+                          Choose an amount to add to your balance
+                        </p>
+                      </div>
+
+                      <div className="flex flex-wrap gap-2">
+                        {[10, 25, 50, 100].map((amount) => (
+                          <Button
+                            key={amount}
+                            variant={
+                              selectedCreditAmount === amount
+                                ? 'default'
+                                : 'outline'
+                            }
+                            size="sm"
+                            className={`px-4 py-2 transition-all ${
+                              selectedCreditAmount === amount
+                                ? 'border-2 border-[#647653] bg-[#647653] text-white hover:bg-[#526144]'
+                                : 'border-2 border-gray-300 text-black hover:border-[#647653] hover:bg-[#647653] hover:text-white'
+                            }`}
+                            onClick={() => setSelectedCreditAmount(amount)}
+                          >
+                            ${amount}
+                          </Button>
+                        ))}
+                        {selectedCreditAmount !== null &&
+                        ![10, 25, 50, 100].includes(selectedCreditAmount) ? (
+                          <div className="relative">
+                            <Input
+                              className="w-24 border-2 border-[#647653] focus-visible:ring-[#647653]"
+                              type="number"
+                              placeholder="Amount"
+                              autoFocus
+                              value={selectedCreditAmount}
+                              onChange={(e) =>
+                                setSelectedCreditAmount(Number(e.target.value))
+                              }
+                            />
+                          </div>
+                        ) : (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="border-2 border-gray-300 px-4 py-2 text-black transition-all hover:border-[#647653] hover:bg-[#647653] hover:text-white"
+                            onClick={() => setSelectedCreditAmount(75)}
+                          >
+                            Custom
+                          </Button>
+                        )}
+                      </div>
+
+                      <div className="flex gap-2 pt-2">
+                        <Button
+                          size="sm"
+                          disabled={!selectedCreditAmount || isTopUpLoading}
+                          className="border-2 border-[#a1a1a1] bg-[#a1a1a1] font-semibold text-white transition-all hover:bg-[#526144]"
+                          onClick={async () => {
+                            if (!selectedCreditAmount) return;
+                            setIsTopUpLoading(true);
+                            try {
+                              const token = await getToken();
+                              const baseUrl =
+                                process.env.NEXT_PUBLIC_API_URL || '';
+                              let apiBase = baseUrl.endsWith('/')
+                                ? baseUrl.slice(0, -1)
+                                : baseUrl;
+                              if (!apiBase.endsWith('/api'))
+                                apiBase = `${apiBase}/api`;
+
+                              const res = await fetch(
+                                `${apiBase}/billing/allowance/topup`,
+                                {
+                                  method: 'POST',
+                                  headers: {
+                                    Authorization: `Bearer ${token}`,
+                                    'Content-Type': 'application/json',
+                                  },
+                                  body: JSON.stringify({
+                                    amountCents: selectedCreditAmount * 100,
+                                  }),
+                                }
+                              );
+
+                              if (res.ok) {
+                                const data = await res.json();
+                                if (data.checkoutUrl) {
+                                  window.location.href = data.checkoutUrl;
+                                }
+                              }
+                            } catch (error) {
+                              console.error('Top-up error:', error);
+                            } finally {
+                              setIsTopUpLoading(false);
+                              setShowCreditsModal(false);
+                            }
+                          }}
+                        >
+                          {isTopUpLoading
+                            ? 'Processing...'
+                            : `Add $${selectedCreditAmount || 0} Credits`}
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="text-gray-500 hover:text-gray-700"
+                          onClick={() => setShowCreditsModal(false)}
+                        >
+                          Cancel
+                        </Button>
+                      </div>
                     </div>
-                    <Progress
-                      value={
-                        onDemandLimit && onDemandLimit > 0
-                          ? (onDemandUsed / onDemandLimit) * 100
-                          : 0
-                      }
-                      className="h-3 bg-gray-200"
-                      indicatorClassName="bg-[#647653]"
-                    />
-                  </div>
+                  </Card>
                 )}
-                {/* Add more credits button */}
-                <div className="flex flex-col gap-3 mt-2">
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Partner Upgrade / Payment Method Card - Only shown for partners */}
+        {isPartner && (
+          <Card className="border-2 border-yellow-200 bg-yellow-50 shadow-none">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <CreditCardIcon className="size-5 text-yellow-600" />
+                Unlock Full Features
+              </CardTitle>
+              <CardDescription>
+                Upgrade to your own plan for full sync + AI features, or add a
+                payment method for per-usage AI
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                {/* Upgrade Option */}
+                <div className="flex items-start gap-3 rounded-lg border-2 border-[#000] bg-white p-3">
+                  <TrendingUpIcon className="mt-0.5 size-5 flex-shrink-0 text-[#647653]" />
+                  <div className="flex-1">
+                    <p className="font-medium text-[#647653]">
+                      Start your own plan
+                    </p>
+                    <p className="text-muted-foreground text-sm">
+                      Get your own inventory, full sync, and AI features
+                      starting at $20/mo
+                    </p>
+                  </div>
                   <Button
                     variant="outline"
                     size="sm"
-                    className="w-fit rounded-md border-2 border-[#647653] bg-[#647653] font-normal text-sm text-white py-2 px-4 hover:bg-[#647653] hover:text-white hover:border-[#647653] transition-all"
-                    onClick={() => setShowCreditsModal(true)}
+                    onClick={() => setShowTierSelector(true)}
+                    className="border-2 border-[#000] text-black transition-all hover:border-[#647653] hover:bg-[#647653] hover:text-white"
                   >
-                    <PlusCircleIcon className="size-4 mr-2" />
-                    Add Credits
+                    Upgrade
                   </Button>
-
-                  {/* Credits Modal */}
-                  {showCreditsModal && (
-                    <Card className="p-4 bg-white border-2 border-gray-200 shadow-lg">
-                      <div className="space-y-3">
-                        <div>
-                          <h3 className="font-semibold text-gray-900">Add Credits</h3>
-                          <p className="text-xs text-muted-foreground">Choose an amount to add to your balance</p>
-                        </div>
-
-                        <div className="flex flex-wrap gap-2">
-                          {[10, 25, 50, 100].map((amount) => (
-                            <Button
-                              key={amount}
-                              variant={selectedCreditAmount === amount ? "default" : "outline"}
-                              size="sm"
-                              className={`px-4 py-2 transition-all ${selectedCreditAmount === amount
-                                ? 'bg-[#647653] hover:bg-[#526144] border-2 border-[#647653] text-white'
-                                : 'border-2 border-gray-300 text-black hover:bg-[#647653] hover:text-white hover:border-[#647653]'
-                                }`}
-                              onClick={() => setSelectedCreditAmount(amount)}
-                            >
-                              ${amount}
-                            </Button>
-                          ))}
-                          {selectedCreditAmount !== null && ![10, 25, 50, 100].includes(selectedCreditAmount) ? (
-                            <div className="relative">
-                              <Input
-                                className="w-24 border-2 border-[#647653] focus-visible:ring-[#647653]"
-                                type="number"
-                                placeholder="Amount"
-                                autoFocus
-                                value={selectedCreditAmount}
-                                onChange={(e) => setSelectedCreditAmount(Number(e.target.value))}
-                              />
-                            </div>
-                          ) : (
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="border-2 border-gray-300 text-black hover:bg-[#647653] hover:text-white hover:border-[#647653] py-2 px-4 transition-all"
-                              onClick={() => setSelectedCreditAmount(75)}
-                            >
-                              Custom
-                            </Button>
-                          )}
-                        </div>
-
-                        <div className="flex gap-2 pt-2">
-                          <Button
-                            size="sm"
-                            disabled={!selectedCreditAmount || isTopUpLoading}
-                            className="bg-[#a1a1a1] hover:bg-[#526144] border-2 border-[#a1a1a1] text-white font-semibold transition-all"
-                            onClick={async () => {
-                              if (!selectedCreditAmount) return;
-                              setIsTopUpLoading(true);
-                              try {
-                                const token = await getToken();
-                                const baseUrl = process.env.NEXT_PUBLIC_API_URL || '';
-                                let apiBase = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-                                if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
-
-                                const res = await fetch(`${apiBase}/billing/allowance/topup`, {
-                                  method: 'POST',
-                                  headers: {
-                                    'Authorization': `Bearer ${token}`,
-                                    'Content-Type': 'application/json',
-                                  },
-                                  body: JSON.stringify({ amountCents: selectedCreditAmount * 100 }),
-                                });
-
-                                if (res.ok) {
-                                  const data = await res.json();
-                                  if (data.checkoutUrl) {
-                                    window.location.href = data.checkoutUrl;
-                                  }
-                                }
-                              } catch (error) {
-                                console.error('Top-up error:', error);
-                              } finally {
-                                setIsTopUpLoading(false);
-                                setShowCreditsModal(false);
-                              }
-                            }}
-                          >
-                            {isTopUpLoading ? 'Processing...' : `Add $${selectedCreditAmount || 0} Credits`}
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-gray-500 hover:text-gray-700"
-                            onClick={() => setShowCreditsModal(false)}
-                          >
-                            Cancel
-                          </Button>
-                        </div>
-                      </div>
-                    </Card>
-                  )}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
 
-          {/* Partner Upgrade / Payment Method Card - Only shown for partners */}
-          {isPartner && (
-            <Card className="shadow-none border-2 border-yellow-200 bg-yellow-50">
-              <CardHeader className="pb-2">
-                <CardTitle className="flex items-center gap-2 text-base">
-                  <CreditCardIcon className="size-5 text-yellow-600" />
-                  Unlock Full Features
-                </CardTitle>
-                <CardDescription>
-                  Upgrade to your own plan for full sync + AI features, or add a payment method for per-usage AI
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {/* Upgrade Option */}
-                  <div className="flex items-start gap-3 p-3 bg-white rounded-lg border-2 border-[#000]">
-                    <TrendingUpIcon className="size-5 text-[#647653] mt-0.5 flex-shrink-0" />
+                {/* Payment Method Option */}
+                {partnerPaymentMethod?.hasPaymentMethod ? (
+                  <div className="flex items-center justify-between rounded-lg border bg-white p-3">
+                    <div className="flex items-center gap-3">
+                      <div className="rounded-lg border bg-gray-50 p-2">
+                        <CreditCardIcon className="size-5 text-gray-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">
+                          {partnerPaymentMethod.brand || 'Card'} ••••{' '}
+                          {partnerPaymentMethod.lastFour || '****'}
+                        </p>
+                        {partnerPaymentMethod.expiresAt && (
+                          <p className="text-muted-foreground text-xs">
+                            Expires {partnerPaymentMethod.expiresAt}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleAddPartnerPaymentMethod}
+                      disabled={isAddingPaymentMethod}
+                    >
+                      {isAddingPaymentMethod ? 'Loading...' : 'Update'}
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-start gap-3 rounded-lg border border-yellow-200 bg-white p-3">
+                    <AlertCircleIcon className="mt-0.5 size-5 flex-shrink-0 text-yellow-600" />
                     <div className="flex-1">
-                      <p className="font-medium text-[#647653]">Start your own plan</p>
-                      <p className="text-sm text-muted-foreground">
-                        Get your own inventory, full sync, and AI features starting at $20/mo
+                      <p className="font-medium text-yellow-800">
+                        Per-usage AI option
+                      </p>
+                      <p className="text-muted-foreground text-sm">
+                        Add a payment method to use AI features at $0.20 per
+                        scan (billed to you)
                       </p>
                     </div>
                     <Button
                       variant="outline"
                       size="sm"
-                      onClick={() => setShowTierSelector(true)}
-                      className="border-2 border-[#000] text-black hover:bg-[#647653] hover:text-white hover:border-[#647653] transition-all"
+                      onClick={handleAddPartnerPaymentMethod}
+                      disabled={isAddingPaymentMethod}
+                      className="border-2 border-[#000] text-black transition-all hover:border-[#647653] hover:bg-[#647653] hover:text-white"
                     >
-                      Upgrade
+                      {isAddingPaymentMethod ? 'Loading...' : 'Add Card'}
                     </Button>
                   </div>
-
-                  {/* Payment Method Option */}
-                  {partnerPaymentMethod?.hasPaymentMethod ? (
-                    <div className="flex items-center justify-between p-3 bg-white rounded-lg border">
-                      <div className="flex items-center gap-3">
-                        <div className="p-2 bg-gray-50 rounded-lg border">
-                          <CreditCardIcon className="size-5 text-gray-600" />
-                        </div>
-                        <div>
-                          <p className="font-medium">
-                            {partnerPaymentMethod.brand || 'Card'} •••• {partnerPaymentMethod.lastFour || '****'}
-                          </p>
-                          {partnerPaymentMethod.expiresAt && (
-                            <p className="text-xs text-muted-foreground">
-                              Expires {partnerPaymentMethod.expiresAt}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddPartnerPaymentMethod}
-                        disabled={isAddingPaymentMethod}
-                      >
-                        {isAddingPaymentMethod ? 'Loading...' : 'Update'}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="flex items-start gap-3 p-3 bg-white rounded-lg border border-yellow-200">
-                      <AlertCircleIcon className="size-5 text-yellow-600 mt-0.5 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="font-medium text-yellow-800">Per-usage AI option</p>
-                        <p className="text-sm text-muted-foreground">
-                          Add a payment method to use AI features at $0.20 per scan (billed to you)
-                        </p>
-                      </div>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={handleAddPartnerPaymentMethod}
-                        disabled={isAddingPaymentMethod}
-                        className="border-2 border-[#000] text-black hover:bg-[#647653] hover:text-white hover:border-[#647653] transition-all"
-                      >
-                        {isAddingPaymentMethod ? 'Loading...' : 'Add Card'}
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Upcoming Invoice */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                {/*<CalendarIcon className="size-5" />*/}
-                {upcoming?.upcoming ? 'Upcoming Invoice' : 'No Upcoming Invoice'}
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {upcoming?.upcoming ? (
-                <div className="flex items-center justify-between">
-                  <div className="text-2xl font-bold">
-                    {(() => {
-                      // Handle both number and price object formats
-                      const total = upcoming.upcoming.total;
-                      const amount = typeof total === 'object'
-                        ? (total?.price_amount || total?.amount || 0) / 100
-                        : (total || 0) / 100;
-                      return amount.toLocaleString(undefined, { style: 'currency', currency: 'USD' });
-                    })()}
-                  </div>
-                  <div className="text-muted-foreground">
-                    Due {new Date(upcoming.upcoming.due_date || Date.now()).toLocaleDateString()}
-                  </div>
-                </div>
-              ) : (
-                <div className="text-muted-foreground">You have no upcoming invoice.</div>
-              )}
+                )}
+              </div>
             </CardContent>
           </Card>
+        )}
 
-          {/* Invoice History */}
-          <Card>
-            <CardHeader>
-              <CardTitle>Invoice History</CardTitle>
-              <CardDescription>Your billing history and payment records</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {invoices?.invoices && invoices.invoices.length > 0 ? (
-                <div className="space-y-4">
-                  {invoices.invoices.map((inv: any) => (
-                    <div key={inv.id} className="flex flex-col gap-3 p-4 border rounded-lg sm:flex-row sm:items-center sm:justify-between">
-                      <div>
-                        <div className="font-medium">{(() => {
+        {/* Upcoming Invoice */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {/*<CalendarIcon className="size-5" />*/}
+              {upcoming?.upcoming ? 'Upcoming Invoice' : 'No Upcoming Invoice'}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {upcoming?.upcoming ? (
+              <div className="flex items-center justify-between">
+                <div className="font-bold text-2xl">
+                  {(() => {
+                    // Handle both number and price object formats
+                    const total = upcoming.upcoming.total;
+                    const amount =
+                      typeof total === 'object'
+                        ? (total?.price_amount || total?.amount || 0) / 100
+                        : (total || 0) / 100;
+                    return amount.toLocaleString(undefined, {
+                      style: 'currency',
+                      currency: 'USD',
+                    });
+                  })()}
+                </div>
+                <div className="text-muted-foreground">
+                  Due{' '}
+                  {new Date(
+                    upcoming.upcoming.due_date || Date.now()
+                  ).toLocaleDateString()}
+                </div>
+              </div>
+            ) : (
+              <div className="text-muted-foreground">
+                You have no upcoming invoice.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Invoice History */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Invoice History</CardTitle>
+            <CardDescription>
+              Your billing history and payment records
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {invoices?.invoices && invoices.invoices.length > 0 ? (
+              <div className="space-y-4">
+                {invoices.invoices.map((inv: any) => (
+                  <div
+                    key={inv.id}
+                    className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
+                  >
+                    <div>
+                      <div className="font-medium">
+                        {(() => {
                           // Handle both Unix timestamp (seconds) and ISO date string
                           const created = inv.created_at || inv.created;
                           if (!created) return 'N/A';
                           // If it's a small number, it's Unix seconds - convert to ms
-                          const timestamp = typeof created === 'number' && created < 10000000000
-                            ? created * 1000
-                            : created;
+                          const timestamp =
+                            typeof created === 'number' && created < 10000000000
+                              ? created * 1000
+                              : created;
                           return new Date(timestamp).toLocaleDateString();
-                        })()}</div>
-                        <div className="text-sm text-muted-foreground">{inv.number || 'Invoice'}</div>
+                        })()}
                       </div>
-                      <div className="flex items-center gap-3">
-                        <Badge className={inv.status === 'paid' ? 'bg-[#647653]/10 text-[#647653] border-[#647653]/20' : undefined}>{inv.status || 'open'}</Badge>
-                        <div className="text-right">
-                          <div className="font-medium">
-                            {(() => {
-                              // Use total_amount (cents) if available, else total
-                              const amount = inv.total_amount ?? inv.total ?? 0;
-                              // Convert cents to dollars
-                              return (amount / 100).toLocaleString(undefined, {
-                                style: 'currency',
-                                currency: inv.currency?.toUpperCase() || 'USD'
-                              });
-                            })()}
-                          </div>
-                        </div>
-                        {(inv.hosted_invoice_url || inv.hosted_url || inv.url) && (
-                          <Button asChild variant="ghost" size="sm">
-                            <a href={inv.hosted_invoice_url || inv.hosted_url || inv.url} target="_blank" rel="noreferrer">
-                              <ExternalLinkIcon className="size-4" />
-                            </a>
-                          </Button>
-                        )}
+                      <div className="text-muted-foreground text-sm">
+                        {inv.number || 'Invoice'}
                       </div>
                     </div>
-                  ))}
-                </div>
-              ) : (
-                <div className="text-muted-foreground text-center py-6">No invoices found.</div>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-      </PageWrapper>
-    </div>
+                    <div className="flex items-center gap-3">
+                      <Badge
+                        className={
+                          inv.status === 'paid'
+                            ? 'border-[#647653]/20 bg-[#647653]/10 text-[#647653]'
+                            : undefined
+                        }
+                      >
+                        {inv.status || 'open'}
+                      </Badge>
+                      <div className="text-right">
+                        <div className="font-medium">
+                          {(() => {
+                            // Use total_amount (cents) if available, else total
+                            const amount = inv.total_amount ?? inv.total ?? 0;
+                            // Convert cents to dollars
+                            return (amount / 100).toLocaleString(undefined, {
+                              style: 'currency',
+                              currency: inv.currency?.toUpperCase() || 'USD',
+                            });
+                          })()}
+                        </div>
+                      </div>
+                      {(inv.hosted_invoice_url ||
+                        inv.hosted_url ||
+                        inv.url) && (
+                        <Button asChild variant="ghost" size="sm">
+                          <a
+                            href={
+                              inv.hosted_invoice_url ||
+                              inv.hosted_url ||
+                              inv.url
+                            }
+                            target="_blank"
+                            rel="noreferrer"
+                          >
+                            <ExternalLinkIcon className="size-4" />
+                          </a>
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="py-6 text-center text-muted-foreground">
+                No invoices found.
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+    </PageWrapper>
   );
 }

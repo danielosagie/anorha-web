@@ -1,15 +1,8 @@
+import { getServerSupabaseClient } from '@/lib/supabase/server';
 import { currentUser } from '@repo/auth/server';
 import { notFound } from 'next/navigation';
-import { getServerSupabaseClient } from '@/lib/supabase/server';
-import { Button } from '@repo/design-system/components/ui/button';
-import {
-  ScanIcon,
-  PlusIcon,
-  UploadIcon,
-  DownloadIcon,
-} from 'lucide-react';
-import { InventoryClient } from '../inventory/inventory-client';
 import { PageWrapper } from '../components/page-wrapper';
+import { InventoryClient } from '../inventory/inventory-client';
 
 function toPlatformKey(name?: string | null) {
   return (name ?? 'unknown').toLowerCase();
@@ -44,26 +37,23 @@ async function fetchInventoryData(userId: string) {
   let mappings: any[] | null = [];
 
   if (variantIds.length > 0) {
-    const [
-      { data: imagesData },
-      { data: levelsData },
-      { data: mappingsData },
-    ] = await Promise.all([
-      supabase
-        .from('ProductImages')
-        .select('ProductVariantId, ImageUrl, Position')
-        .in('ProductVariantId', variantIds),
-      supabase
-        .from('InventoryLevels')
-        .select('ProductVariantId, Quantity, PlatformLocationId')
-        .in('ProductVariantId', variantIds),
-      supabase
-        .from('PlatformProductMappings')
-        .select(
-          'ProductVariantId, PlatformConnectionId, IsEnabled, PlatformSpecificData'
-        )
-        .in('ProductVariantId', variantIds),
-    ]);
+    const [{ data: imagesData }, { data: levelsData }, { data: mappingsData }] =
+      await Promise.all([
+        supabase
+          .from('ProductImages')
+          .select('ProductVariantId, ImageUrl, Position')
+          .in('ProductVariantId', variantIds),
+        supabase
+          .from('InventoryLevels')
+          .select('ProductVariantId, Quantity, PlatformLocationId')
+          .in('ProductVariantId', variantIds),
+        supabase
+          .from('PlatformProductMappings')
+          .select(
+            'ProductVariantId, PlatformConnectionId, IsEnabled, PlatformSpecificData'
+          )
+          .in('ProductVariantId', variantIds),
+      ]);
 
     images = imagesData;
     levels = levelsData;
@@ -96,7 +86,9 @@ async function fetchInventoryData(userId: string) {
       locationIdsByVariant[lvl.ProductVariantId] = new Set<string>();
     }
     if (lvl.PlatformLocationId) {
-      locationIdsByVariant[lvl.ProductVariantId]!.add(String(lvl.PlatformLocationId));
+      locationIdsByVariant[lvl.ProductVariantId]!.add(
+        String(lvl.PlatformLocationId)
+      );
     }
   });
 
@@ -132,7 +124,9 @@ async function fetchInventoryData(userId: string) {
     imageUrl: v.PrimaryImageUrl || firstImageByVariant[v.Id],
     totalQuantity: quantityByVariant[v.Id] ?? 0,
     locationIds: Array.from(locationIdsByVariant[v.Id] ?? new Set<string>()),
-    connectionIds: Array.from(connectionIdsByVariant[v.Id] ?? new Set<string>()),
+    connectionIds: Array.from(
+      connectionIdsByVariant[v.Id] ?? new Set<string>()
+    ),
     platformData: platformDataByVariant[v.Id] ?? {},
     onShopify: v.OnShopify,
     onSquare: v.OnSquare,
@@ -173,52 +167,15 @@ export const InventoryContent = async () => {
   const { items, locations, connections } = await fetchInventoryData(user.id);
 
   return (
-    <div
-      className="flex flex-1 flex-col p-2 min-h-[100vh]"
-      style={{ backgroundColor: '#FEF4DD' }}
+    <PageWrapper
+      title="Inventory"
+      description="Products, stock, and channel details in one place."
     >
-      <PageWrapper>
-        <div className="flex flex-col gap-3 border-b border-gray-200 pb-4 mb-6 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">Inventory</h1>
-            <p className="text-gray-600">
-              Manage inventory across all your platforms
-            </p>
-          </div>
-          <div className="flex flex-wrap gap-2 justify-end">
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-[#34A853] text-[#34A853] hover:bg-[#34A853]/10"
-            >
-              <ScanIcon className="mr-2 size-4" />
-              Scan Inventory
-            </Button>
-            <Button
-              size="sm"
-              className="bg-[#34A853] hover:bg-[#2d8f48] text-white border border-[#34A853]"
-            >
-              <PlusIcon className="mr-2 size-4" />
-              Add Product
-            </Button>
-            <Button variant="outline" size="sm" className="text-gray-700">
-              <UploadIcon className="mr-2 size-4" />
-              Import
-            </Button>
-            <Button variant="outline" size="sm" className="text-gray-700">
-              <DownloadIcon className="mr-2 size-4" />
-              Export
-            </Button>
-          </div>
-        </div>
-        <InventoryClient
-          items={items}
-          locations={locations}
-          connections={connections}
-        />
-      </PageWrapper>
-    </div>
+      <InventoryClient
+        items={items}
+        locations={locations}
+        connections={connections}
+      />
+    </PageWrapper>
   );
-}
-
-
+};

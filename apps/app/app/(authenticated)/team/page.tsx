@@ -1,30 +1,15 @@
 'use client';
 
-import { useState } from 'react';
 import { useOrganization, useUser } from '@clerk/nextjs';
-import dynamic from 'next/dynamic';
-import Image from 'next/image';
-import {
-  Loader2,
-  Settings,
-  Users,
-  Plus,
-  MoreVertical,
-  Shield,
-  Mail,
-  Check,
-  X,
-  UserPlus
-} from 'lucide-react';
+import { Badge } from '@repo/design-system/components/ui/badge';
 import { Button } from '@repo/design-system/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
-import { Input } from '@repo/design-system/components/ui/input';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger
-} from '@repo/design-system/components/ui/dropdown-menu';
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@repo/design-system/components/ui/card';
 import {
   Dialog,
   DialogContent,
@@ -32,18 +17,35 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-} from "@repo/design-system/components/ui/dialog";
+} from '@repo/design-system/components/ui/dialog';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@repo/design-system/components/ui/dropdown-menu';
+import { Input } from '@repo/design-system/components/ui/input';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from "@repo/design-system/components/ui/select";
-import { Badge } from '@repo/design-system/components/ui/badge';
-import { Header } from '../components/header';
+} from '@repo/design-system/components/ui/select';
 import { cn } from '@repo/design-system/lib/utils';
+import {
+  Loader2,
+  Mail,
+  MoreVertical,
+  Settings,
+  UserPlus,
+  Users,
+} from 'lucide-react';
+import dynamic from 'next/dynamic';
+import Image from 'next/image';
+import { useState } from 'react';
 import { toast } from 'sonner';
+import { PageWrapper } from '../components/page-wrapper';
 
 // Lazy load heavy components
 const PoolsAndPartnersClient = dynamic(
@@ -51,7 +53,7 @@ const PoolsAndPartnersClient = dynamic(
   {
     loading: () => (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="w-6 h-6 animate-spin text-gray-400" />
+        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
         <span className="ml-2 text-gray-500">Loading pools...</span>
       </div>
     ),
@@ -64,7 +66,7 @@ type Tab = 'members' | 'pools';
 // Roles mapping
 const ROLES = {
   'org:admin': 'Admin',
-  'org:member': 'Member'
+  'org:member': 'Member',
 };
 
 export default function TeamPage() {
@@ -84,11 +86,15 @@ export default function TeamPage() {
   // Invitation State
   const [isInviteOpen, setIsInviteOpen] = useState(false);
   const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'org:member' | 'org:admin'>('org:member');
+  const [inviteRole, setInviteRole] = useState<'org:member' | 'org:admin'>(
+    'org:member'
+  );
   const [isSendingInvite, setIsSendingInvite] = useState(false);
 
   // Check if current user is admin
-  const isAdmin = memberships?.data?.find(m => m.publicUserData.userId === user?.id)?.role === 'org:admin';
+  const isAdmin =
+    memberships?.data?.find((m) => m.publicUserData.userId === user?.id)
+      ?.role === 'org:admin';
 
   const handleInvite = async () => {
     if (!inviteEmail) return;
@@ -101,7 +107,7 @@ export default function TeamPage() {
       toast.success(`Invitation sent to ${inviteEmail}`);
       setInviteEmail('');
       setIsInviteOpen(false);
-      // Refresh invites list handled automatically by SWR-like behavior of Clerk hook usually, 
+      // Refresh invites list handled automatically by SWR-like behavior of Clerk hook usually,
       // but we can force revalidate if needed.
     } catch (err: any) {
       console.error('Invite failed:', err);
@@ -115,209 +121,250 @@ export default function TeamPage() {
     if (!confirm('Are you sure you want to remove this member?')) return;
     try {
       await organization?.removeMember(userId);
-      toast.success("Member removed");
+      toast.success('Member removed');
     } catch (e: any) {
-      toast.error("Failed to remove member");
+      toast.error('Failed to remove member');
     }
-  }
+  };
 
   const handleRevokeInvite = async (inviteId: string) => {
     try {
-      const invite = invitations?.data?.find(i => i.id === inviteId);
+      const invite = invitations?.data?.find((i) => i.id === inviteId);
       await invite?.revoke();
-      toast.success("Invitation revoked");
+      toast.success('Invitation revoked');
     } catch (e) {
-      toast.error("Failed to revoke invitation");
+      toast.error('Failed to revoke invitation');
     }
-  }
+  };
 
   if (!isLoaded || !organization) {
     return (
-      <div className="flex items-center justify-center h-screen bg-[#FEF4DD]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#647653]" />
-      </div>
+      <PageWrapper
+        title="Team"
+        description="People and partners with access to your workspace."
+      >
+        <div
+          className="flex min-h-64 items-center justify-center"
+          aria-label="Loading team"
+        >
+          <Loader2 className="size-7 animate-spin text-accent-foreground" />
+        </div>
+      </PageWrapper>
     );
   }
 
   return (
-    <div className="flex flex-1 flex-col p-2 min-h-[100vh] bg-[#FEF4DD]" >
-      <div className="bg-[#FFFCF5] rounded-lg border-2 border-[#AFAFAF] p-4 flex flex-col flex-1 overflow-hidden" >
-        <Header page="Team" />
-
-        <div className="flex flex-col flex-1 min-h-0 mt-4 space-y-6 overflow-y-auto pr-2">
-
-          {/* Page Header Area */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight text-gray-900">{organization.name}</h1>
-              <p className="text-gray-500 mt-1">Manage your team members and partner connections.</p>
-            </div>
-
-            <div className="flex items-center bg-gray-100/80 p-1 rounded-lg border border-gray-200 self-start md:self-auto">
-              <button
-                onClick={() => setActiveTab('members')}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                  activeTab === 'members'
-                    ? "bg-white text-[#647653] shadow-sm ring-1 ring-gray-200"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
-                )}
-              >
-                <Users className="w-4 h-4" />
-                Team Members
-              </button>
-              <button
-                onClick={() => setActiveTab('pools')}
-                className={cn(
-                  "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all duration-200",
-                  activeTab === 'pools'
-                    ? "bg-white text-[#647653] shadow-sm ring-1 ring-gray-200"
-                    : "text-gray-500 hover:text-gray-700 hover:bg-gray-200/50"
-                )}
-              >
-                <Settings className="w-4 h-4" />
-                Pools & Partners
-              </button>
-            </div>
+    <PageWrapper
+      title="Team"
+      description="People and partners with access to your workspace."
+    >
+      <div className="flex max-w-6xl flex-col gap-6">
+        {/* Page Header Area */}
+        <div className="flex flex-col justify-between gap-4 md:flex-row md:items-center">
+          <div>
+            <p className="font-bold text-[0.6875rem] text-muted-foreground uppercase tracking-[0.1em]">
+              Workspace
+            </p>
+            <h2 className="mt-1 font-extrabold text-xl tracking-[-0.02em]">
+              {organization.name}
+            </h2>
           </div>
 
-          {/* TAB CONTENT */}
+          <div className="flex items-center self-start rounded-2xl bg-muted/70 p-1.5 md:self-auto">
+            <button
+              onClick={() => setActiveTab('members')}
+              className={cn(
+                'flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 font-semibold text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
+                activeTab === 'members'
+                  ? 'bg-card text-accent-foreground shadow-xs'
+                  : 'text-muted-foreground hover:bg-card/70 hover:text-foreground'
+              )}
+            >
+              <Users className="size-4" />
+              Members
+            </button>
+            <button
+              onClick={() => setActiveTab('pools')}
+              className={cn(
+                'flex min-h-10 items-center gap-2 rounded-xl px-4 py-2 font-semibold text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
+                activeTab === 'pools'
+                  ? 'bg-card text-accent-foreground shadow-xs'
+                  : 'text-muted-foreground hover:bg-card/70 hover:text-foreground'
+              )}
+            >
+              <Settings className="size-4" />
+              Pools & Partners
+            </button>
+          </div>
+        </div>
 
-          {activeTab === 'members' && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-bottom-2 duration-300">
+        {/* TAB CONTENT */}
 
-              {/* Members List Card */}
-              <Card className="border-2 border-gray-100 shadow-sm">
-                <CardHeader className="flex flex-row items-center justify-between pb-2 border-b border-gray-50">
-                  <div>
-                    <CardTitle className="text-xl">Active Members</CardTitle>
-                    <CardDescription>People with access to this organization.</CardDescription>
-                  </div>
-                  {isAdmin && (
-                    <Button
-                      onClick={() => setIsInviteOpen(true)}
-                      className="bg-[#647653] hover:bg-[#556145] text-white"
+        {activeTab === 'members' && (
+          <div className="flex flex-col gap-6">
+            {/* Members List Card */}
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between border-b pb-5">
+                <div>
+                  <CardTitle className="text-xl">Active Members</CardTitle>
+                  <CardDescription>
+                    People with access to this organization.
+                  </CardDescription>
+                </div>
+                {isAdmin && (
+                  <Button
+                    onClick={() => setIsInviteOpen(true)}
+                    className="h-11 px-4"
+                  >
+                    <UserPlus data-icon="inline-start" />
+                    Invite member
+                  </Button>
+                )}
+              </CardHeader>
+              <CardContent className="p-0">
+                <div className="divide-y divide-gray-100">
+                  {memberships?.data?.map((mem) => (
+                    <div
+                      key={mem.id}
+                      className="flex min-h-20 items-center justify-between gap-4 p-4 transition-colors hover:bg-muted/45 md:px-5"
                     >
-                      <UserPlus className="w-4 h-4 mr-2" />
-                      Invite Member
-                    </Button>
-                  )}
+                      <div className="flex items-center gap-4">
+                        <div className="relative size-10 overflow-hidden rounded-full border bg-muted">
+                          <Image
+                            src={mem.publicUserData.imageUrl}
+                            alt={mem.publicUserData.identifier}
+                            fill
+                            className="object-cover"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="font-semibold">
+                              {mem.publicUserData.firstName}{' '}
+                              {mem.publicUserData.lastName}
+                            </span>
+                            {mem.publicUserData.userId === user?.id && (
+                              <Badge
+                                variant="secondary"
+                                className="h-5 px-1.5 text-[10px]"
+                              >
+                                You
+                              </Badge>
+                            )}
+                          </div>
+                          <div className="font-medium text-muted-foreground text-sm">
+                            {mem.publicUserData.identifier}
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center gap-4">
+                        <div className="mr-4 hidden flex-col items-end md:flex">
+                          <Badge
+                            variant="outline"
+                            className={cn(
+                              'font-semibold text-[10px] uppercase tracking-wider',
+                              mem.role === 'org:admin'
+                                ? 'border-amber-200 bg-amber-50 text-amber-700'
+                                : 'border-blue-200 bg-blue-50 text-blue-700'
+                            )}
+                          >
+                            {ROLES[mem.role as keyof typeof ROLES] || mem.role}
+                          </Badge>
+                          <span className="mt-1 text-muted-foreground text-xs">
+                            Joined{' '}
+                            {new Date(mem.createdAt).toLocaleDateString()}
+                          </span>
+                        </div>
+
+                        {/* Only admins can manage others, but not themselves here for safety (usually handled by specialized settings) */}
+                        {isAdmin && mem.publicUserData.userId !== user?.id && (
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0"
+                              >
+                                <MoreVertical className="text-muted-foreground" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuItem
+                                className="cursor-pointer text-red-600 focus:text-red-600"
+                                onClick={() =>
+                                  handleRemoveMember(mem.publicUserData.userId!)
+                                }
+                              >
+                                Remove Member
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            {/* Pending Invites Section */}
+            {invitations?.data && invitations.data.length > 0 && (
+              <Card className="border-warning/25">
+                <CardHeader className="border-b pb-5">
+                  <CardTitle className="flex items-center gap-2 text-lg">
+                    <Mail className="size-4 text-warning" />
+                    Pending invitations
+                  </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
                   <div className="divide-y divide-gray-100">
-                    {memberships?.data?.map((mem) => (
-                      <div key={mem.id} className="flex items-center justify-between p-4 hover:bg-gray-50/50 transition-colors">
+                    {invitations.data.map((inv) => (
+                      <div
+                        key={inv.id}
+                        className="flex items-center justify-between p-4"
+                      >
                         <div className="flex items-center gap-4">
-                          <div className="relative w-10 h-10 rounded-full overflow-hidden bg-gray-200 border border-gray-200">
-                            <Image
-                              src={mem.publicUserData.imageUrl}
-                              alt={mem.publicUserData.identifier}
-                              fill
-                              className="object-cover"
-                            />
+                          <div className="flex size-10 items-center justify-center rounded-xl bg-warning/10 text-warning">
+                            <Mail className="size-5" />
                           </div>
                           <div>
-                            <div className="flex items-center gap-2">
-                              <span className="font-medium text-gray-900">
-                                {mem.publicUserData.firstName} {mem.publicUserData.lastName}
-                              </span>
-                              {mem.publicUserData.userId === user?.id && (
-                                <Badge variant="secondary" className="text-[10px] h-5 px-1.5">You</Badge>
-                              )}
+                            <div className="font-semibold">
+                              {inv.emailAddress}
                             </div>
-                            <div className="text-sm text-gray-500">{mem.publicUserData.identifier}</div>
+                            <div className="font-medium text-muted-foreground text-sm">
+                              Invited as{' '}
+                              <span className="font-semibold text-foreground">
+                                {ROLES[inv.role as keyof typeof ROLES]}
+                              </span>{' '}
+                              · {new Date(inv.createdAt).toLocaleDateString()}
+                            </div>
                           </div>
                         </div>
-
-                        <div className="flex items-center gap-4">
-                          <div className="hidden md:flex flex-col items-end mr-4">
-                            <Badge
-                              variant="outline"
-                              className={cn(
-                                "uppercase text-[10px] tracking-wider font-semibold",
-                                mem.role === 'org:admin' ? "bg-amber-50 text-amber-700 border-amber-200" : "bg-blue-50 text-blue-700 border-blue-200"
-                              )}
-                            >
-                              {ROLES[mem.role as keyof typeof ROLES] || mem.role}
-                            </Badge>
-                            <span className="text-xs text-gray-400 mt-1">Joined {new Date(mem.createdAt).toLocaleDateString()}</span>
-                          </div>
-
-                          {/* Only admins can manage others, but not themselves here for safety (usually handled by specialized settings) */}
-                          {isAdmin && mem.publicUserData.userId !== user?.id && (
-                            <DropdownMenu>
-                              <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                                  <MoreVertical className="w-4 h-4 text-gray-400" />
-                                </Button>
-                              </DropdownMenuTrigger>
-                              <DropdownMenuContent align="end">
-                                <DropdownMenuItem
-                                  className="text-red-600 focus:text-red-600 cursor-pointer"
-                                  onClick={() => handleRemoveMember(mem.publicUserData.userId!)}
-                                >
-                                  Remove Member
-                                </DropdownMenuItem>
-                              </DropdownMenuContent>
-                            </DropdownMenu>
-                          )}
-                        </div>
+                        {isAdmin && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleRevokeInvite(inv.id)}
+                            className="text-gray-400 hover:text-red-600"
+                          >
+                            Revoke
+                          </Button>
+                        )}
                       </div>
                     ))}
                   </div>
                 </CardContent>
               </Card>
+            )}
+          </div>
+        )}
 
-              {/* Pending Invites Section */}
-              {invitations?.data && invitations.data.length > 0 && (
-                <Card className="border-2 border-gray-100 shadow-sm border-t-amber-200">
-                  <CardHeader className="pb-2 border-b border-gray-50">
-                    <CardTitle className="text-lg flex items-center gap-2">
-                      <Mail className="w-4 h-4 text-amber-500" />
-                      Pending Invitations
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent className="p-0">
-                    <div className="divide-y divide-gray-100">
-                      {invitations.data.map((inv) => (
-                        <div key={inv.id} className="flex items-center justify-between p-4">
-                          <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
-                              <Mail className="w-5 h-5" />
-                            </div>
-                            <div>
-                              <div className="font-medium text-gray-900">{inv.emailAddress}</div>
-                              <div className="text-sm text-gray-500">
-                                Invited as <span className="font-medium text-gray-700">{ROLES[inv.role as keyof typeof ROLES]}</span> • {new Date(inv.createdAt).toLocaleDateString()}
-                              </div>
-                            </div>
-                          </div>
-                          {isAdmin && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              onClick={() => handleRevokeInvite(inv.id)}
-                              className="text-gray-400 hover:text-red-600"
-                            >
-                              Revoke
-                            </Button>
-                          )}
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
-            </div>
-          )}
-
-          {activeTab === 'pools' && (
-            <div className="animate-in fade-in slide-in-from-bottom-2 duration-300">
-              <PoolsAndPartnersClient />
-            </div>
-          )}
-
-        </div>
+        {activeTab === 'pools' && (
+          <div className="fade-in slide-in-from-bottom-2 animate-in duration-300">
+            <PoolsAndPartnersClient />
+          </div>
+        )}
       </div>
 
       {/* Invite Member Dialog */}
@@ -326,13 +373,16 @@ export default function TeamPage() {
           <DialogHeader>
             <DialogTitle>Invite Team Member</DialogTitle>
             <DialogDescription>
-              Send an email invitation to join <strong>{organization.name}</strong>.
+              Send an email invitation to join{' '}
+              <strong>{organization.name}</strong>.
             </DialogDescription>
           </DialogHeader>
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Email Address</label>
+              <label className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Email Address
+              </label>
               <Input
                 placeholder="colleague@company.com"
                 type="email"
@@ -342,8 +392,13 @@ export default function TeamPage() {
             </div>
 
             <div className="space-y-2">
-              <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">Role</label>
-              <Select value={inviteRole} onValueChange={(val: any) => setInviteRole(val)}>
+              <label className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
+                Role
+              </label>
+              <Select
+                value={inviteRole}
+                onValueChange={(val: any) => setInviteRole(val)}
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select a role" />
                 </SelectTrigger>
@@ -351,13 +406,18 @@ export default function TeamPage() {
                   <SelectItem value="org:member">
                     <div className="flex flex-col items-start py-1">
                       <span className="font-medium">Member</span>
-                      <span className="text-xs text-gray-500">Can view and edit but cannot manage organization settings.</span>
+                      <span className="text-gray-500 text-xs">
+                        Can view and edit but cannot manage organization
+                        settings.
+                      </span>
                     </div>
                   </SelectItem>
                   <SelectItem value="org:admin">
                     <div className="flex flex-col items-start py-1">
                       <span className="font-medium">Admin</span>
-                      <span className="text-xs text-gray-500">Full access to everything including member management.</span>
+                      <span className="text-gray-500 text-xs">
+                        Full access to everything including member management.
+                      </span>
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -366,14 +426,23 @@ export default function TeamPage() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" onClick={() => setIsInviteOpen(false)}>Cancel</Button>
-            <Button onClick={handleInvite} disabled={!inviteEmail || isSendingInvite} className="bg-[#647653] hover:bg-[#556145] text-white">
-              {isSendingInvite ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Mail className="w-4 h-4 mr-2" />}
+            <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleInvite}
+              disabled={!inviteEmail || isSendingInvite}
+            >
+              {isSendingInvite ? (
+                <Loader2 className="animate-spin" data-icon="inline-start" />
+              ) : (
+                <Mail data-icon="inline-start" />
+              )}
               Send Invitation
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+    </PageWrapper>
   );
 }

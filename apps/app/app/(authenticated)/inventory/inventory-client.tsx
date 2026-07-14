@@ -1,11 +1,21 @@
 'use client';
 
-import React from 'react';
+import { Button } from '@repo/design-system/components/ui/button';
 import {
-  Tabs,
-  TabsList,
-  TabsTrigger,
-} from '@repo/design-system/components/ui/tabs';
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from '@repo/design-system/components/ui/dropdown-menu';
+import { Input } from '@repo/design-system/components/ui/input';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@repo/design-system/components/ui/select';
 import {
   Table,
   TableBody,
@@ -15,24 +25,13 @@ import {
   TableRow,
 } from '@repo/design-system/components/ui/table';
 import {
-  DropdownMenu,
-  DropdownMenuCheckboxItem,
-  DropdownMenuContent,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@repo/design-system/components/ui/dropdown-menu';
-import { Input } from '@repo/design-system/components/ui/input';
-import { Button } from '@repo/design-system/components/ui/button';
+  Tabs,
+  TabsList,
+  TabsTrigger,
+} from '@repo/design-system/components/ui/tabs';
 import { ChevronDownIcon, SearchIcon } from 'lucide-react';
 import Image from 'next/image';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/design-system/components/ui/select';
+import React from 'react';
 
 type InventoryItem = {
   id: string;
@@ -105,7 +104,11 @@ const PLATFORM_FIELD_DEFS: Record<string, PlatformField[]> = {
   ],
   square: [
     { key: 'name', label: 'Item Name', path: 'object.itemData.name' },
-    { key: 'description', label: 'Description', path: 'object.itemData.description' },
+    {
+      key: 'description',
+      label: 'Description',
+      path: 'object.itemData.description',
+    },
     {
       key: 'categorySuggestion',
       label: 'Category Suggestion',
@@ -153,7 +156,11 @@ const PLATFORM_FIELD_DEFS: Record<string, PlatformField[]> = {
     { key: 'availability', label: 'Availability', path: 'availability' },
     { key: 'condition', label: 'Condition', path: 'condition' },
     { key: 'price', label: 'Price', path: 'price' },
-    { key: 'category', label: 'Category Suggestion', path: 'categorySuggestion' },
+    {
+      key: 'category',
+      label: 'Category Suggestion',
+      path: 'categorySuggestion',
+    },
   ],
   ebay: [
     { key: 'title', label: 'Listing Title', path: 'title' },
@@ -246,11 +253,12 @@ export function InventoryClient({
 }) {
   const [platform, setPlatform] = React.useState<string>('all');
   const [query, setQuery] = React.useState('');
-  const [selectedConnectionIds, setSelectedConnectionIds] =
-    React.useState<string[]>([]);
-  const [selectedLocationIds, setSelectedLocationIds] = React.useState<string[]>(
-    []
-  );
+  const [selectedConnectionIds, setSelectedConnectionIds] = React.useState<
+    string[]
+  >([]);
+  const [selectedLocationIds, setSelectedLocationIds] = React.useState<
+    string[]
+  >([]);
   const [connectionSearch, setConnectionSearch] = React.useState('');
   const [locationSearch, setLocationSearch] = React.useState('');
   const [rowsPerPage, setRowsPerPage] = React.useState(25);
@@ -311,7 +319,13 @@ export function InventoryClient({
 
   React.useEffect(() => {
     setPage(1);
-  }, [platform, query, selectedConnectionIds, selectedLocationIds, rowsPerPage]);
+  }, [
+    platform,
+    query,
+    selectedConnectionIds,
+    selectedLocationIds,
+    rowsPerPage,
+  ]);
 
   const locationMap = React.useMemo(() => {
     const map: Record<string, Location> = {};
@@ -380,7 +394,12 @@ export function InventoryClient({
       }
     });
     return result;
-  }, [items, itemPlatformKeys, platformConnectionCounts, shouldShowAllForPlatform]);
+  }, [
+    items,
+    itemPlatformKeys,
+    platformConnectionCounts,
+    shouldShowAllForPlatform,
+  ]);
 
   const visibleConnections = React.useMemo(() => {
     const base =
@@ -400,7 +419,9 @@ export function InventoryClient({
       const platformKey = normalizePlatform(loc.platformType);
       if (platform !== 'all' && platformKey !== platform) return false;
       if (selectedConnectionIds.length > 0) {
-        return loc.connectionId && selectedConnectionIds.includes(loc.connectionId);
+        return (
+          loc.connectionId && selectedConnectionIds.includes(loc.connectionId)
+        );
       }
       return true;
     });
@@ -534,7 +555,7 @@ export function InventoryClient({
         render: (item: InventoryItem) => (
           <div>
             <div className="font-semibold text-gray-900">{item.title}</div>
-            <div className="text-xs text-gray-500">
+            <div className="text-gray-500 text-xs">
               {item.sku || 'No SKU'} · {locationSummary(item)}
             </div>
           </div>
@@ -555,14 +576,17 @@ export function InventoryClient({
         label: 'Quantity',
         className: 'min-w-[120px]',
         render: (item: InventoryItem) => (
-          <span className="font-semibold text-gray-900">{item.totalQuantity}</span>
+          <span className="font-semibold text-gray-900">
+            {item.totalQuantity}
+          </span>
         ),
       },
       {
         key: 'weight',
         label: 'Weight',
         className: 'min-w-[140px]',
-        render: (item: InventoryItem) => formatWeight(item.weight, item.weightUnit),
+        render: (item: InventoryItem) =>
+          formatWeight(item.weight, item.weightUnit),
       },
       {
         key: 'matching',
@@ -570,7 +594,7 @@ export function InventoryClient({
         className: 'min-w-[200px]',
         render: (item: InventoryItem) =>
           item.hasShopifyMapping ? (
-            <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs font-semibold text-green-700">
+            <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 font-semibold text-green-700 text-xs">
               Linked
             </span>
           ) : (
@@ -596,7 +620,7 @@ export function InventoryClient({
         const rendered = field.formatter
           ? field.formatter(value)
           : formatPlatformValue(value);
-        return <span className="text-sm text-gray-700">{rendered}</span>;
+        return <span className="text-gray-700 text-sm">{rendered}</span>;
       },
     }));
   }, [platform]);
@@ -607,17 +631,17 @@ export function InventoryClient({
   );
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       <Tabs value={platform} onValueChange={(value) => setPlatform(value)}>
-        <TabsList className="flex flex-wrap gap-2 border-b border-gray-200 bg-transparent p-0">
+        <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1 rounded-2xl bg-muted/70 p-1.5">
           {platformOptions.map((option) => (
             <TabsTrigger
               key={option}
               value={option}
-              className="rounded-full px-4 py-2 text-sm font-medium text-gray-600 data-[state=active]:bg-[#34A853]/10 data-[state=active]:text-[#34A853]"
+              className="h-9 rounded-xl px-3 font-semibold text-muted-foreground text-sm data-[state=active]:bg-card data-[state=active]:text-accent-foreground data-[state=active]:shadow-xs"
             >
               {toDisplayLabel(option)}{' '}
-              <span className="ml-1 text-xs text-gray-400">
+              <span className="text-muted-foreground/70 text-xs">
                 ({counts[option] ?? 0})
               </span>
             </TabsTrigger>
@@ -625,20 +649,20 @@ export function InventoryClient({
         </TabsList>
       </Tabs>
 
-      <div className="flex flex-col gap-3 lg:items-start lg:justify-start">
-        <div className="flex flex-wrap gap-3">
+      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 md:p-4">
+        <div className="flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="min-w-[220px] justify-between text-sm"
+                className="h-11 min-w-[220px] justify-between text-sm"
               >
                 {connectionLabel}
-                <ChevronDownIcon className="size-4" />
+                <ChevronDownIcon data-icon="inline-end" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-72 p-0">
-              <div className="border-b border-gray-100 p-3">
+              <div className="border-gray-100 border-b p-3">
                 <Input
                   value={connectionSearch}
                   onChange={(e) => setConnectionSearch(e.target.value)}
@@ -647,7 +671,7 @@ export function InventoryClient({
               </div>
               <div className="max-h-64 overflow-y-auto">
                 {visibleConnections.length === 0 ? (
-                  <p className="px-3 py-2 text-sm text-gray-500">
+                  <p className="px-3 py-2 text-gray-500 text-sm">
                     No accounts found
                   </p>
                 ) : (
@@ -657,7 +681,10 @@ export function InventoryClient({
                       checked={selectedConnectionIds.includes(conn.id)}
                       onCheckedChange={(checked) => {
                         if (checked) {
-                          setSelectedConnectionIds((prev) => [...prev, conn.id]);
+                          setSelectedConnectionIds((prev) => [
+                            ...prev,
+                            conn.id,
+                          ]);
                         } else {
                           setSelectedConnectionIds((prev) =>
                             prev.filter((id) => id !== conn.id)
@@ -682,7 +709,9 @@ export function InventoryClient({
                 <button
                   className="text-[#34A853]"
                   onClick={() =>
-                    setSelectedConnectionIds(visibleConnections.map((c) => c.id))
+                    setSelectedConnectionIds(
+                      visibleConnections.map((c) => c.id)
+                    )
                   }
                 >
                   Select all
@@ -695,14 +724,14 @@ export function InventoryClient({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="min-w-[200px] justify-between text-sm"
+                className="h-11 min-w-[200px] justify-between text-sm"
               >
                 {locationLabel}
-                <ChevronDownIcon className="size-4" />
+                <ChevronDownIcon data-icon="inline-end" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-80 p-0">
-              <div className="border-b border-gray-100 p-3">
+              <div className="border-gray-100 border-b p-3">
                 <Input
                   value={locationSearch}
                   onChange={(e) => setLocationSearch(e.target.value)}
@@ -711,11 +740,13 @@ export function InventoryClient({
               </div>
               <div className="max-h-72 overflow-y-auto">
                 {locationGroups.length === 0 ? (
-                  <p className="px-3 py-2 text-sm text-gray-500">No locations</p>
+                  <p className="px-3 py-2 text-gray-500 text-sm">
+                    No locations
+                  </p>
                 ) : (
                   locationGroups.map(([key, group]) => (
                     <div key={key} className="px-3 py-2">
-                      <p className="mb-1 text-xs uppercase text-gray-400">
+                      <p className="mb-1 text-gray-400 text-xs uppercase">
                         {group.connectionName}
                       </p>
                       {group.locations.map((loc) => (
@@ -724,7 +755,10 @@ export function InventoryClient({
                           checked={selectedLocationIds.includes(loc.id)}
                           onCheckedChange={(checked) => {
                             if (checked) {
-                              setSelectedLocationIds((prev) => [...prev, loc.id]);
+                              setSelectedLocationIds((prev) => [
+                                ...prev,
+                                loc.id,
+                              ]);
                             } else {
                               setSelectedLocationIds((prev) =>
                                 prev.filter((id) => id !== loc.id)
@@ -751,7 +785,9 @@ export function InventoryClient({
                 <button
                   className="text-[#34A853]"
                   onClick={() =>
-                    setSelectedLocationIds(filteredLocations.map((loc) => loc.id))
+                    setSelectedLocationIds(
+                      filteredLocations.map((loc) => loc.id)
+                    )
                   }
                 >
                   Select all
@@ -761,27 +797,27 @@ export function InventoryClient({
           </DropdownMenu>
         </div>
 
-        <div className="flex flex-1 min-w-[260px] items-center justify-end gap-2">
-          <div className="relative flex-1 max-w-md">
-            <SearchIcon className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-gray-400" />
+        <div className="flex min-w-[260px] flex-1 items-center gap-2">
+          <div className="relative max-w-lg flex-1">
+            <SearchIcon className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground" />
             <Input
               placeholder="Search for product"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="pl-10"
+              className="border-transparent bg-muted/70 pl-10 focus-visible:border-ring"
             />
           </div>
-          <Button variant="outline" className="border-dashed text-gray-600">
+          <Button variant="outline" className="h-11 text-muted-foreground">
             Columns
           </Button>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-gray-200 bg-white shadow-sm">
+      <div className="overflow-hidden rounded-[1.125rem] border bg-card">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-gray-50">
-              <TableRow className="text-xs uppercase tracking-wide text-gray-500">
+            <TableHeader className="bg-muted/60">
+              <TableRow className="text-muted-foreground text-xs uppercase tracking-[0.06em] hover:bg-transparent">
                 {columns.map((column) => (
                   <TableHead key={column.key} className={column.className}>
                     {column.label}
@@ -794,19 +830,19 @@ export function InventoryClient({
                 <TableRow>
                   <TableCell
                     colSpan={7}
-                    className="py-12 text-center text-sm text-gray-500"
+                    className="py-14 text-center font-medium text-muted-foreground text-sm"
                   >
                     No products found
                   </TableCell>
                 </TableRow>
               ) : (
                 pageItems.map((item) => (
-                  <TableRow
-                    key={item.id}
-                    className="text-sm text-gray-700 hover:bg-gray-50"
-                  >
+                  <TableRow key={item.id} className="text-sm hover:bg-muted/45">
                     {columns.map((column) => (
-                      <TableCell key={`${item.id}-${column.key}`} className={column.className}>
+                      <TableCell
+                        key={`${item.id}-${column.key}`}
+                        className={column.className}
+                      >
                         {column.render(item)}
                       </TableCell>
                     ))}
@@ -819,11 +855,12 @@ export function InventoryClient({
       </div>
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-        <div className="text-sm text-gray-500">
-          Showing {showingFrom} to {showingTo} of {filteredItems.length} products
+        <div className="font-medium text-muted-foreground text-sm">
+          Showing {showingFrom} to {showingTo} of {filteredItems.length}{' '}
+          products
         </div>
         <div className="flex items-center gap-4">
-          <div className="flex items-center gap-2 text-sm text-gray-600">
+          <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">
             Rows per page
             <Select
               value={rowsPerPage.toString()}
@@ -850,7 +887,7 @@ export function InventoryClient({
             >
               Previous
             </Button>
-            <div className="text-sm text-gray-600">
+            <div className="font-medium text-muted-foreground text-sm">
               Page {safePage} of {totalPages}
             </div>
             <Button
@@ -885,7 +922,9 @@ function formatPlatformValue(value: any) {
   if (typeof value === 'number') return value;
   if (typeof value === 'boolean') return value ? 'Yes' : 'No';
   if (Array.isArray(value)) {
-    const filtered = value.filter((val) => val !== null && val !== undefined && val !== '');
+    const filtered = value.filter(
+      (val) => val !== null && val !== undefined && val !== ''
+    );
     if (filtered.length === 0) return '—';
     return filtered
       .map((entry) =>

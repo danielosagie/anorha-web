@@ -1,10 +1,11 @@
-import { PageWrapper } from '../components/page-wrapper';
-import { InConstruction } from '../components/in-construction';
+import type { Metadata } from 'next';
+import { InventoryContent } from '../components/inventory-content';
+
+export const metadata: Metadata = {
+  title: 'Inventory | Anorha',
+  description: 'Manage inventory across every connected sales channel.',
+};
 
 export default function InventoryPage() {
-  return (
-    <PageWrapper title="Inventory" description='Manage & track your inventory' >
-      <InConstruction />
-    </PageWrapper>
-  );
+  return <InventoryContent />;
 }

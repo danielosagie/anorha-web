@@ -9,13 +9,6 @@ import {
   CollapsibleTrigger,
 } from '@repo/design-system/components/ui/collapsible';
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from '@repo/design-system/components/ui/dropdown-menu';
-import {
   Sidebar,
   SidebarContent,
   SidebarFooter,
@@ -36,18 +29,19 @@ import {
 import { cn } from '@repo/design-system/lib/utils';
 import { NotificationsTrigger } from '@repo/notifications/components/trigger';
 import {
-  ChevronRightIcon,
+  BoxesIcon,
   CreditCardIcon,
-  PackageIcon,
   LayoutDashboardIcon,
   Settings2Icon,
+  UserRoundIcon,
   UsersIcon,
-  BoxesIcon,
 } from 'lucide-react';
+import type { LucideIcon } from 'lucide-react';
+import Image from 'next/image';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import type { LucideIcon } from 'lucide-react';
+import anorhaLogo from '../../assets/anorha_logo.png';
 import { Search } from './search';
 
 type GlobalSidebarProperties = {
@@ -63,14 +57,18 @@ type NavItem = {
   readonly title: string;
   readonly url: string;
   readonly icon: LucideIcon;
-  readonly items?: ReadonlyArray<SubNavItem>;
+  readonly items?: readonly SubNavItem[];
 };
 
 const data: {
-  readonly user: { readonly name: string; readonly email: string; readonly avatar: string };
-  readonly navMain: ReadonlyArray<NavItem>;
-  readonly navSecondary: ReadonlyArray<NavItem>;
-  readonly projects: ReadonlyArray<unknown>;
+  readonly user: {
+    readonly name: string;
+    readonly email: string;
+    readonly avatar: string;
+  };
+  readonly navMain: readonly NavItem[];
+  readonly navSecondary: readonly NavItem[];
+  readonly projects: readonly unknown[];
 } = {
   user: {
     name: 'shadcn',
@@ -84,6 +82,7 @@ const data: {
   navSecondary: [
     { title: 'Billing/Usage', url: '/billing', icon: CreditCardIcon },
     { title: 'Team', url: '/team', icon: UsersIcon },
+    { title: 'Profile', url: '/profile', icon: UserRoundIcon },
     { title: 'Settings', url: '/settings', icon: Settings2Icon },
   ],
   projects: [],
@@ -95,23 +94,42 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
 
   return (
     <>
-      <Sidebar variant="inset" className='bg-[#FEF4DD]'>
-        <SidebarHeader className='bg-[#FEF4DD]'>
+      <Sidebar variant="inset" className="bg-background p-2 pr-0">
+        <SidebarHeader className="gap-3 border-sidebar-border border-b px-3 pt-3 pb-4">
+          <Link
+            href="/"
+            className="flex items-center gap-3 rounded-2xl px-1 py-1.5 outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
+          >
+            <Image
+              src={anorhaLogo}
+              alt=""
+              className="size-9 rounded-xl object-cover"
+              priority
+            />
+            <div className="min-w-0 group-data-[collapsible=icon]:hidden">
+              <div className="font-extrabold text-[0.9375rem] tracking-[-0.02em]">
+                Anorha
+              </div>
+              <div className="font-medium text-muted-foreground text-xs">
+                Seller workspace
+              </div>
+            </div>
+          </Link>
           <SidebarMenu>
             <SidebarMenuItem>
               <div
                 className={cn(
-                  'h-[36px] overflow-hidden transition-all [&>div]:w-full',
+                  'h-10 overflow-hidden rounded-xl bg-muted/70 transition-all [&>div]:w-full',
                   sidebar.open ? '' : '-mx-1'
                 )}
-                style={{backgroundColor: "#FEF4DD"}}
               >
                 <OrganizationSwitcher
                   hidePersonal
                   afterSelectOrganizationUrl="/"
                   appearance={{
                     elements: {
-                      organizationSwitcherTrigger: 'hover:bg-black/10 focus:bg-black/10',
+                      organizationSwitcherTrigger:
+                        'h-10 w-full rounded-xl px-2 hover:bg-accent focus:bg-accent',
                     },
                   }}
                 />
@@ -119,50 +137,62 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
             </SidebarMenuItem>
           </SidebarMenu>
         </SidebarHeader>
-        <div className='bg-[#FEF4DD]' >
+        <div className="py-3">
           <Search />
         </div>
-        <SidebarContent className='bg-[#FEF4DD]'>
-            <SidebarGroup className='bg-[#FEF4DD]'>
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+        <SidebarContent>
+          <SidebarGroup className="px-3">
+            <SidebarGroupLabel className="px-2 font-bold text-[0.6875rem] text-muted-foreground uppercase tracking-[0.09em]">
+              Workspace
+            </SidebarGroupLabel>
             <SidebarMenu>
               {data.navMain.map((item) => (
                 <Collapsible
                   key={item.title}
                   asChild
-                  defaultOpen={item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)}
+                  defaultOpen={
+                    item.url === '/'
+                      ? pathname === '/'
+                      : pathname.startsWith(item.url)
+                  }
                 >
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       asChild
                       tooltip={item.title}
                       className={cn(
-                        "relative data-[active=true]:bg-[#647653] data-[active=true]:text-white hover:bg-black/10 focus:bg-black/10",
-                        // Border only shows when active
-                        "data-[active=true]:border-[3px] data-[active=true]:border-[#647653] data-[active=true]:px-3 data-[active=true]:py-2",
-                        // White ring inside for active
-                        "data-[active=true]:ring-2 data-[active=true]:ring-white data-[active=true]:ring-inset"
+                        'h-11 rounded-xl px-3 font-semibold text-sidebar-foreground/75 text-sm',
+                        'hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus:bg-sidebar-accent/70',
+                        'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground'
                       )}
-                      isActive={item.url === '/' ? pathname === '/' : pathname.startsWith(item.url)}
+                      isActive={
+                        item.url === '/'
+                          ? pathname === '/'
+                          : pathname.startsWith(item.url)
+                      }
                     >
                       <Link href={item.url}>
-                        <item.icon />
+                        <span className="flex size-7 items-center justify-center rounded-lg bg-muted/80 group-data-[collapsible=icon]:bg-transparent">
+                          <item.icon />
+                        </span>
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                     {item.items?.length ? (
                       <>
                         <CollapsibleTrigger asChild>
-                          <SidebarMenuAction className="data-[state=open]:rotate-90 hover:bg-black/10 focus:bg-black/10">
-                            <ChevronRightIcon />
-                            <span className="sr-only">Toggle</span>
+                          <SidebarMenuAction className="hover:bg-black/10 focus:bg-black/10 data-[state=open]:rotate-90">
+                            <span className="sr-only">Toggle {item.title}</span>
                           </SidebarMenuAction>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                          <SidebarMenuSub>
+                          <SidebarMenuSub className="border-sidebar-border">
                             {item.items?.map((subItem: SubNavItem) => (
                               <SidebarMenuSubItem key={subItem.title}>
-                                <SidebarMenuSubButton asChild className="hover:bg-black/10 focus:bg-black/10">
+                                <SidebarMenuSubButton
+                                  asChild
+                                  className="hover:bg-black/10 focus:bg-black/10"
+                                >
                                   <Link href={subItem.url}>
                                     <span>{subItem.title}</span>
                                   </Link>
@@ -179,7 +209,10 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
             </SidebarMenu>
           </SidebarGroup>
           {/* Projects group removed */}
-          <SidebarGroup className="mt-auto">
+          <SidebarGroup className="mt-auto px-3">
+            <SidebarGroupLabel className="px-2 font-bold text-[0.6875rem] text-muted-foreground uppercase tracking-[0.09em]">
+              Account
+            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
                 {data.navSecondary.map((item) => (
@@ -187,16 +220,16 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                     <SidebarMenuButton
                       asChild
                       className={cn(
-                        "relative data-[active=true]:bg-[#647653] data-[active=true]:text-white hover:bg-black/10 focus:bg-black/10",
-                        // Border only shows when active
-                        "data-[active=true]:border-[3px] data-[active=true]:border-[#647653] data-[active=true]:px-3 data-[active=true]:py-2",
-                        // White ring inside for active
-                        "data-[active=true]:ring-2 data-[active=true]:ring-white data-[active=true]:ring-inset"
+                        'h-11 rounded-xl px-3 font-semibold text-sidebar-foreground/75 text-sm',
+                        'hover:bg-sidebar-accent/70 hover:text-sidebar-accent-foreground focus:bg-sidebar-accent/70',
+                        'data-[active=true]:bg-sidebar-accent data-[active=true]:text-sidebar-accent-foreground'
                       )}
                       isActive={pathname.startsWith(item.url)}
                     >
                       <Link href={item.url}>
-                        <item.icon />
+                        <span className="flex size-7 items-center justify-center rounded-lg bg-muted/80 group-data-[collapsible=icon]:bg-transparent">
+                          <item.icon />
+                        </span>
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
@@ -206,9 +239,9 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
-        <SidebarFooter className='bg-[#FEF4DD]' >
+        <SidebarFooter className="border-sidebar-border border-t p-3">
           <SidebarMenu>
-            <SidebarMenuItem className="flex items-center gap-2 bg-[#FEF4DD]">
+            <SidebarMenuItem className="flex items-center gap-2 rounded-xl bg-muted/60 p-1.5">
               <UserButton
                 showName
                 appearance={{
@@ -216,7 +249,8 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                     rootBox: 'flex overflow-hidden w-full',
                     userButtonBox: 'flex-row-reverse',
                     userButtonOuterIdentifier: 'truncate pl-0',
-                    userButtonTrigger: 'hover:bg-black/10 focus:bg-black/10',
+                    userButtonTrigger:
+                      'rounded-lg hover:bg-accent focus:bg-accent',
                   },
                 }}
               />
@@ -225,10 +259,10 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                 <Button
                   variant="ghost"
                   size="icon"
-                  className="shrink-0 hover:bg-black/10 focus:bg-black/10"
+                  className="shrink-0 hover:bg-accent focus:bg-accent"
                   asChild
                 >
-                  <div className="h-4 w-4">
+                  <div className="size-4">
                     <NotificationsTrigger />
                   </div>
                 </Button>
@@ -237,8 +271,9 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
           </SidebarMenu>
         </SidebarFooter>
       </Sidebar>
-      <SidebarInset>{children}</SidebarInset>
+      <SidebarInset className="min-h-svh bg-background md:rounded-l-[1.5rem] md:border md:border-border md:shadow-none">
+        {children}
+      </SidebarInset>
     </>
   );
 };
-         

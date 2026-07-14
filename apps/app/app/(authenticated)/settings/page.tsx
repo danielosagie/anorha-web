@@ -1,34 +1,51 @@
 import { auth, currentUser } from '@repo/auth/server';
-import { SettingsClient } from './settings-client';
+import { redirect } from 'next/navigation';
 import { PageWrapper } from '../components/page-wrapper';
+import { SettingsClient } from './settings-client';
 
 async function getBillingSummary() {
   const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   try {
-    const res = await fetch(`${origin}/api/billing/summary`, { cache: 'no-store' });
-    if (!res.ok) return null;
+    const res = await fetch(`${origin}/api/billing/summary`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      return null;
+    }
     return await res.json();
   } catch {
     return null;
   }
 }
 
-async function getUpcomingInvoice() {
+type UpcomingInvoiceResponse = {
+  upcoming: { due_date?: string } | null;
+};
+
+async function getUpcomingInvoice(): Promise<UpcomingInvoiceResponse> {
   const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   try {
-    const res = await fetch(`${origin}/api/billing/upcoming`, { cache: 'no-store' });
-    if (!res.ok) return { upcoming: null } as any;
-    return await res.json();
+    const res = await fetch(`${origin}/api/billing/upcoming`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      return { upcoming: null };
+    }
+    return (await res.json()) as UpcomingInvoiceResponse;
   } catch {
-    return { upcoming: null } as any;
+    return { upcoming: null };
   }
 }
 
 async function getPools(orgId: string) {
   const origin = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   try {
-    const res = await fetch(`${origin}/api/pools/org/${orgId}`, { cache: 'no-store' });
-    if (!res.ok) return [] as Array<{ id: string; name: string; description?: string }>;
+    const res = await fetch(`${origin}/api/pools/org/${orgId}`, {
+      cache: 'no-store',
+    });
+    if (!res.ok) {
+      return [] as Array<{ id: string; name: string; description?: string }>;
+    }
     const data = await res.json();
     return Array.isArray(data) ? data : [];
   } catch {
@@ -41,12 +58,20 @@ export default async function SettingsPage() {
   const user = await currentUser();
   const isAdmin = orgRole === 'org:admin' || orgRole === 'org:owner';
 
+  if (!user) {
+    redirect('/sign-in');
+  }
+
   if (!orgId) {
     return (
-      <div className="flex flex-1 flex-col gap-6 p-4 md:p-6">
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Settings</h1>
-        <p className="text-muted-foreground text-sm md:text-base">Select an organization to manage settings.</p>
-      </div>
+      <PageWrapper
+        title="Settings"
+        description="Account, business, channel, and notification preferences."
+      >
+        <div className="rounded-2xl border bg-card p-5 font-medium text-muted-foreground text-sm">
+          Select an organization to manage settings.
+        </div>
+      </PageWrapper>
     );
   }
 
@@ -57,24 +82,23 @@ export default async function SettingsPage() {
   ]);
 
   const subscription = summary?.subscription || null;
-  const nextDue = upcoming?.upcoming?.due_date ? new Date(upcoming.upcoming.due_date) : null;
+  const nextDue = upcoming?.upcoming?.due_date
+    ? new Date(upcoming.upcoming.due_date)
+    : null;
 
   return (
-     <div className="flex flex-1 flex-col p-2 min-h-[100vh]" style={{ backgroundColor: '#FEF4DD' }}>
-      
-      <PageWrapper 
-        title="Settings"
-        description="Manage your account settings and set e-mail preferences."
-      >
-        <SettingsClient 
-          orgId={orgId}
-          isAdmin={isAdmin}
-          userId={user!.id}
-          subscription={subscription}
-          nextDue={nextDue}
-          pools={pools}
-        />
-      </PageWrapper>
-    </div>
+    <PageWrapper
+      title="Settings"
+      description="Account, business, channel, and notification preferences."
+    >
+      <SettingsClient
+        orgId={orgId}
+        isAdmin={isAdmin}
+        userId={user.id}
+        subscription={subscription}
+        nextDue={nextDue}
+        pools={pools}
+      />
+    </PageWrapper>
   );
 }

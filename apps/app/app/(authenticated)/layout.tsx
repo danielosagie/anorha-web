@@ -1,14 +1,14 @@
 import { env } from '@/env';
-import { auth, currentUser, clerkClient } from '@repo/auth/server';
+import { auth, clerkClient, currentUser } from '@repo/auth/server';
 import { SidebarProvider } from '@repo/design-system/components/ui/sidebar';
 import { showBetaFeature } from '@repo/feature-flags';
 import { NotificationsProvider } from '@repo/notifications/components/provider';
 import { secure } from '@repo/security';
 import { redirect } from 'next/navigation';
 import type { ReactNode } from 'react';
+import { OrgGuard } from './components/org-guard';
 import { PostHogIdentifier } from './components/posthog-identifier';
 import { GlobalSidebar } from './components/sidebar';
-import { OrgGuard } from './components/org-guard';
 
 type AppLayoutProperties = {
   readonly children: ReactNode;
@@ -43,11 +43,11 @@ const AppLayout = async ({ children }: AppLayoutProperties) => {
   return (
     <NotificationsProvider userId={user.id}>
       <OrgGuard>
-        <SidebarProvider className="bg-[#FEF4DD]">
+        <SidebarProvider className="bg-background">
           <GlobalSidebar>
             {betaFeature && (
-              <div className="m-4 rounded-full bg-blue-500  text-center text-sm text-white">
-                Beta feature now available
+              <div className="mx-4 mt-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-center font-semibold text-accent-foreground text-sm md:mx-8 lg:mx-10">
+                A new beta feature is ready to try.
               </div>
             )}
             {children}
@@ -60,4 +60,3 @@ const AppLayout = async ({ children }: AppLayoutProperties) => {
 };
 
 export default AppLayout;
-

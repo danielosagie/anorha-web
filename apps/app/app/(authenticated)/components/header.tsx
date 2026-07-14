@@ -1,8 +1,8 @@
+import { Button } from '@repo/design-system/components/ui/button';
 import { Separator } from '@repo/design-system/components/ui/separator';
 import { SidebarTrigger } from '@repo/design-system/components/ui/sidebar';
-import { type ReactNode } from 'react';
-import { Button } from '@repo/design-system/components/ui/button';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeftIcon } from 'lucide-react';
+import type { ReactNode } from 'react';
 
 type HeaderProps = {
   page: string;
@@ -11,29 +11,26 @@ type HeaderProps = {
   backButtonText?: string;
 };
 
-export const Header = ({ page, children, onBack, backButtonText = 'Back' }: HeaderProps) => (
-  <header className="flex h-16 shrink-0 items-center justify-between gap-2">
-    <div className="flex items-center gap-2 px-4">
-      <SidebarTrigger className="-ml-1" />
-      <Separator orientation="vertical" className="mr-2 h-4" />
-      <div className="font-medium text-sm">{page}</div>
+export const Header = ({
+  page,
+  children,
+  onBack,
+  backButtonText = 'Back',
+}: HeaderProps) => (
+  <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-3 border-b bg-background/95 px-4 backdrop-blur md:h-16 md:px-8 lg:px-10">
+    <div className="flex min-w-0 items-center gap-2">
+      <SidebarTrigger className="-ml-2 size-9 rounded-full" />
+      <Separator orientation="vertical" className="mx-1 h-5 md:hidden" />
+      <div className="truncate font-semibold text-sm md:hidden">{page}</div>
     </div>
-    <div className="flex items-center gap-2 px-4">
+    <div className="flex items-center gap-2">
       {onBack && (
-        <>
-          <Separator orientation="vertical" className="h-4" />
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={onBack}
-            className="h-8 px-2"
-          >
-            <ArrowLeft className="h-4 w-4 mr-1" />
-            {backButtonText}
-          </Button>
-        </>
+        <Button variant="outline" size="sm" onClick={onBack}>
+          <ArrowLeftIcon data-icon="inline-start" />
+          {backButtonText}
+        </Button>
       )}
-    {children}
+      {children}
     </div>
   </header>
 );

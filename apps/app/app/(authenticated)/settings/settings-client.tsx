@@ -1,23 +1,38 @@
 'use client';
 
-import React from 'react';
-import Image, { type StaticImageData } from 'next/image';
-import { Button } from '@repo/design-system/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@repo/design-system/components/ui/card';
 import { Badge } from '@repo/design-system/components/ui/badge';
-import { Calendar } from '@repo/design-system/components/ui/calendar'
-import { Separator } from '@repo/design-system/components/ui/separator';
-import { ExternalLinkIcon, SettingsIcon, UsersIcon, Building2Icon, CreditCardIcon, LogOutIcon, NetworkIcon, MapIcon, BellIcon } from 'lucide-react';
+import { Button } from '@repo/design-system/components/ui/button';
+import { Calendar } from '@repo/design-system/components/ui/calendar';
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@repo/design-system/components/ui/card';
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@repo/design-system/components/ui/popover';
+import { Switch } from '@repo/design-system/components/ui/switch';
 import { cn } from '@repo/design-system/lib/utils';
-import { NotificationSettings } from './components/NotificationSettings';
-import { SignOutControl } from './components/SignOutControl';
-import { Popover, PopoverTrigger, PopoverContent, PopoverAnchor } from '@repo/design-system/components/ui/popover'
-import shopifyLogo from '../../assets/shopify.png';
-import squareLogo from '../../assets/square.png';
-import cloverLogo from '../../assets/clover.png';
+import {
+  BellIcon,
+  Building2Icon,
+  ExternalLinkIcon,
+  NetworkIcon,
+  SettingsIcon,
+  UsersIcon,
+} from 'lucide-react';
+import Image, { type StaticImageData } from 'next/image';
+import React from 'react';
 import amazonLogo from '../../assets/amazon.png';
+import cloverLogo from '../../assets/clover.png';
 import ebayLogo from '../../assets/ebay.png';
 import facebookLogo from '../../assets/facebook.png';
+import shopifyLogo from '../../assets/shopify.png';
+import squareLogo from '../../assets/square.png';
 import whatnotLogo from '../../assets/whatnot.png';
 
 type Connection = {
@@ -45,14 +60,14 @@ const PLATFORM_LOGOS: Record<string, PlatformLogo> = {
 };
 
 const STATUS_BADGE_CLASSES: Record<string, string> = {
-  active: 'bg-[#647653] text-white',
-  inactive: 'bg-gray-100 text-gray-800',
-  error: 'bg-red-100 text-red-800',
-  syncing: 'bg-blue-100 text-blue-800',
-  reconciling: 'bg-yellow-100 text-yellow-800',
-  pending: 'bg-amber-100 text-amber-800',
-  review: 'bg-amber-100 text-amber-800',
-  ready_to_sync: 'bg-lime-100 text-lime-800',
+  active: 'border-transparent bg-primary/15 text-accent-foreground',
+  inactive: 'bg-muted text-muted-foreground',
+  error: 'border-transparent bg-destructive/10 text-destructive',
+  syncing: 'bg-muted text-foreground',
+  reconciling: 'border-transparent bg-warning/10 text-warning',
+  pending: 'border-transparent bg-warning/10 text-warning',
+  review: 'border-transparent bg-warning/10 text-warning',
+  ready_to_sync: 'border-transparent bg-primary/15 text-accent-foreground',
 };
 
 type SettingsTab = 'profile' | 'business' | 'integrations' | 'notifications';
@@ -77,7 +92,9 @@ export function SettingsClient({
   const [activeTab, setActiveTab] = React.useState<SettingsTab>('profile');
   const [connections, setConnections] = React.useState<Connection[]>([]);
   const [isLoadingConnections, setIsLoadingConnections] = React.useState(false);
-  const [connectionsError, setConnectionsError] = React.useState<string | null>(null);
+  const [connectionsError, setConnectionsError] = React.useState<string | null>(
+    null
+  );
 
   // Notification Preferences State
   const [preferences, setPreferences] = React.useState({
@@ -125,21 +142,19 @@ export function SettingsClient({
 
   const togglePreference = async (key: keyof typeof preferences) => {
     const newValue = !preferences[key];
-    setPreferences(prev => ({ ...prev, [key]: newValue }));
+    setPreferences((prev) => ({ ...prev, [key]: newValue }));
 
     try {
       await fetch('/api/notifications/preferences', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ [key]: newValue })
+        body: JSON.stringify({ [key]: newValue }),
       });
     } catch (err) {
       console.error('Failed to update preference:', err);
-      setPreferences(prev => ({ ...prev, [key]: !newValue })); // Revert
+      setPreferences((prev) => ({ ...prev, [key]: !newValue })); // Revert
     }
   };
-
-
 
   const loadBusinessAddress = React.useCallback(async () => {
     try {
@@ -228,31 +243,34 @@ export function SettingsClient({
     };
   }, []);
 
-  const tabs: { id: SettingsTab; label: string }[] = [
-    { id: 'profile', label: 'Profile' },
-    { id: 'business', label: 'Business' },
-    { id: 'integrations', label: 'Integrations' },
-    { id: 'notifications', label: 'Notifications' },
+  const tabs = [
+    { id: 'profile', label: 'Profile', icon: SettingsIcon },
+    { id: 'business', label: 'Business', icon: Building2Icon },
+    { id: 'integrations', label: 'Integrations', icon: NetworkIcon },
+    { id: 'notifications', label: 'Notifications', icon: BellIcon },
   ];
 
   return (
-    <div className="flex flex-col lg:flex-row border-t-2 border-gray-100 gap-6 w-full">
-
+    <div className="anorha-settings grid w-full gap-6 lg:grid-cols-[12rem_minmax(0,1fr)] xl:gap-10">
       {/* Sidebar Navigation - Responsive */}
-      <div className="w-full lg:w-48 flex-shrink-0 h-full">
-        <div className=" rounded-lg p-4 text-align-l lg:sticky lg:top-0">
-          <nav className="space-y-2 flex flex-row lg:flex-col flex-wrap lg:flex-nowrap gap-2">
+      <div className="min-w-0">
+        <div className="lg:sticky lg:top-20">
+          <nav
+            className="flex gap-2 overflow-x-auto rounded-2xl bg-muted/70 p-1.5 lg:flex-col"
+            aria-label="Settings sections"
+          >
             {tabs.map((tab) => (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => setActiveTab(tab.id as SettingsTab)}
                 className={cn(
-                  'flex-1 lg:flex-none lg:w-full text-left px-4 py-2 rounded-md transition-colors font-medium text-sm',
+                  'flex min-h-10 shrink-0 items-center gap-2 rounded-xl px-3 py-2 text-left font-semibold text-sm outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring lg:w-full',
                   activeTab === tab.id
-                    ? 'bg-gray-200 text-gray-900'
-                    : 'text-gray-600 hover:bg-gray-100'
+                    ? 'bg-card text-accent-foreground shadow-xs'
+                    : 'text-muted-foreground hover:bg-card/70 hover:text-foreground'
                 )}
               >
+                <tab.icon className="size-4" />
                 {tab.label}
               </button>
             ))}
@@ -261,134 +279,194 @@ export function SettingsClient({
       </div>
 
       {/* Main Content - Responsive */}
-      <div className="flex-1 space-y-6 h-full pt-4">
+      <div className="min-w-0 max-w-4xl">
         {activeTab === 'profile' && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-2xl font-bold">Profile</h2>
-              <p className="text-gray-600">Update your account settings. Set your preferred language and timezone.</p>
+              <h2 className="font-extrabold text-xl tracking-[-0.02em]">
+                Profile
+              </h2>
+              <p className="mt-1 font-medium text-muted-foreground text-sm">
+                Set the identity and defaults Anorha uses for your account.
+              </p>
             </div>
 
-            <Card className="border border-gray-200">
-              <CardContent className="p-6 space-y-4">
+            <Card>
+              <CardContent className="flex flex-col gap-5 px-5 py-5 md:px-6 md:py-6">
                 <div>
-                  <label className="block text-sm font-medium mb-2">Name</label>
+                  <label className="mb-2 block font-medium text-sm">Name</label>
                   <input
                     type="text"
                     placeholder="Your name"
-                    className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
                   />
-                  <p className="text-xs text-gray-500 mt-1">This is the name that will be displayed on your profile and in emails.</p>
+                  <p className="mt-1 text-gray-500 text-xs">
+                    This is the name that will be displayed on your profile and
+                    in emails.
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Date of birth</label>
+                  <label className="mb-2 block font-medium text-sm">
+                    Date of birth
+                  </label>
                   {/* Use shadcn popover calendar with same input */}
                   <Popover>
                     <PopoverTrigger asChild>
                       <input
                         type="date"
                         placeholder="Pick a date"
-                        className="px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        className="rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
                       />
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
                       <Calendar
                         mode="single"
                         selected={undefined}
-                        onSelect={() => { }}
+                        onSelect={() => {}}
                         initialFocus
                       />
                     </PopoverContent>
                   </Popover>
-                  <p className="text-xs text-gray-500 mt-1">Your date of birth is used to calculate your age.</p>
+                  <p className="mt-1 text-gray-500 text-xs">
+                    Your date of birth is used to calculate your age.
+                  </p>
                 </div>
 
                 <div>
-                  <label className="block text-sm font-medium mb-2">Language</label>
-                  <select className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]">
+                  <label className="mb-2 block font-medium text-sm">
+                    Language
+                  </label>
+                  <select className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]">
                     <option>Select Language</option>
                     <option>English</option>
                     <option>Spanish</option>
                     <option>French</option>
                   </select>
-                  <p className="text-xs text-gray-500 mt-1">This is the language that will be used in the dashboard.</p>
+                  <p className="mt-1 text-gray-500 text-xs">
+                    This is the language that will be used in the dashboard.
+                  </p>
                 </div>
 
-                <Button className="bg-[#647653] hover:bg-[#647653] text-white">Update account</Button>
+                <Button className="h-11 self-start px-5">Update account</Button>
               </CardContent>
             </Card>
           </div>
         )}
 
         {activeTab === 'business' && (
-          <div className="space-y-4">
+          <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-2xl font-bold">Business</h2>
-              <p className="text-gray-600">Manage your business address for shipping, returns, and platform setup.</p>
+              <h2 className="font-extrabold text-xl tracking-[-0.02em]">
+                Business
+              </h2>
+              <p className="mt-1 font-medium text-muted-foreground text-sm">
+                Manage the address used for shipping, returns, and channel
+                setup.
+              </p>
             </div>
 
-            <Card className="border border-gray-200">
+            <Card>
               <CardHeader>
                 <CardTitle>Business Address</CardTitle>
-                <CardDescription>This address is used for eBay locations, return policies, and shipping.</CardDescription>
+                <CardDescription>
+                  This address is used for eBay locations, return policies, and
+                  shipping.
+                </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoadingAddress ? (
-                  <p className="text-sm text-gray-500">Loading address...</p>
+                  <p className="text-gray-500 text-sm">Loading address...</p>
                 ) : (
                   <>
                     <div>
-                      <label className="block text-sm font-medium mb-2">Street Address</label>
+                      <label className="mb-2 block font-medium text-sm">
+                        Street Address
+                      </label>
                       <input
                         type="text"
                         placeholder="123 Main Street"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
                         value={businessAddress.street1}
-                        onChange={(e) => setBusinessAddress(prev => ({ ...prev, street1: e.target.value }))}
+                        onChange={(e) =>
+                          setBusinessAddress((prev) => ({
+                            ...prev,
+                            street1: e.target.value,
+                          }))
+                        }
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Apt, Suite, Unit (optional)</label>
+                      <label className="mb-2 block font-medium text-sm">
+                        Apt, Suite, Unit (optional)
+                      </label>
                       <input
                         type="text"
                         placeholder="Suite 100"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
                         value={businessAddress.street2}
-                        onChange={(e) => setBusinessAddress(prev => ({ ...prev, street2: e.target.value }))}
+                        onChange={(e) =>
+                          setBusinessAddress((prev) => ({
+                            ...prev,
+                            street2: e.target.value,
+                          }))
+                        }
                       />
                     </div>
 
                     <div>
-                      <label className="block text-sm font-medium mb-2">Business Phone</label>
+                      <label className="mb-2 block font-medium text-sm">
+                        Business Phone
+                      </label>
                       <input
                         type="tel"
                         placeholder="+1 (555) 555-5555"
-                        className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
                         value={businessAddress.phone}
-                        onChange={(e) => setBusinessAddress(prev => ({ ...prev, phone: e.target.value }))}
+                        onChange={(e) =>
+                          setBusinessAddress((prev) => ({
+                            ...prev,
+                            phone: e.target.value,
+                          }))
+                        }
                       />
-                      <p className="text-xs text-gray-500 mt-1">Required for eBay location creation.</p>
+                      <p className="mt-1 text-gray-500 text-xs">
+                        Required for eBay location creation.
+                      </p>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
                       <div className="col-span-2">
-                        <label className="block text-sm font-medium mb-2">City</label>
+                        <label className="mb-2 block font-medium text-sm">
+                          City
+                        </label>
                         <input
                           type="text"
                           placeholder="Los Angeles"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                          className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
                           value={businessAddress.city}
-                          onChange={(e) => setBusinessAddress(prev => ({ ...prev, city: e.target.value }))}
+                          onChange={(e) =>
+                            setBusinessAddress((prev) => ({
+                              ...prev,
+                              city: e.target.value,
+                            }))
+                          }
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2">State</label>
+                        <label className="mb-2 block font-medium text-sm">
+                          State
+                        </label>
                         <select
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653] bg-white"
+                          className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
                           value={businessAddress.state}
-                          onChange={(e) => setBusinessAddress(prev => ({ ...prev, state: e.target.value }))}
+                          onChange={(e) =>
+                            setBusinessAddress((prev) => ({
+                              ...prev,
+                              state: e.target.value,
+                            }))
+                          }
                           autoComplete="address-level1"
                         >
                           <option value="">Select State</option>
@@ -449,21 +527,35 @@ export function SettingsClient({
 
                     <div className="grid grid-cols-2 gap-4">
                       <div>
-                        <label className="block text-sm font-medium mb-2">ZIP Code</label>
+                        <label className="mb-2 block font-medium text-sm">
+                          ZIP Code
+                        </label>
                         <input
                           type="text"
                           placeholder="90001"
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                          className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
                           value={businessAddress.postalCode}
-                          onChange={(e) => setBusinessAddress(prev => ({ ...prev, postalCode: e.target.value }))}
+                          onChange={(e) =>
+                            setBusinessAddress((prev) => ({
+                              ...prev,
+                              postalCode: e.target.value,
+                            }))
+                          }
                         />
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-2">Country</label>
+                        <label className="mb-2 block font-medium text-sm">
+                          Country
+                        </label>
                         <select
-                          className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#647653] bg-white"
+                          className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
                           value={businessAddress.country}
-                          onChange={(e) => setBusinessAddress(prev => ({ ...prev, country: e.target.value }))}
+                          onChange={(e) =>
+                            setBusinessAddress((prev) => ({
+                              ...prev,
+                              country: e.target.value,
+                            }))
+                          }
                           autoComplete="country"
                         >
                           <option value="US">United States</option>
@@ -487,14 +579,16 @@ export function SettingsClient({
 
                     <div className="flex items-center gap-4 pt-2">
                       <Button
-                        className="bg-[#647653] hover:bg-[#647653] text-white"
+                        className="h-11 px-5"
                         onClick={saveBusinessAddress}
                         disabled={isLoadingAddress}
                       >
                         {isLoadingAddress ? 'Saving...' : 'Save Address'}
                       </Button>
                       {addressSaved && (
-                        <span className="text-sm text-[#647653]">✓ Address saved!</span>
+                        <span className="font-semibold text-accent-foreground text-sm">
+                          Address saved
+                        </span>
                       )}
                     </div>
                   </>
@@ -505,57 +599,70 @@ export function SettingsClient({
         )}
 
         {activeTab === 'integrations' && (
-          <div className="space-y-4 h-full">
+          <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-2xl font-bold">Integrations</h2>
-              <p className="text-gray-600">Manage your connected inventory sources/marketplaces</p>
+              <h2 className="font-extrabold text-xl tracking-[-0.02em]">
+                Integrations
+              </h2>
+              <p className="mt-1 font-medium text-muted-foreground text-sm">
+                See the channels that feed and publish your inventory.
+              </p>
             </div>
 
-            <Card className="border border-gray-200">
+            <Card>
               <CardHeader className="flex flex-row items-center justify-between">
                 <div>
                   <CardTitle>Connected Platforms</CardTitle>
                   <CardDescription>Your active integrations</CardDescription>
                 </div>
-                <Button
-                  className="bg-[#647653] hover:bg-[#647653] text-white opacity-70 cursor-not-allowed"
-                  disabled
-                >
+                <Button variant="outline" disabled>
                   + Connect New Platform
                 </Button>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3">
+                <div className="flex flex-col gap-3">
                   {isLoadingConnections && (
-                    <p className="text-sm text-gray-500">Loading your integrations...</p>
+                    <p className="text-gray-500 text-sm">
+                      Loading your integrations...
+                    </p>
                   )}
 
                   {!isLoadingConnections && connectionsError && (
-                    <p className="text-sm text-red-500">{connectionsError}</p>
-                  )}
-
-                  {!isLoadingConnections && !connectionsError && connections.length === 0 && (
-                    <p className="text-sm text-gray-500">No integrations connected yet.</p>
+                    <p className="text-red-500 text-sm">{connectionsError}</p>
                   )}
 
                   {!isLoadingConnections &&
                     !connectionsError &&
+                    connections.length === 0 && (
+                      <p className="text-gray-500 text-sm">
+                        No integrations connected yet.
+                      </p>
+                    )}
+
+                  {!isLoadingConnections &&
+                    !connectionsError &&
                     connections.map((connection) => {
-                      const platformKey = connection.PlatformType?.toLowerCase() || 'unknown';
+                      const platformKey =
+                        connection.PlatformType?.toLowerCase() || 'unknown';
                       const logo = PLATFORM_LOGOS[platformKey];
-                      const statusKey = (connection.Status || 'inactive').toLowerCase();
+                      const statusKey = (
+                        connection.Status || 'inactive'
+                      ).toLowerCase();
                       const statusClasses =
-                        STATUS_BADGE_CLASSES[statusKey] || 'bg-gray-100 text-gray-800';
+                        STATUS_BADGE_CLASSES[statusKey] ||
+                        'bg-gray-100 text-gray-800';
                       const displayName =
-                        connection.DisplayName || connection.PlatformType || 'Unknown connection';
+                        connection.DisplayName ||
+                        connection.PlatformType ||
+                        'Unknown connection';
 
                       return (
                         <div
                           key={connection.Id}
-                          className="flex items-center justify-between p-3 border border-gray-200 rounded-lg"
+                          className="flex min-h-16 items-center justify-between gap-4 rounded-2xl border bg-card p-3.5"
                         >
                           <div className="flex items-center gap-3">
-                            <div className="relative h-10 w-10 rounded-md overflow-hidden bg-white border border-gray-200 flex items-center justify-center">
+                            <div className="relative flex size-10 items-center justify-center overflow-hidden rounded-xl border bg-card">
                               {logo ? (
                                 <Image
                                   src={logo.src}
@@ -564,7 +671,7 @@ export function SettingsClient({
                                   className="object-contain p-1"
                                 />
                               ) : (
-                                <span className="text-xs font-medium text-gray-500">
+                                <span className="font-medium text-gray-500 text-xs">
                                   {platformKey.charAt(0).toUpperCase() || '?'}
                                 </span>
                               )}
@@ -572,36 +679,33 @@ export function SettingsClient({
                             <div>
                               <div className="font-medium">{displayName}</div>
 
-
-
                               <Badge className={statusClasses}>
                                 {connection.Status
                                   ? connection.Status.charAt(0).toUpperCase() +
-                                  connection.Status.slice(1).replace('_', ' ')
+                                    connection.Status.slice(1).replace('_', ' ')
                                   : 'Inactive'}
                               </Badge>
 
-
-
                               {connection.LastSyncSuccessAt && (
-                                <div className="text-xs text-gray-400 mt-1">
+                                <div className="mt-1 text-gray-400 text-xs">
                                   Last synced:{' '}
-                                  {new Date(connection.LastSyncSuccessAt).toLocaleString()}
+                                  {new Date(
+                                    connection.LastSyncSuccessAt
+                                  ).toLocaleString()}
                                 </div>
                               )}
                             </div>
                           </div>
 
                           <div className="flex flex-col items-end gap-1">
-
                             <Button
                               variant="outline"
                               size="sm"
                               disabled
                               className={
                                 connection.IsEnabled
-                                  ? 'bg-[#647653] text-white opacity-80 cursor-not-allowed'
-                                  : 'bg-gray-100 text-gray-600 opacity-80 cursor-not-allowed'
+                                  ? 'border-primary/30 bg-primary/10 text-accent-foreground'
+                                  : 'bg-muted text-muted-foreground'
                               }
                             >
                               {connection.IsEnabled ? 'Enabled' : 'Disabled'}
@@ -617,109 +721,138 @@ export function SettingsClient({
         )}
 
         {activeTab === 'notifications' && (
-          <div className="space-y-4 h-full">
+          <div className="flex flex-col gap-4">
             <div>
-              <h2 className="text-2xl font-bold">Notifications</h2>
-              <p className="text-gray-600">Configure how you receive alerts and updates.</p>
+              <h2 className="font-extrabold text-xl tracking-[-0.02em]">
+                Notifications
+              </h2>
+              <p className="mt-1 font-medium text-muted-foreground text-sm">
+                Choose the moments that are worth interrupting you for.
+              </p>
             </div>
 
-            <Card className="border border-gray-200">
+            <Card>
               <CardHeader>
                 <CardTitle>Notification Preferences</CardTitle>
-                <CardDescription>Manage which events trigger notifications.</CardDescription>
+                <CardDescription>
+                  Manage which events trigger notifications.
+                </CardDescription>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="flex flex-col gap-3">
                 {isLoadingPreferences ? (
-                  <p className="text-sm text-gray-500">Loading preferences...</p>
+                  <p className="text-gray-500 text-sm">
+                    Loading preferences...
+                  </p>
                 ) : (
                   <>
-                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 p-2 rounded-full">
-                          <NetworkIcon className="w-5 h-5 text-gray-600" />
+                    <div className="flex min-h-16 items-center justify-between gap-4 rounded-2xl border p-3.5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                          <NetworkIcon className="size-5" />
                         </div>
                         <div>
-                          <div className="font-medium">Job Completions</div>
-                          <div className="text-sm text-gray-600">Get notified when AI processing, matching, or scanning finishes.</div>
+                          <div className="font-bold text-sm">
+                            Job completions
+                          </div>
+                          <div className="font-medium text-muted-foreground text-sm">
+                            When processing, matching, or scanning finishes.
+                          </div>
                         </div>
                       </div>
-                      <input
-                        type="checkbox"
-                        className="w-5 h-5 accent-[#647653]"
+                      <Switch
                         checked={preferences.jobCompletions}
-                        onChange={() => togglePreference('jobCompletions')}
+                        onCheckedChange={() =>
+                          togglePreference('jobCompletions')
+                        }
+                        aria-label="Job completion notifications"
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 p-2 rounded-full">
-                          <UsersIcon className="w-5 h-5 text-gray-600" />
+                    <div className="flex min-h-16 items-center justify-between gap-4 rounded-2xl border p-3.5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                          <UsersIcon className="size-5" />
                         </div>
                         <div>
-                          <div className="font-medium">Inventory Sharing</div>
-                          <div className="text-sm text-gray-600">When partners share new inventory with you.</div>
+                          <div className="font-bold text-sm">
+                            Inventory sharing
+                          </div>
+                          <div className="font-medium text-muted-foreground text-sm">
+                            When a partner shares new inventory with you.
+                          </div>
                         </div>
                       </div>
-                      <input
-                        type="checkbox"
-                        className="w-5 h-5 accent-[#647653]"
+                      <Switch
                         checked={preferences.inventorySharing}
-                        onChange={() => togglePreference('inventorySharing')}
+                        onCheckedChange={() =>
+                          togglePreference('inventorySharing')
+                        }
+                        aria-label="Inventory sharing notifications"
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 p-2 rounded-full">
-                          <SettingsIcon className="w-5 h-5 text-gray-600" />
+                    <div className="flex min-h-16 items-center justify-between gap-4 rounded-2xl border p-3.5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                          <SettingsIcon className="size-5" />
                         </div>
                         <div>
-                          <div className="font-medium">Sprout Insights</div>
-                          <div className="text-sm text-gray-600">AI-driven insights and opportunities.</div>
+                          <div className="font-bold text-sm">
+                            Sprout insights
+                          </div>
+                          <div className="font-medium text-muted-foreground text-sm">
+                            Useful opportunities surfaced by Sprout.
+                          </div>
                         </div>
                       </div>
-                      <input
-                        type="checkbox"
-                        className="w-5 h-5 accent-[#647653]"
+                      <Switch
                         checked={preferences.sproutInsights}
-                        onChange={() => togglePreference('sproutInsights')}
+                        onCheckedChange={() =>
+                          togglePreference('sproutInsights')
+                        }
+                        aria-label="Sprout insight notifications"
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 p-2 rounded-full">
-                          <BellIcon className="w-5 h-5 text-gray-600" />
+                    <div className="flex min-h-16 items-center justify-between gap-4 rounded-2xl border p-3.5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                          <BellIcon className="size-5" />
                         </div>
                         <div>
-                          <div className="font-medium">Sync Alerts</div>
-                          <div className="text-sm text-gray-600">Critical issues with platform connections.</div>
+                          <div className="font-bold text-sm">Sync alerts</div>
+                          <div className="font-medium text-muted-foreground text-sm">
+                            Problems that need attention on a connected channel.
+                          </div>
                         </div>
                       </div>
-                      <input
-                        type="checkbox"
-                        className="w-5 h-5 accent-[#647653]"
+                      <Switch
                         checked={preferences.syncAlerts}
-                        onChange={() => togglePreference('syncAlerts')}
+                        onCheckedChange={() => togglePreference('syncAlerts')}
+                        aria-label="Sync alert notifications"
                       />
                     </div>
 
-                    <div className="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
-                      <div className="flex items-center gap-3">
-                        <div className="bg-gray-100 p-2 rounded-full">
-                          <ExternalLinkIcon className="w-5 h-5 text-gray-600" />
+                    <div className="flex min-h-16 items-center justify-between gap-4 rounded-2xl border p-3.5">
+                      <div className="flex min-w-0 items-center gap-3">
+                        <div className="flex size-10 shrink-0 items-center justify-center rounded-xl bg-muted text-muted-foreground">
+                          <ExternalLinkIcon className="size-5" />
                         </div>
                         <div>
-                          <div className="font-medium">Marketing Updates</div>
-                          <div className="text-sm text-gray-600">News and updates about Anorha.</div>
+                          <div className="font-bold text-sm">
+                            Product updates
+                          </div>
+                          <div className="font-medium text-muted-foreground text-sm">
+                            Occasional news about what is new in Anorha.
+                          </div>
                         </div>
                       </div>
-                      <input
-                        type="checkbox"
-                        className="w-5 h-5 accent-[#647653]"
+                      <Switch
                         checked={preferences.marketingUpdates}
-                        onChange={() => togglePreference('marketingUpdates')}
+                        onCheckedChange={() =>
+                          togglePreference('marketingUpdates')
+                        }
+                        aria-label="Product update notifications"
                       />
                     </div>
                   </>
@@ -732,4 +865,3 @@ export function SettingsClient({
     </div>
   );
 }
-

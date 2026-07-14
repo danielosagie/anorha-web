@@ -2,3 +2,122 @@
 @import "@repo/design-system/styles/globals.css";
 
 @source "./**/*.{ts,tsx}";
+
+:root {
+  --anorhaGreen: oklch(0.77 0.17 122);
+  --anorhaDarkGreen: oklch(0.48 0.12 123);
+  --brand: var(--anorhaGreen);
+  --brand-foreground: oklch(0.25 0.04 120);
+  --brand-muted: oklch(0.96 0.04 120);
+  --brand-muted-foreground: oklch(0.48 0.08 122);
+  --background: oklch(0.965 0.006 100);
+  --foreground: oklch(0.2 0.008 100);
+  --card: oklch(0.995 0.004 100);
+  --card-foreground: oklch(0.2 0.008 100);
+  --popover: oklch(0.995 0.004 100);
+  --popover-foreground: oklch(0.2 0.008 100);
+  --primary: var(--anorhaGreen);
+  --primary-foreground: oklch(0.25 0.04 120);
+  --secondary: oklch(0.94 0.006 100);
+  --secondary-foreground: oklch(0.3 0.01 100);
+  --muted: oklch(0.94 0.006 100);
+  --muted-foreground: oklch(0.5 0.012 100);
+  --accent: oklch(0.94 0.04 120);
+  --accent-foreground: oklch(0.4 0.1 122);
+  --destructive: oklch(0.58 0.2 26);
+  --destructive-foreground: oklch(0.985 0.004 100);
+  --success: oklch(0.59 0.16 145);
+  --warning: oklch(0.58 0.13 72);
+  --border: oklch(0.9 0.008 100);
+  --input: oklch(0.9 0.008 100);
+  --ring: var(--anorhaGreen);
+  --radius: 1rem;
+  --sidebar: oklch(0.985 0.006 100);
+  --sidebar-foreground: oklch(0.25 0.012 100);
+  --sidebar-primary: var(--anorhaGreen);
+  --sidebar-primary-foreground: oklch(0.25 0.04 120);
+  --sidebar-accent: oklch(0.95 0.045 120);
+  --sidebar-accent-foreground: oklch(0.42 0.1 122);
+  --sidebar-border: oklch(0.9 0.008 100);
+  --sidebar-ring: var(--anorhaGreen);
+}
+
+.dark {
+  --background: oklch(0.19 0.008 100);
+  --foreground: oklch(0.94 0.006 100);
+  --card: oklch(0.23 0.009 100);
+  --card-foreground: oklch(0.94 0.006 100);
+  --popover: oklch(0.23 0.009 100);
+  --popover-foreground: oklch(0.94 0.006 100);
+  --primary: oklch(0.76 0.16 122);
+  --primary-foreground: oklch(0.22 0.04 120);
+  --secondary: oklch(0.28 0.01 100);
+  --secondary-foreground: oklch(0.91 0.006 100);
+  --muted: oklch(0.28 0.01 100);
+  --muted-foreground: oklch(0.7 0.01 100);
+  --accent: oklch(0.32 0.055 122);
+  --accent-foreground: oklch(0.86 0.12 122);
+  --border: oklch(0.34 0.012 100);
+  --input: oklch(0.34 0.012 100);
+  --ring: oklch(0.76 0.16 122);
+  --sidebar: oklch(0.21 0.009 100);
+  --sidebar-foreground: oklch(0.91 0.006 100);
+  --sidebar-primary: oklch(0.76 0.16 122);
+  --sidebar-primary-foreground: oklch(0.22 0.04 120);
+  --sidebar-accent: oklch(0.32 0.055 122);
+  --sidebar-accent-foreground: oklch(0.86 0.12 122);
+  --sidebar-border: oklch(0.34 0.012 100);
+  --sidebar-ring: oklch(0.76 0.16 122);
+}
+
+@theme inline {
+  --color-warning: var(--warning);
+}
+
+@layer base {
+  body {
+    background: var(--background);
+    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  }
+
+  ::selection {
+    background: color-mix(in oklch, var(--primary) 34%, transparent);
+  }
+}
+
+@layer components {
+  [data-slot="button"] {
+    border-radius: 999px;
+    font-weight: 650;
+  }
+
+  [data-slot="input"] {
+    min-height: 2.75rem;
+    border-radius: 0.875rem;
+    box-shadow: none;
+  }
+
+  [data-slot="card"] {
+    border-radius: 1.125rem;
+    box-shadow: none;
+  }
+}
+
+.anorha-settings input,
+.anorha-settings select {
+  min-height: 2.75rem;
+  border: 1px solid var(--input);
+  border-radius: 0.875rem;
+  background: var(--card);
+  color: var(--foreground);
+  padding-inline: 0.875rem;
+  font-size: 0.875rem;
+  outline: none;
+  box-shadow: none;
+}
+
+.anorha-settings input:focus-visible,
+.anorha-settings select:focus-visible {
+  border-color: var(--ring);
+  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 24%, transparent);
+}
