@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@repo/design-system/components/ui/button';
+import { Checkbox } from '@repo/design-system/components/ui/checkbox';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -29,9 +30,18 @@ import {
   TabsList,
   TabsTrigger,
 } from '@repo/design-system/components/ui/tabs';
-import { ChevronDownIcon, SearchIcon } from 'lucide-react';
+import {
+  ArrowDownIcon,
+  ArrowUpDownIcon,
+  ArrowUpIcon,
+  ChevronDownIcon,
+  DownloadIcon,
+  LoaderCircleIcon,
+  SearchIcon,
+} from 'lucide-react';
 import Image from 'next/image';
 import React from 'react';
+import { toast } from 'sonner';
 
 type InventoryItem = {
   id: string;
@@ -190,9 +200,18 @@ const PLATFORM_FIELD_DEFS: Record<string, PlatformField[]> = {
 type ColumnDef = {
   key: string;
   label: React.ReactNode;
+  menuLabel?: string;
   className?: string;
   render: (item: InventoryItem) => React.ReactNode;
+  sortKey?: 'title' | 'sku' | 'price' | 'quantity';
 };
+
+type SortState = {
+  key: NonNullable<ColumnDef['sortKey']>;
+  direction: 'asc' | 'desc';
+};
+
+type InventoryPatch = Partial<Pick<InventoryItem, 'title' | 'sku' | 'price'>>;
 
 function formatPrice(value?: number) {
   if (value === null || value === undefined) return '—';
@@ -227,18 +246,73 @@ function toDisplayLabel(value: string) {
 
 function ProductImage({ src, alt }: { src?: string; alt: string }) {
   if (!src) {
-    return (
-      <div className="size-10 rounded border border-gray-200 bg-gray-50" />
-    );
+    return <div className="size-9 rounded-lg border bg-muted" />;
   }
   return (
     <Image
       src={src}
       alt={alt}
-      className="size-10 rounded object-cover"
-      width={40}
-      height={40}
+      className="size-9 rounded-lg border object-cover"
+      width={36}
+      height={36}
     />
+  );
+}
+
+function EditableCell({
+  value,
+  type = 'text',
+  ariaLabel,
+  disabled,
+  onCommit,
+}: {
+  value: string;
+  type?: 'text' | 'number';
+  ariaLabel: string;
+  disabled?: boolean;
+  onCommit: (value: string) => Promise<void>;
+}) {
+  const [draft, setDraft] = React.useState(value);
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => setDraft(value), [value]);
+
+  const commit = async () => {
+    if (draft === value) return;
+    setSaving(true);
+    try {
+      await onCommit(draft);
+    } catch {
+      setDraft(value);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="relative">
+      <Input
+        value={draft}
+        type={type}
+        min={type === 'number' ? 0 : undefined}
+        step={type === 'number' ? '0.01' : undefined}
+        aria-label={ariaLabel}
+        disabled={disabled || saving}
+        onChange={(event) => setDraft(event.target.value)}
+        onBlur={commit}
+        onKeyDown={(event) => {
+          if (event.key === 'Enter') event.currentTarget.blur();
+          if (event.key === 'Escape') {
+            setDraft(value);
+            event.currentTarget.blur();
+          }
+        }}
+        className="h-8 min-h-8 rounded-md border-transparent bg-transparent px-2 text-sm hover:border-input focus-visible:border-ring focus-visible:bg-card"
+      />
+      {saving ? (
+        <LoaderCircleIcon className="-translate-y-1/2 absolute top-1/2 right-2 size-3.5 animate-spin text-muted-foreground" />
+      ) : null}
+    </div>
   );
 }
 
@@ -251,6 +325,7 @@ export function InventoryClient({
   locations: Location[];
   connections: Connection[];
 }) {
+  const [rows, setRows] = React.useState(items);
   const [platform, setPlatform] = React.useState<string>('all');
   const [query, setQuery] = React.useState('');
   const [selectedConnectionIds, setSelectedConnectionIds] = React.useState<
@@ -263,6 +338,59 @@ export function InventoryClient({
   const [locationSearch, setLocationSearch] = React.useState('');
   const [rowsPerPage, setRowsPerPage] = React.useState(25);
   const [page, setPage] = React.useState(1);
+  const [stockFilter, setStockFilter] = React.useState('all');
+  const [sort, setSort] = React.useState<SortState>({
+    key: 'title',
+    direction: 'asc',
+  });
+  const [selectedIds, setSelectedIds] = React.useState<Set<string>>(new Set());
+  const [hiddenColumnKeys, setHiddenColumnKeys] = React.useState<Set<string>>(
+    new Set(['weight'])
+  );
+  const [savingIds, setSavingIds] = React.useState<Set<string>>(new Set());
+
+  React.useEffect(() => setRows(items), [items]);
+
+  const saveItem = React.useCallback(
+    async (id: string, patch: InventoryPatch) => {
+      const original = rows.find((item) => item.id === id);
+      if (!original) return;
+
+      setRows((current) =>
+        current.map((item) => (item.id === id ? { ...item, ...patch } : item))
+      );
+      setSavingIds((current) => new Set(current).add(id));
+
+      try {
+        const response = await fetch(`/api/inventory/${id}`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patch),
+        });
+
+        if (!response.ok) {
+          const detail = await response.json().catch(() => null);
+          throw new Error(detail?.error || 'Could not save product');
+        }
+        toast.success('Product updated');
+      } catch (error) {
+        setRows((current) =>
+          current.map((item) => (item.id === id ? original : item))
+        );
+        toast.error(
+          error instanceof Error ? error.message : 'Could not save product'
+        );
+        throw error;
+      } finally {
+        setSavingIds((current) => {
+          const next = new Set(current);
+          next.delete(id);
+          return next;
+        });
+      }
+    },
+    [rows]
+  );
 
   const connectionMap = React.useMemo(() => {
     const map: Record<string, Connection & { platformKey: string }> = {};
@@ -288,7 +416,7 @@ export function InventoryClient({
       { key: 'amazon', flag: 'onAmazon' },
     ];
     boolPlatforms.forEach(({ key, flag }) => {
-      if (items.some((item) => item[flag])) {
+      if (rows.some((item) => item[flag])) {
         unique.add(key);
       }
     });
@@ -302,7 +430,7 @@ export function InventoryClient({
     });
 
     return ['all', ...ordered, ...Array.from(unique)];
-  }, [connections, items]);
+  }, [connections, rows]);
 
   React.useEffect(() => {
     if (!platformOptions.includes(platform)) {
@@ -325,6 +453,7 @@ export function InventoryClient({
     selectedConnectionIds,
     selectedLocationIds,
     rowsPerPage,
+    stockFilter,
   ]);
 
   const locationMap = React.useMemo(() => {
@@ -364,14 +493,14 @@ export function InventoryClient({
 
   const platformHasMappings = React.useMemo(() => {
     const result: Record<string, boolean> = {};
-    items.forEach((item) => {
+    rows.forEach((item) => {
       const keys = itemPlatformKeys(item);
       keys.forEach((key) => {
         result[key] = true;
       });
     });
     return result;
-  }, [items, itemPlatformKeys]);
+  }, [rows, itemPlatformKeys]);
 
   const shouldShowAllForPlatform = React.useCallback(
     (platformKey: string) =>
@@ -381,8 +510,8 @@ export function InventoryClient({
   );
 
   const counts = React.useMemo(() => {
-    const result: Record<string, number> = { all: items.length };
-    items.forEach((item) => {
+    const result: Record<string, number> = { all: rows.length };
+    rows.forEach((item) => {
       const keys = itemPlatformKeys(item);
       keys.forEach((key) => {
         result[key] = (result[key] ?? 0) + 1;
@@ -390,12 +519,12 @@ export function InventoryClient({
     });
     Object.keys(platformConnectionCounts).forEach((key) => {
       if (shouldShowAllForPlatform(key)) {
-        result[key] = items.length;
+        result[key] = rows.length;
       }
     });
     return result;
   }, [
-    items,
+    rows,
     itemPlatformKeys,
     platformConnectionCounts,
     shouldShowAllForPlatform,
@@ -475,7 +604,7 @@ export function InventoryClient({
   }, [selectedLocationIds]);
 
   const filteredItems = React.useMemo(() => {
-    return items.filter((item) => {
+    return rows.filter((item) => {
       if (platform !== 'all') {
         const keys = itemPlatformKeys(item);
         if (!shouldShowAllForPlatform(platform) && !keys.has(platform)) {
@@ -500,23 +629,106 @@ export function InventoryClient({
         const matchesSku = item.sku?.toLowerCase().includes(q);
         if (!matchesTitle && !matchesSku) return false;
       }
+      if (stockFilter === 'low' && item.totalQuantity > 5) return false;
+      if (stockFilter === 'out' && item.totalQuantity !== 0) return false;
       return true;
     });
   }, [
-    items,
+    rows,
     platform,
     itemPlatformKeys,
     selectedConnectionIds,
     selectedLocationIds,
     query,
+    stockFilter,
   ]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredItems.length / rowsPerPage));
+  const sortedItems = React.useMemo(() => {
+    const direction = sort.direction === 'asc' ? 1 : -1;
+    return [...filteredItems].sort((a, b) => {
+      if (sort.key === 'price') {
+        return ((a.price ?? -1) - (b.price ?? -1)) * direction;
+      }
+      if (sort.key === 'quantity') {
+        return (a.totalQuantity - b.totalQuantity) * direction;
+      }
+      const aValue = sort.key === 'sku' ? (a.sku ?? '') : a.title;
+      const bValue = sort.key === 'sku' ? (b.sku ?? '') : b.title;
+      return (
+        aValue.localeCompare(bValue, undefined, {
+          numeric: true,
+          sensitivity: 'base',
+        }) * direction
+      );
+    });
+  }, [filteredItems, sort]);
+
+  const totalPages = Math.max(1, Math.ceil(sortedItems.length / rowsPerPage));
   const safePage = Math.min(page, totalPages);
   const startIndex = (safePage - 1) * rowsPerPage;
-  const pageItems = filteredItems.slice(startIndex, startIndex + rowsPerPage);
-  const showingFrom = filteredItems.length === 0 ? 0 : startIndex + 1;
-  const showingTo = Math.min(startIndex + rowsPerPage, filteredItems.length);
+  const pageItems = sortedItems.slice(startIndex, startIndex + rowsPerPage);
+  const showingFrom = sortedItems.length === 0 ? 0 : startIndex + 1;
+  const showingTo = Math.min(startIndex + rowsPerPage, sortedItems.length);
+
+  const selectedVisibleItems = React.useMemo(
+    () => sortedItems.filter((item) => selectedIds.has(item.id)),
+    [selectedIds, sortedItems]
+  );
+
+  const allPageItemsSelected =
+    pageItems.length > 0 && pageItems.every((item) => selectedIds.has(item.id));
+  const somePageItemsSelected = pageItems.some((item) =>
+    selectedIds.has(item.id)
+  );
+
+  const togglePageSelection = (checked: boolean) => {
+    setSelectedIds((current) => {
+      const next = new Set(current);
+      pageItems.forEach((item) => {
+        if (checked) next.add(item.id);
+        else next.delete(item.id);
+      });
+      return next;
+    });
+  };
+
+  const toggleSort = (key: NonNullable<ColumnDef['sortKey']>) => {
+    setSort((current) => ({
+      key,
+      direction:
+        current.key === key && current.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  const exportCsv = () => {
+    const source = selectedVisibleItems.length
+      ? selectedVisibleItems
+      : sortedItems;
+    const escape = (value: string | number | undefined) =>
+      `"${String(value ?? '').replaceAll('"', '""')}"`;
+    const csv = [
+      ['Name', 'SKU', 'Price', 'Quantity', 'Locations'],
+      ...source.map((item) => [
+        item.title,
+        item.sku ?? '',
+        item.price ?? '',
+        item.totalQuantity,
+        locationSummary(item),
+      ]),
+    ]
+      .map((row) => row.map(escape).join(','))
+      .join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = `anorha-inventory-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+    toast.success(
+      `Exported ${source.length} product${source.length === 1 ? '' : 's'}`
+    );
+  };
 
   const locationSummary = React.useCallback(
     (item: InventoryItem) => {
@@ -535,15 +747,36 @@ export function InventoryClient({
   const baseColumns: ColumnDef[] = React.useMemo(
     () => [
       {
-        key: 'drag',
-        label: '',
-        className: 'w-10',
-        render: () => <span className="text-gray-300">⋮⋮</span>,
+        key: 'select',
+        label: (
+          <Checkbox
+            aria-label="Select this page"
+            checked={
+              allPageItemsSelected || (somePageItemsSelected && 'indeterminate')
+            }
+            onCheckedChange={(checked) => togglePageSelection(checked === true)}
+          />
+        ),
+        className: 'w-10 min-w-10 px-3',
+        render: (item: InventoryItem) => (
+          <Checkbox
+            aria-label={`Select ${item.title}`}
+            checked={selectedIds.has(item.id)}
+            onCheckedChange={(checked) =>
+              setSelectedIds((current) => {
+                const next = new Set(current);
+                if (checked === true) next.add(item.id);
+                else next.delete(item.id);
+                return next;
+              })
+            }
+          />
+        ),
       },
       {
         key: 'image',
         label: 'Image',
-        className: 'min-w-[80px]',
+        className: 'w-16 min-w-16',
         render: (item: InventoryItem) => (
           <ProductImage src={item.imageUrl} alt={item.title} />
         ),
@@ -551,60 +784,93 @@ export function InventoryClient({
       {
         key: 'name',
         label: 'Name',
-        className: 'min-w-[240px]',
+        menuLabel: 'Name',
+        className: 'min-w-[230px]',
+        sortKey: 'title',
         render: (item: InventoryItem) => (
-          <div>
-            <div className="font-semibold text-gray-900">{item.title}</div>
-            <div className="text-gray-500 text-xs">
-              {item.sku || 'No SKU'} · {locationSummary(item)}
-            </div>
-          </div>
+          <EditableCell
+            value={item.title}
+            ariaLabel={`Name for ${item.title}`}
+            disabled={savingIds.has(item.id)}
+            onCommit={(title) => saveItem(item.id, { title })}
+          />
+        ),
+      },
+      {
+        key: 'sku',
+        label: 'SKU',
+        menuLabel: 'SKU',
+        className: 'min-w-[150px]',
+        sortKey: 'sku',
+        render: (item: InventoryItem) => (
+          <EditableCell
+            value={item.sku ?? ''}
+            ariaLabel={`SKU for ${item.title}`}
+            disabled={savingIds.has(item.id)}
+            onCommit={(sku) => saveItem(item.id, { sku })}
+          />
         ),
       },
       {
         key: 'price',
         label: 'Price',
-        className: 'min-w-[140px]',
+        menuLabel: 'Price',
+        className: 'min-w-[130px]',
+        sortKey: 'price',
         render: (item: InventoryItem) => (
-          <span className="font-medium text-gray-900">
-            {formatPrice(item.price)}
-          </span>
+          <EditableCell
+            value={item.price === undefined ? '' : String(item.price)}
+            type="number"
+            ariaLabel={`Price for ${item.title}`}
+            disabled={savingIds.has(item.id)}
+            onCommit={(price) =>
+              saveItem(item.id, {
+                price: price.trim() === '' ? undefined : Number(price),
+              })
+            }
+          />
         ),
       },
       {
         key: 'quantity',
         label: 'Quantity',
-        className: 'min-w-[120px]',
+        menuLabel: 'Quantity',
+        className: 'min-w-[110px]',
+        sortKey: 'quantity',
         render: (item: InventoryItem) => (
-          <span className="font-semibold text-gray-900">
+          <span className="px-2 font-semibold tabular-nums">
             {item.totalQuantity}
+          </span>
+        ),
+      },
+      {
+        key: 'locations',
+        label: 'Locations',
+        menuLabel: 'Locations',
+        className: 'min-w-[180px]',
+        render: (item: InventoryItem) => (
+          <span className="text-muted-foreground text-xs">
+            {locationSummary(item)}
           </span>
         ),
       },
       {
         key: 'weight',
         label: 'Weight',
+        menuLabel: 'Weight',
         className: 'min-w-[140px]',
         render: (item: InventoryItem) =>
           formatWeight(item.weight, item.weightUnit),
       },
-      {
-        key: 'matching',
-        label: 'Matching Product',
-        className: 'min-w-[200px]',
-        render: (item: InventoryItem) =>
-          item.hasShopifyMapping ? (
-            <span className="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 font-semibold text-green-700 text-xs">
-              Linked
-            </span>
-          ) : (
-            <Button variant="ghost" size="sm" className="text-[#34A853]">
-              Set Matching Product
-            </Button>
-          ),
-      },
     ],
-    [locationSummary]
+    [
+      allPageItemsSelected,
+      locationSummary,
+      saveItem,
+      savingIds,
+      selectedIds,
+      somePageItemsSelected,
+    ]
   );
 
   const dynamicColumns: ColumnDef[] = React.useMemo(() => {
@@ -613,6 +879,7 @@ export function InventoryClient({
     return defs.map((field) => ({
       key: `platform-${field.key}`,
       label: field.label,
+      menuLabel: field.label,
       className: 'min-w-[220px]',
       render: (item: InventoryItem) => {
         const data = item.platformData?.[platform];
@@ -625,9 +892,17 @@ export function InventoryClient({
     }));
   }, [platform]);
 
-  const columns = React.useMemo(
+  const allColumns = React.useMemo(
     () => [...baseColumns, ...dynamicColumns],
     [baseColumns, dynamicColumns]
+  );
+
+  const columns = React.useMemo(
+    () =>
+      allColumns.filter(
+        (column) => column.key === 'select' || !hiddenColumnKeys.has(column.key)
+      ),
+    [allColumns, hiddenColumnKeys]
   );
 
   return (
@@ -649,13 +924,13 @@ export function InventoryClient({
         </TabsList>
       </Tabs>
 
-      <div className="flex flex-col gap-3 rounded-2xl border bg-card p-3 md:p-4">
+      <div className="flex flex-col gap-3 rounded-xl border bg-card p-3">
         <div className="flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="h-11 min-w-[220px] justify-between text-sm"
+                className="h-10 min-w-[210px] justify-between text-sm"
               >
                 {connectionLabel}
                 <ChevronDownIcon data-icon="inline-end" />
@@ -724,7 +999,7 @@ export function InventoryClient({
             <DropdownMenuTrigger asChild>
               <Button
                 variant="outline"
-                className="h-11 min-w-[200px] justify-between text-sm"
+                className="h-10 min-w-[190px] justify-between text-sm"
               >
                 {locationLabel}
                 <ChevronDownIcon data-icon="inline-end" />
@@ -797,30 +1072,124 @@ export function InventoryClient({
           </DropdownMenu>
         </div>
 
-        <div className="flex min-w-[260px] flex-1 items-center gap-2">
-          <div className="relative max-w-lg flex-1">
+        <div className="flex min-w-[260px] flex-1 flex-wrap items-center gap-2">
+          <div className="relative min-w-[220px] flex-1">
             <SearchIcon className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search for product"
+              placeholder="Search name or SKU"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              className="border-transparent bg-muted/70 pl-10 focus-visible:border-ring"
+              className="h-10 min-h-10 rounded-lg border-transparent bg-muted/65 pl-10 focus-visible:border-ring"
             />
           </div>
-          <Button variant="outline" className="h-11 text-muted-foreground">
-            Columns
+          <Select value={stockFilter} onValueChange={setStockFilter}>
+            <SelectTrigger className="h-10 min-h-10 w-[145px] rounded-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All stock</SelectItem>
+              <SelectItem value="low">Low stock (5 or less)</SelectItem>
+              <SelectItem value="out">Out of stock</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="h-10 text-muted-foreground">
+                Columns
+                <ChevronDownIcon data-icon="inline-end" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              {allColumns
+                .filter((column) => column.key !== 'select')
+                .map((column) => (
+                  <DropdownMenuCheckboxItem
+                    key={column.key}
+                    checked={!hiddenColumnKeys.has(column.key)}
+                    onCheckedChange={(checked) =>
+                      setHiddenColumnKeys((current) => {
+                        const next = new Set(current);
+                        if (checked) next.delete(column.key);
+                        else next.add(column.key);
+                        return next;
+                      })
+                    }
+                  >
+                    {column.menuLabel ?? column.label}
+                  </DropdownMenuCheckboxItem>
+                ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          <Button
+            variant="outline"
+            className="h-10"
+            onClick={exportCsv}
+            disabled={sortedItems.length === 0}
+          >
+            <DownloadIcon data-icon="inline-start" />
+            Export
           </Button>
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-[1.125rem] border bg-card">
+      {selectedIds.size > 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2">
+          <span className="font-semibold text-sm">
+            {selectedIds.size} product{selectedIds.size === 1 ? '' : 's'}{' '}
+            selected
+          </span>
+          <div className="flex items-center gap-2">
+            {selectedIds.size < sortedItems.length ? (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  setSelectedIds(new Set(sortedItems.map((item) => item.id)))
+                }
+              >
+                Select all {sortedItems.length}
+              </Button>
+            ) : null}
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setSelectedIds(new Set())}
+            >
+              Clear selection
+            </Button>
+          </div>
+        </div>
+      ) : null}
+
+      <div className="overflow-hidden rounded-xl border bg-card">
         <div className="overflow-x-auto">
           <Table>
-            <TableHeader className="bg-muted/60">
-              <TableRow className="text-muted-foreground text-xs uppercase tracking-[0.06em] hover:bg-transparent">
+            <TableHeader className="bg-muted/45">
+              <TableRow className="text-muted-foreground text-[0.6875rem] uppercase tracking-[0.06em] hover:bg-transparent">
                 {columns.map((column) => (
                   <TableHead key={column.key} className={column.className}>
-                    {column.label}
+                    {column.sortKey ? (
+                      <button
+                        type="button"
+                        onClick={() => toggleSort(column.sortKey!)}
+                        className="-ml-2 inline-flex h-8 items-center gap-1 rounded-md px-2 hover:bg-muted hover:text-foreground"
+                      >
+                        {column.label}
+                        {sort.key === column.sortKey ? (
+                          sort.direction === 'asc' ? (
+                            <ArrowUpIcon className="size-3.5" />
+                          ) : (
+                            <ArrowDownIcon className="size-3.5" />
+                          )
+                        ) : (
+                          <ArrowUpDownIcon className="size-3.5 opacity-45" />
+                        )}
+                      </button>
+                    ) : (
+                      column.label
+                    )}
                   </TableHead>
                 ))}
               </TableRow>
@@ -829,7 +1198,7 @@ export function InventoryClient({
               {pageItems.length === 0 ? (
                 <TableRow>
                   <TableCell
-                    colSpan={7}
+                    colSpan={columns.length}
                     className="py-14 text-center font-medium text-muted-foreground text-sm"
                   >
                     No products found
@@ -837,7 +1206,13 @@ export function InventoryClient({
                 </TableRow>
               ) : (
                 pageItems.map((item) => (
-                  <TableRow key={item.id} className="text-sm hover:bg-muted/45">
+                  <TableRow
+                    key={item.id}
+                    data-state={
+                      selectedIds.has(item.id) ? 'selected' : undefined
+                    }
+                    className="h-12 text-sm hover:bg-muted/35 data-[state=selected]:bg-primary/8"
+                  >
                     {columns.map((column) => (
                       <TableCell
                         key={`${item.id}-${column.key}`}
@@ -856,8 +1231,7 @@ export function InventoryClient({
 
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div className="font-medium text-muted-foreground text-sm">
-          Showing {showingFrom} to {showingTo} of {filteredItems.length}{' '}
-          products
+          Showing {showingFrom} to {showingTo} of {sortedItems.length} products
         </div>
         <div className="flex items-center gap-4">
           <div className="flex items-center gap-2 font-medium text-muted-foreground text-sm">

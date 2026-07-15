@@ -5,7 +5,7 @@ import { showBetaFeature } from '@repo/feature-flags';
 import { NotificationsProvider } from '@repo/notifications/components/provider';
 import { secure } from '@repo/security';
 import { redirect } from 'next/navigation';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { OrgGuard } from './components/org-guard';
 import { PostHogIdentifier } from './components/posthog-identifier';
 import { GlobalSidebar } from './components/sidebar';
@@ -43,7 +43,15 @@ const AppLayout = async ({ children }: AppLayoutProperties) => {
   return (
     <NotificationsProvider userId={user.id}>
       <OrgGuard>
-        <SidebarProvider className="bg-background">
+        <SidebarProvider
+          className="bg-background"
+          style={
+            {
+              '--sidebar-width': '13.75rem',
+              '--sidebar-width-icon': '3.25rem',
+            } as CSSProperties
+          }
+        >
           <GlobalSidebar>
             {betaFeature && (
               <div className="mx-4 mt-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-center font-semibold text-accent-foreground text-sm md:mx-8 lg:mx-10">

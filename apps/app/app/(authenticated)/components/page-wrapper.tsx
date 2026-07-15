@@ -19,16 +19,16 @@ export function PageWrapper({
   backButtonText = 'Back',
 }: PageWrapperProps) {
   return (
-    <div className="flex min-h-svh w-full flex-col bg-background">
+    <div className="flex min-h-[calc(100svh-1rem)] w-full flex-col bg-card">
       <Header
         page={title || ''}
         onBack={onBack}
         backButtonText={backButtonText}
       />
-      <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 pt-3 pb-10 md:px-8 md:pb-12 lg:px-10">
+      <main className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-4 pt-4 pb-10 md:px-7 md:pt-5 md:pb-12 lg:px-8">
         {title && (
-          <div className="mb-6 flex shrink-0 flex-col gap-1 md:mb-8">
-            <h1 className="font-extrabold text-2xl tracking-[-0.025em] md:text-[1.875rem]">
+          <div className="mb-5 flex shrink-0 flex-col gap-1 md:mb-6">
+            <h1 className="font-bold text-2xl tracking-[-0.025em] md:text-[1.75rem]">
               {title}
             </h1>
             {description && (

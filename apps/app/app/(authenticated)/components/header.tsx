@@ -17,7 +17,7 @@ export const Header = ({
   onBack,
   backButtonText = 'Back',
 }: HeaderProps) => (
-  <header className="sticky top-0 z-20 flex h-14 shrink-0 items-center justify-between gap-3 border-b bg-background/95 px-4 backdrop-blur md:h-16 md:px-8 lg:px-10">
+  <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center justify-between gap-3 border-b bg-card/95 px-4 backdrop-blur md:h-14 md:px-7 lg:px-8">
     <div className="flex min-w-0 items-center gap-2">
       <SidebarTrigger className="-ml-2 size-9 rounded-full" />
       <Separator orientation="vertical" className="mx-1 h-5 md:hidden" />
