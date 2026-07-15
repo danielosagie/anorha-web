@@ -47,7 +47,7 @@ const AppLayout = async ({ children }: AppLayoutProperties) => {
           className="bg-background"
           style={
             {
-              '--sidebar-width': '13.75rem',
+              '--sidebar-width': '15rem',
               '--sidebar-width-icon': '3.25rem',
             } as CSSProperties
           }

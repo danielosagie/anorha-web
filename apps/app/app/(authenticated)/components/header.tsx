@@ -17,11 +17,13 @@ export const Header = ({
   onBack,
   backButtonText = 'Back',
 }: HeaderProps) => (
-  <header className="sticky top-0 z-20 flex h-12 shrink-0 items-center justify-between gap-3 border-b bg-card/95 px-4 backdrop-blur md:h-14 md:px-7 lg:px-8">
+  <header className="flex h-13 shrink-0 items-center justify-between gap-3 px-2 md:h-14 md:px-3">
     <div className="flex min-w-0 items-center gap-2">
-      <SidebarTrigger className="-ml-2 size-9 rounded-full" />
-      <Separator orientation="vertical" className="mx-1 h-5 md:hidden" />
-      <div className="truncate font-semibold text-sm md:hidden">{page}</div>
+      <SidebarTrigger className="size-8 rounded-lg" />
+      <Separator orientation="vertical" className="mx-1 h-5" />
+      <div className="truncate font-medium text-muted-foreground text-sm">
+        {page}
+      </div>
     </div>
     <div className="flex items-center gap-2">
       {onBack && (

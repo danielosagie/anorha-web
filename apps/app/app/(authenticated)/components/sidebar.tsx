@@ -108,7 +108,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
 
   return (
     <>
-      <Sidebar variant="inset" className="bg-background p-2 pr-0">
+      <Sidebar variant="inset" className="bg-sidebar">
         <SidebarHeader className="gap-2 px-2 pt-2 pb-3">
           <Search />
           <div className="overflow-hidden rounded-xl border border-sidebar-border bg-card [&>div]:w-full">
@@ -160,10 +160,8 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="min-h-svh bg-background p-2 md:pl-2">
-        <div className="min-h-[calc(100svh-1rem)] overflow-hidden rounded-[1.25rem] border border-border bg-card shadow-[0_1px_2px_rgba(28,31,25,0.03)]">
-          {children}
-        </div>
+      <SidebarInset className="min-h-svh bg-background">
+        {children}
       </SidebarInset>
     </>
   );
