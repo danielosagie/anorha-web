@@ -1,6 +1,10 @@
 'use client';
 
-import { OrganizationSwitcher } from '@repo/auth/client';
+import {
+  OrganizationSwitcher,
+  SignOutButton,
+  UserButton,
+} from '@repo/auth/client';
 import { ModeToggle } from '@repo/design-system/components/mode-toggle';
 import { Button } from '@repo/design-system/components/ui/button';
 import {
@@ -22,6 +26,7 @@ import {
   BoxesIcon,
   CreditCardIcon,
   LayoutDashboardIcon,
+  LogOutIcon,
   Settings2Icon,
   UserRoundIcon,
   UsersIcon,
@@ -64,12 +69,12 @@ function NavigationGroup({
   pathname: string;
 }) {
   return (
-    <SidebarGroup className="px-2 py-2">
-      <SidebarGroupLabel className="h-7 px-2 font-semibold text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
+    <SidebarGroup className="px-2 py-1.5">
+      <SidebarGroupLabel className="h-6 px-2 font-semibold text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
         {label}
       </SidebarGroupLabel>
       <SidebarGroupContent>
-        <SidebarMenu className="gap-0.5">
+        <SidebarMenu className="gap-1">
           {items.map((item) => {
             const active =
               item.url === '/'
@@ -108,8 +113,8 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
 
   return (
     <>
-      <Sidebar variant="inset" className="bg-sidebar">
-        <SidebarHeader className="gap-2 px-2 pt-2 pb-3">
+      <Sidebar variant="inset" className="bg-background">
+        <SidebarHeader className="gap-2 border-sidebar-border border-b px-2 pt-2 pb-3">
           <Search />
           <div className="overflow-hidden rounded-xl border border-sidebar-border bg-card [&>div]:w-full">
             <OrganizationSwitcher
@@ -129,7 +134,7 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
           </div>
         </SidebarHeader>
 
-        <SidebarContent className="gap-0">
+        <SidebarContent className="gap-1 py-2">
           <NavigationGroup
             label="Workspace"
             items={workspaceItems}
@@ -142,20 +147,49 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
           />
         </SidebarContent>
 
-        <SidebarFooter className="px-2 pt-2 pb-2">
-          <div className="flex items-center gap-1 rounded-xl border border-sidebar-border bg-card p-1">
-            <ModeToggle />
-            <Button
-              variant="ghost"
-              size="icon"
-              className="size-8 rounded-lg hover:bg-sidebar-accent"
-              aria-label="Notifications"
-              asChild
-            >
-              <div className="size-4">
-                <NotificationsTrigger />
+        <SidebarFooter className="border-sidebar-border border-t px-2 pt-2 pb-2">
+          <div className="rounded-xl border border-sidebar-border bg-card p-1.5">
+            <div className="flex min-w-0 items-center gap-1">
+              <div className="min-w-0 flex-1 overflow-hidden px-1">
+                <UserButton
+                  showName
+                  appearance={{
+                    elements: {
+                      rootBox: 'flex w-full min-w-0 overflow-hidden',
+                      userButtonBox:
+                        'flex w-full min-w-0 flex-row-reverse justify-end gap-2',
+                      userButtonOuterIdentifier:
+                        'min-w-0 flex-1 truncate pl-0 text-left text-sm font-semibold text-sidebar-foreground',
+                      userButtonTrigger:
+                        'min-w-0 rounded-lg hover:bg-sidebar-accent/60 focus:bg-sidebar-accent/60',
+                      avatarBox: 'size-7',
+                    },
+                  }}
+                />
               </div>
-            </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                className="size-8 rounded-lg hover:bg-sidebar-accent"
+                aria-label="Notifications"
+                asChild
+              >
+                <div className="size-4">
+                  <NotificationsTrigger />
+                </div>
+              </Button>
+              <ModeToggle />
+            </div>
+            <SignOutButton redirectUrl="/sign-in">
+              <Button
+                variant="ghost"
+                size="sm"
+                className="mt-1 h-8 w-full justify-start rounded-lg px-2.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+              >
+                <LogOutIcon aria-hidden="true" />
+                Log out
+              </Button>
+            </SignOutButton>
           </div>
         </SidebarFooter>
       </Sidebar>
