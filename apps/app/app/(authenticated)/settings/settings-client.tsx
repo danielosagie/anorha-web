@@ -25,15 +25,10 @@ import {
   SettingsIcon,
   UsersIcon,
 } from 'lucide-react';
-import Image, { type StaticImageData } from 'next/image';
+import Image from 'next/image';
+import Link from 'next/link';
 import React from 'react';
-import amazonLogo from '../../assets/amazon.png';
-import cloverLogo from '../../assets/clover.png';
-import ebayLogo from '../../assets/ebay.png';
-import facebookLogo from '../../assets/facebook.png';
-import shopifyLogo from '../../assets/shopify.png';
-import squareLogo from '../../assets/square.png';
-import whatnotLogo from '../../assets/whatnot.png';
+import { getPlatform } from '@/lib/platforms';
 
 type Connection = {
   Id: string;
@@ -44,31 +39,32 @@ type Connection = {
   LastSyncSuccessAt?: string | null;
 };
 
-type PlatformLogo = {
-  src: StaticImageData;
-  alt: string;
-};
+function integrationStatusVariant(
+  connection: Connection
+): 'default' | 'secondary' | 'destructive' | 'outline' {
+  if (connection.IsEnabled === false) return 'outline';
+  const status = connection.Status?.toLowerCase();
+  if (status === 'active') return 'default';
+  if (status === 'error') return 'destructive';
+  return status ? 'secondary' : 'outline';
+}
 
-const PLATFORM_LOGOS: Record<string, PlatformLogo> = {
-  shopify: { src: shopifyLogo, alt: 'Shopify' },
-  square: { src: squareLogo, alt: 'Square' },
-  clover: { src: cloverLogo, alt: 'Clover' },
-  amazon: { src: amazonLogo, alt: 'Amazon' },
-  ebay: { src: ebayLogo, alt: 'eBay' },
-  facebook: { src: facebookLogo, alt: 'Facebook' },
-  whatnot: { src: whatnotLogo, alt: 'Whatnot' },
-};
-
-const STATUS_BADGE_CLASSES: Record<string, string> = {
-  active: 'border-transparent bg-primary/15 text-accent-foreground',
-  inactive: 'bg-muted text-muted-foreground',
-  error: 'border-transparent bg-destructive/10 text-destructive',
-  syncing: 'bg-muted text-foreground',
-  reconciling: 'border-transparent bg-warning/10 text-warning',
-  pending: 'border-transparent bg-warning/10 text-warning',
-  review: 'border-transparent bg-warning/10 text-warning',
-  ready_to_sync: 'border-transparent bg-primary/15 text-accent-foreground',
-};
+function integrationStatus(connection: Connection): string {
+  if (connection.IsEnabled === false) return 'Disabled';
+  const status = connection.Status?.toLowerCase() || 'inactive';
+  const labels: Record<string, string> = {
+    active: 'Active',
+    error: 'Error',
+    inactive: 'Inactive',
+    pending: 'Pending',
+    ready_to_sync: 'Ready',
+    reconciling: 'Review',
+    review: 'Review',
+    scanning: 'Scanning',
+    syncing: 'Syncing',
+  };
+  return labels[status] || status.replaceAll('_', ' ');
+}
 
 type SettingsTab = 'profile' | 'business' | 'integrations' | 'notifications';
 
@@ -605,56 +601,48 @@ export function SettingsClient({
                 Integrations
               </h2>
               <p className="mt-1 font-medium text-muted-foreground text-sm">
-                See the channels that feed and publish your inventory.
+                Connected sales channels.
               </p>
             </div>
 
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
+              <CardHeader className="flex flex-row items-center justify-between gap-4">
                 <div>
-                  <CardTitle>Connected Platforms</CardTitle>
-                  <CardDescription>Your active integrations</CardDescription>
+                  <CardTitle>Connections</CardTitle>
+                  <CardDescription>{connections.length} total</CardDescription>
                 </div>
-                <Button variant="outline" disabled>
-                  + Connect New Platform
+                <Button variant="outline" asChild>
+                  <Link href="/connections">Connect</Link>
                 </Button>
               </CardHeader>
               <CardContent>
                 <div className="flex flex-col gap-3">
                   {isLoadingConnections && (
-                    <p className="text-gray-500 text-sm">
-                      Loading your integrations...
-                    </p>
+                    <p className="text-muted-foreground text-sm">Loading</p>
                   )}
 
                   {!isLoadingConnections && connectionsError && (
-                    <p className="text-red-500 text-sm">{connectionsError}</p>
+                    <p className="text-destructive text-sm">
+                      {connectionsError}
+                    </p>
                   )}
 
                   {!isLoadingConnections &&
                     !connectionsError &&
                     connections.length === 0 && (
-                      <p className="text-gray-500 text-sm">
-                        No integrations connected yet.
+                      <p className="text-muted-foreground text-sm">
+                        No connections
                       </p>
                     )}
 
                   {!isLoadingConnections &&
                     !connectionsError &&
                     connections.map((connection) => {
-                      const platformKey =
-                        connection.PlatformType?.toLowerCase() || 'unknown';
-                      const logo = PLATFORM_LOGOS[platformKey];
-                      const statusKey = (
-                        connection.Status || 'inactive'
-                      ).toLowerCase();
-                      const statusClasses =
-                        STATUS_BADGE_CLASSES[statusKey] ||
-                        'bg-gray-100 text-gray-800';
+                      const platform = getPlatform(connection.PlatformType);
                       const displayName =
                         connection.DisplayName ||
-                        connection.PlatformType ||
-                        'Unknown connection';
+                        platform?.name ||
+                        connection.PlatformType;
 
                       return (
                         <div
@@ -663,53 +651,29 @@ export function SettingsClient({
                         >
                           <div className="flex items-center gap-3">
                             <div className="relative flex size-10 items-center justify-center overflow-hidden rounded-xl border bg-card">
-                              {logo ? (
+                              {platform ? (
                                 <Image
-                                  src={logo.src}
-                                  alt={logo.alt}
+                                  src={platform.logo}
+                                  alt=""
                                   fill
+                                  sizes="40px"
                                   className="object-contain p-1"
                                 />
                               ) : (
-                                <span className="font-medium text-gray-500 text-xs">
-                                  {platformKey.charAt(0).toUpperCase() || '?'}
-                                </span>
+                                <NetworkIcon
+                                  className="size-5 text-muted-foreground"
+                                  aria-hidden="true"
+                                />
                               )}
                             </div>
-                            <div>
+                            <div className="flex min-w-0 flex-col gap-1">
                               <div className="font-medium">{displayName}</div>
-
-                              <Badge className={statusClasses}>
-                                {connection.Status
-                                  ? connection.Status.charAt(0).toUpperCase() +
-                                    connection.Status.slice(1).replace('_', ' ')
-                                  : 'Inactive'}
+                              <Badge
+                                variant={integrationStatusVariant(connection)}
+                              >
+                                {integrationStatus(connection)}
                               </Badge>
-
-                              {connection.LastSyncSuccessAt && (
-                                <div className="mt-1 text-gray-400 text-xs">
-                                  Last synced:{' '}
-                                  {new Date(
-                                    connection.LastSyncSuccessAt
-                                  ).toLocaleString()}
-                                </div>
-                              )}
                             </div>
-                          </div>
-
-                          <div className="flex flex-col items-end gap-1">
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              disabled
-                              className={
-                                connection.IsEnabled
-                                  ? 'border-primary/30 bg-primary/10 text-accent-foreground'
-                                  : 'bg-muted text-muted-foreground'
-                              }
-                            >
-                              {connection.IsEnabled ? 'Enabled' : 'Disabled'}
-                            </Button>
                           </div>
                         </div>
                       );

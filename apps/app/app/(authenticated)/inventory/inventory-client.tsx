@@ -1,7 +1,16 @@
 'use client';
 
+import { useAuth } from '@clerk/nextjs';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Checkbox } from '@repo/design-system/components/ui/checkbox';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@repo/design-system/components/ui/dialog';
 import {
   DropdownMenu,
   DropdownMenuCheckboxItem,
@@ -10,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from '@repo/design-system/components/ui/dropdown-menu';
 import { Input } from '@repo/design-system/components/ui/input';
+import { Label } from '@repo/design-system/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -36,12 +46,16 @@ import {
   ArrowUpIcon,
   ChevronDownIcon,
   DownloadIcon,
+  ExternalLinkIcon,
   LoaderCircleIcon,
+  PlusIcon,
   SearchIcon,
 } from 'lucide-react';
 import Image from 'next/image';
+import Link from 'next/link';
 import React from 'react';
 import { toast } from 'sonner';
+import { apiUrl, readError } from '../products/contract';
 
 type InventoryItem = {
   id: string;
@@ -325,6 +339,7 @@ export function InventoryClient({
   locations: Location[];
   connections: Connection[];
 }) {
+  const { getToken } = useAuth();
   const [rows, setRows] = React.useState(items);
   const [platform, setPlatform] = React.useState<string>('all');
   const [query, setQuery] = React.useState('');
@@ -348,6 +363,9 @@ export function InventoryClient({
     new Set(['weight'])
   );
   const [savingIds, setSavingIds] = React.useState<Set<string>>(new Set());
+  const [bulkPriceOpen, setBulkPriceOpen] = React.useState(false);
+  const [bulkPrice, setBulkPrice] = React.useState('');
+  const [bulkSaving, setBulkSaving] = React.useState(false);
 
   React.useEffect(() => setRows(items), [items]);
 
@@ -674,6 +692,10 @@ export function InventoryClient({
     () => sortedItems.filter((item) => selectedIds.has(item.id)),
     [selectedIds, sortedItems]
   );
+  const selectedItems = React.useMemo(
+    () => rows.filter((item) => selectedIds.has(item.id)),
+    [rows, selectedIds]
+  );
 
   const allPageItemsSelected =
     pageItems.length > 0 && pageItems.every((item) => selectedIds.has(item.id));
@@ -728,6 +750,76 @@ export function InventoryClient({
     toast.success(
       `Exported ${source.length} product${source.length === 1 ? '' : 's'}`
     );
+  };
+
+  const applyBulkPrice = async () => {
+    const nextPrice = Number(bulkPrice);
+    if (!Number.isFinite(nextPrice) || nextPrice < 0) {
+      toast.error('Enter a valid price');
+      return;
+    }
+    if (selectedItems.length === 0) return;
+
+    setBulkSaving(true);
+    try {
+      const token = await getToken();
+      if (!token) throw new Error('Sign in again');
+      const response = await fetch(
+        apiUrl('/api/products/bulk-actions/execute'),
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            actions: selectedItems.map((item) => ({
+              itemId: item.id,
+              actionType: 'update_price',
+              changes: [
+                {
+                  field: 'price',
+                  from: String(item.price ?? ''),
+                  to: String(nextPrice),
+                },
+              ],
+            })),
+          }),
+        }
+      );
+      const body = (await response.json().catch(() => null)) as {
+        results?: Array<{ itemId: string; success: boolean }>;
+        message?: string;
+        error?: string;
+      } | null;
+      if (!response.ok) throw new Error(readError(body, 'Could not update price'));
+
+      const successfulIds = new Set(
+        (body?.results ?? [])
+          .filter((result) => result.success)
+          .map((result) => result.itemId)
+      );
+      setRows((current) =>
+        current.map((item) =>
+          successfulIds.has(item.id) ? { ...item, price: nextPrice } : item
+        )
+      );
+      setSelectedIds((current) => {
+        const next = new Set(current);
+        successfulIds.forEach((id) => next.delete(id));
+        return next;
+      });
+
+      const failed = selectedItems.length - successfulIds.size;
+      if (failed > 0) toast.error(`${failed} price updates failed`);
+      else toast.success(`Updated ${successfulIds.size} prices`);
+      setBulkPriceOpen(false);
+      setBulkPrice('');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Could not update price');
+    } finally {
+      setBulkSaving(false);
+    }
   };
 
   const locationSummary = React.useCallback(
@@ -788,12 +880,22 @@ export function InventoryClient({
         className: 'min-w-[230px]',
         sortKey: 'title',
         render: (item: InventoryItem) => (
-          <EditableCell
-            value={item.title}
-            ariaLabel={`Name for ${item.title}`}
-            disabled={savingIds.has(item.id)}
-            onCommit={(title) => saveItem(item.id, { title })}
-          />
+          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-center gap-1">
+            <EditableCell
+              value={item.title}
+              ariaLabel={`Name for ${item.title}`}
+              disabled={savingIds.has(item.id)}
+              onCommit={(title) => saveItem(item.id, { title })}
+            />
+            <Button asChild size="icon" variant="ghost">
+              <Link
+                aria-label={`Open ${item.title}`}
+                href={`/products/${item.id}`}
+              >
+                <ExternalLinkIcon />
+              </Link>
+            </Button>
+          </div>
         ),
       },
       {
@@ -1131,6 +1233,12 @@ export function InventoryClient({
             <DownloadIcon data-icon="inline-start" />
             Export
           </Button>
+          <Button asChild className="h-10">
+            <Link href="/products/new">
+              <PlusIcon data-icon="inline-start" />
+              Add
+            </Link>
+          </Button>
         </div>
       </div>
 
@@ -1141,6 +1249,13 @@ export function InventoryClient({
             selected
           </span>
           <div className="flex items-center gap-2">
+            <Button
+              onClick={() => setBulkPriceOpen(true)}
+              size="sm"
+              variant="outline"
+            >
+              Edit price
+            </Button>
             {selectedIds.size < sortedItems.length ? (
               <Button
                 variant="ghost"
@@ -1162,6 +1277,48 @@ export function InventoryClient({
           </div>
         </div>
       ) : null}
+
+      <Dialog open={bulkPriceOpen} onOpenChange={setBulkPriceOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Bulk price</DialogTitle>
+            <DialogDescription>
+              Set one price for {selectedItems.length} products.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="bulk-price">Price</Label>
+            <Input
+              autoFocus
+              id="bulk-price"
+              min={0}
+              onChange={(event) => setBulkPrice(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') void applyBulkPrice();
+              }}
+              placeholder="0.00"
+              step="0.01"
+              type="number"
+              value={bulkPrice}
+            />
+          </div>
+          <DialogFooter>
+            <Button
+              disabled={bulkSaving}
+              onClick={() => setBulkPriceOpen(false)}
+              variant="outline"
+            >
+              Cancel
+            </Button>
+            <Button disabled={bulkSaving} onClick={() => void applyBulkPrice()}>
+              {bulkSaving ? (
+                <LoaderCircleIcon className="animate-spin" data-icon="inline-start" />
+              ) : null}
+              Apply
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       <div className="overflow-hidden rounded-xl border bg-card">
         <div className="overflow-x-auto">

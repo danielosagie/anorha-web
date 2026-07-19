@@ -23,11 +23,16 @@ import {
 import { cn } from '@repo/design-system/lib/utils';
 import { NotificationsTrigger } from '@repo/notifications/components/trigger';
 import {
+  ActivityIcon,
   BoxesIcon,
+  CableIcon,
+  ChartColumnIcon,
   CreditCardIcon,
   LayoutDashboardIcon,
   LogOutIcon,
+  ReceiptTextIcon,
   Settings2Icon,
+  SproutIcon,
   UserRoundIcon,
   UsersIcon,
 } from 'lucide-react';
@@ -50,6 +55,11 @@ type NavItem = {
 const workspaceItems: readonly NavItem[] = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon },
   { title: 'Inventory', url: '/inventory', icon: BoxesIcon },
+  { title: 'Orders', url: '/orders', icon: ReceiptTextIcon },
+  { title: 'Activity', url: '/activity', icon: ActivityIcon },
+  { title: 'Sprout', url: '/sprout', icon: SproutIcon },
+  { title: 'Analytics', url: '/analytics', icon: ChartColumnIcon },
+  { title: 'Connections', url: '/connections', icon: CableIcon },
 ];
 
 const accountItems: readonly NavItem[] = [

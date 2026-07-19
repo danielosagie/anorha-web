@@ -5,7 +5,7 @@ import { Button } from '@repo/design-system/components/ui/button';
 export const metadata: Metadata = {
   title: 'Account & data deletion',
   description:
-    'How to request deletion of your Anorha account and data. In-app steps and support contact.',
+    'How to delete your Anorha account and request deletion of associated data.',
 };
 
 export default function DeleteAccountPage() {
@@ -20,8 +20,8 @@ export default function DeleteAccountPage() {
 
         <div className="mt-6 space-y-8">
           <p className="text-muted-foreground text-sm leading-relaxed">
-            This page describes how to request deletion of your account and data for{' '}
-            <span className="font-semibold text-foreground">Anorha</span>.
+            This page describes how to delete your account and request deletion of associated
+            data for <span className="font-semibold text-foreground">Anorha</span>.
           </p>
 
           <section>
@@ -31,11 +31,11 @@ export default function DeleteAccountPage() {
             <p className="text-muted-foreground text-sm font-medium mb-2">In the app:</p>
             <ul className="list-disc pl-5 space-y-1.5 text-sm text-muted-foreground mb-4">
               <li>
-                Open <span className="font-semibold text-foreground">Anorha</span> → Profile → Delete
-                Account
+                Open <span className="font-semibold text-foreground">Anorha</span> → Profile →
+                Privacy & Security or Delete Account
               </li>
-              <li>Follow the steps (confirm your business name and reason)</li>
-              <li>Your account and associated data will be deleted</li>
+              <li>Follow the confirmation steps shown in the app</li>
+              <li>Sign out after the app confirms the request</li>
             </ul>
             <p className="text-muted-foreground text-sm leading-relaxed">
               You can also contact support with the subject &quot;Delete my account&quot; and the
@@ -46,9 +46,10 @@ export default function DeleteAccountPage() {
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">What we delete</h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Account and profile, organization memberships, platform connections, products and
-              listings data, usage and activity data tied to your account, and other user data we hold
-              for your account.
+              We delete or de-identify account profile data, organization memberships, notification
+              settings, device tokens, platform connections, products, listings, images, drafts,
+              sync records, support attachments, and automation/device records tied only to your
+              account or organization.
             </p>
           </section>
 
@@ -57,17 +58,28 @@ export default function DeleteAccountPage() {
               What we may keep (and for how long)
             </h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Data we are required to keep by law (e.g. tax or invoice records) for the period
-              required by law. Backups or logs may retain your data for a short period (e.g. up to
-              90 days) before being purged.
+              We may retain invoices, tax records, fraud and security logs, chargeback records, and
+              backups awaiting normal expiration where required or permitted by law. Retained records
+              are not used to restore a deleted account except where required for legal or security
+              reasons.
             </p>
           </section>
 
           <section>
             <h2 className="text-base font-semibold text-foreground mb-2">Timing</h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
-              Deletion is processed when you confirm in the app (or when we process your support
-              request).
+              In-app deletion begins when you confirm the request. Support-assisted deletion begins
+              after we verify account ownership.
+            </p>
+          </section>
+
+          <section>
+            <h2 className="text-base font-semibold text-foreground mb-2">Public deletion page</h2>
+            <p className="text-muted-foreground text-sm leading-relaxed">
+              The public account deletion instructions are also available at{' '}
+              <Link className="font-medium text-[#647653] underline underline-offset-4" href="/legal/account-deletion">
+                anorha.app/delete-account
+              </Link>.
             </p>
           </section>
 
