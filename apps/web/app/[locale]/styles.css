@@ -1,6 +1,33 @@
 @import "@repo/design-system/styles/globals.css";
 @import "tailwindcss";
 
+.site-main-shell:has(.connect-extension-page),
+.site-main-shell:has(.connection-sign-in-page) {
+  background: #f4f4f1;
+}
+
+.site-main-shell:has(.connect-extension-page) .landing-nav-section,
+.site-main-shell:has(.connection-sign-in-page) .landing-nav-section {
+  background: #f4f4f1;
+}
+
+.site-main-shell:has(.connect-extension-page) .landing-footer,
+.site-main-shell:has(.connection-sign-in-page) .landing-footer {
+  display: none;
+}
+
+.site-main-shell:has(.connect-extension-page) .landing-nav-links,
+.site-main-shell:has(.connect-extension-page) .landing-nav-actions,
+.site-main-shell:has(.connection-sign-in-page) .landing-nav-links,
+.site-main-shell:has(.connection-sign-in-page) .landing-nav-actions {
+  display: none;
+}
+
+.site-main-shell:has(.connect-extension-page) .landing-nav-pill,
+.site-main-shell:has(.connection-sign-in-page) .landing-nav-pill {
+  padding-right: 20px;
+}
+
 .shiki {
   background-color: var(--shiki-light-bg);
   color: var(--shiki-light);
