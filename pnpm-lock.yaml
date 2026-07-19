@@ -602,9 +602,6 @@ importers:
       '@repo/auth':
         specifier: workspace:*
         version: link:../../packages/auth
-      '@repo/cms':
-        specifier: workspace:*
-        version: link:../../packages/cms
       '@repo/design-system':
         specifier: workspace:*
         version: link:../../packages/design-system
