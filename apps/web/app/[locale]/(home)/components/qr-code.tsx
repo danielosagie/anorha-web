@@ -20,7 +20,7 @@ export function QrCode({ url, size = 220 }: { url: string; size?: number }) {
           className="px-4 text-sm underline"
           style={{ color: '#647653' }}
         >
-          QR unavailable — open link
+          QR unavailable, open link
         </a>
       </div>
     );

@@ -27,6 +27,31 @@ const redirects: NextConfig['redirects'] = async () => [
     destination: '/legal/terms',
     permanent: true,
   },
+  {
+    source: '/delete-account',
+    destination: '/legal/account-deletion',
+    permanent: true,
+  },
+  {
+    source: '/account-deletion',
+    destination: '/legal/account-deletion',
+    permanent: true,
+  },
+  {
+    source: '/data-deletion',
+    destination: '/legal/account-deletion',
+    permanent: true,
+  },
+  {
+    source: '/data-safety',
+    destination: '/legal/data-safety',
+    permanent: true,
+  },
+  {
+    source: '/support',
+    destination: '/legal/support',
+    permanent: true,
+  },
 ];
 
 nextConfig.redirects = redirects;

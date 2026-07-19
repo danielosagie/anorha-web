@@ -133,7 +133,7 @@ export const useDemoStateMachine = ({ mode, liveSnapshot }: UseDemoStateMachineP
   useEffect(() => {
     if (mode !== 'live' || !liveSnapshot) return;
 
-    // Live mode takes over — stop any scripted timers from continuing to
+    // Live mode takes over. Stop any scripted timers from continuing to
     // overwrite stage/progress/events.
     timersRef.current.forEach(clearTimeout);
     timersRef.current = [];

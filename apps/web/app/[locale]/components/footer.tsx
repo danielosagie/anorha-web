@@ -23,7 +23,10 @@ export const Footer = () => {
       title: 'Legal',
       items: [
         { title: 'Privacy', href: '/legal/privacy' },
+        { title: 'Account Deletion', href: '/legal/account-deletion' },
+        { title: 'Data Safety', href: '/legal/data-safety' },
         { title: 'Terms', href: '/legal/terms' },
+        { title: 'Support', href: '/legal/support' },
       ],
     },
   ];

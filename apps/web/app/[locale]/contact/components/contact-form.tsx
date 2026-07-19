@@ -3,9 +3,9 @@
 import { Button } from '@repo/design-system/components/ui/button';
 import { Input } from '@repo/design-system/components/ui/input';
 import { Label } from '@repo/design-system/components/ui/label';
-import { MoveRight, Mail, MessageSquare } from 'lucide-react';
 import { Textarea } from '@repo/design-system/components/ui/textarea';
-import { useState, useTransition } from 'react';
+import { MessageSquare } from 'lucide-react';
+import { type FormEvent, useState, useTransition } from 'react';
 import { contact } from '../actions/contact';
 
 export const ContactForm = () => {
@@ -13,21 +13,24 @@ export const ContactForm = () => {
   const [email, setEmail] = useState('');
   const [message, setMessage] = useState('');
   const [isPending, startTransition] = useTransition();
-  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(null);
+  const [status, setStatus] = useState<{ ok: boolean; msg: string } | null>(
+    null
+  );
 
-  const handleSubmit = (event: React.FormEvent<HTMLFormElement>) => {
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setStatus(null);
 
     startTransition(async () => {
       const { error } = await contact(name, email, message);
-
       if (error) {
-        setStatus({ ok: false, msg: error });
+        setStatus({ msg: error, ok: false });
         return;
       }
-
-      setStatus({ ok: true, msg: "Message sent. We'll get back to you within 24 hours." });
+      setStatus({
+        msg: "Message sent. We'll get back to you within 24 hours.",
+        ok: true,
+      });
       setName('');
       setEmail('');
       setMessage('');
@@ -35,113 +38,76 @@ export const ContactForm = () => {
   };
 
   return (
-    <div className="w-full min-h-screen bg-zinc-950 text-white selection:bg-[#A7CE38]/30">
-      <div className="w-full py-20 lg:py-40 relative overflow-hidden">
-        {/* Background Glow */}
-        <div
-          className="absolute top-1/2 left-0 -translate-y-1/2 w-[600px] h-[600px] bg-[#A7CE38] opacity-5 rounded-full blur-[120px] pointer-events-none"
-        />
-
-        <div className="container mx-auto max-w-6xl relative z-10 px-4">
-          <div className="grid gap-16 lg:grid-cols-2 items-center">
-
-            {/* Left Copy */}
-            <div className="flex flex-col gap-6">
-              <div className="bg-[#647653]/30 border border-[#A7CE38]/30 px-3 py-1 rounded-full text-sm font-medium text-[#A7CE38] mb-2 self-start shadow-[0_0_15px_rgba(167,206,56,0.2)] flex items-center gap-2">
-                <Mail size={14} /> Get in touch
-              </div>
-              <h1 className="max-w-xl text-left font-regular text-4xl tracking-tighter md:text-5xl lg:text-6xl text-transparent bg-clip-text bg-gradient-to-br from-white to-zinc-400">
-                Let's scale your operations together.
-              </h1>
-              <p className="max-w-md text-left text-lg text-zinc-400 leading-relaxed tracking-tight">
-                Whether you have a question about integrating with your warehouse or want to explore enterprise pricing, our team is ready to help you sync your world.
-              </p>
-
-              <div className="flex flex-col gap-6 mt-8">
-                <div className="flex flex-row items-center gap-4 text-left p-4 rounded-2xl bg-zinc-900/50 border border-zinc-800">
-                  <div className="bg-[#A7CE38]/10 p-3 rounded-xl border border-[#A7CE38]/20">
-                    <MessageSquare className="h-6 w-6 text-[#A7CE38]" />
-                  </div>
-                  <div className="flex flex-col">
-                    <p className="text-white font-medium">Enterprise Support</p>
-                    <p className="text-zinc-500 text-sm">Priority onboarding and custom workflows.</p>
-                  </div>
-                </div>
-              </div>
+    <div className="marketing-page contact-page">
+      <section className="contact-shell">
+        <div className="contact-copy">
+          <span className="marketing-hand-label">Get in touch</span>
+          <h1>Let&apos;s scale your operations together.</h1>
+          <p>
+            Whether you have a question about integrating with your warehouse or
+            want to explore enterprise pricing, our team is ready to help you
+            sync your world.
+          </p>
+          <div className="contact-support-note">
+            <span>
+              <MessageSquare aria-hidden="true" size={22} />
+            </span>
+            <div>
+              <strong>Enterprise Support</strong>
+              <p>Priority onboarding and custom workflows.</p>
             </div>
-
-            {/* Right Form */}
-            <div className="flex items-center justify-center lg:justify-end">
-              <div className="flex w-full max-w-md flex-col gap-6 rounded-3xl border border-zinc-800 bg-zinc-900/50 p-8 shadow-2xl backdrop-blur-md">
-                <div className="flex flex-col gap-1">
-                  <h3 className="text-2xl font-medium text-white">Send a message</h3>
-                  <p className="text-zinc-400 text-sm">We'll get back to you within 24 hours.</p>
-                </div>
-
-                <form className="flex flex-col gap-4 mt-2" onSubmit={handleSubmit}>
-                  <div className="grid w-full items-center gap-2">
-                    <Label htmlFor="name" className="text-zinc-300">
-                      Full Name
-                    </Label>
-                    <Input
-                      id="name"
-                      type="text"
-                      placeholder="Jane Doe"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      className="bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-[#A7CE38]/50"
-                    />
-                  </div>
-
-                  <div className="grid w-full items-center gap-2">
-                    <Label htmlFor="email" className="text-zinc-300">
-                      Work Email
-                    </Label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="jane@company.com"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      className="bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-[#A7CE38]/50"
-                    />
-                  </div>
-
-                  <div className="grid w-full items-center gap-2">
-                    <Label htmlFor="message" className="text-zinc-300">
-                      How can we help?
-                    </Label>
-                    <Textarea
-                      id="message"
-                      placeholder="Tell us about your inventory needs..."
-                      required
-                      value={message}
-                      onChange={(e) => setMessage(e.target.value)}
-                      className="min-h-[120px] bg-zinc-950 border-zinc-800 text-white placeholder:text-zinc-600 focus-visible:ring-[#A7CE38]/50 resize-none"
-                    />
-                  </div>
-
-                  <Button
-                    type="submit"
-                    disabled={isPending}
-                    className="w-full mt-4 bg-[#A7CE38] hover:bg-[#96BB32] text-zinc-950 font-medium h-12 rounded-xl text-base"
-                  >
-                    {isPending ? 'Sending...' : 'Send Message'}
-                  </Button>
-                  {status && (
-                    <p className={`text-sm ${status.ok ? 'text-[#A7CE38]' : 'text-red-400'}`}>
-                      {status.msg}
-                    </p>
-                  )}
-                </form>
-              </div>
-            </div>
-
           </div>
         </div>
-      </div>
+
+        <div className="contact-form-card">
+          <div>
+            <h2>Send a message</h2>
+            <p>We&apos;ll get back to you within 24 hours.</p>
+          </div>
+          <form onSubmit={handleSubmit}>
+            <div className="marketing-field">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                onChange={(event) => setName(event.target.value)}
+                placeholder="Jane Doe"
+                required
+                type="text"
+                value={name}
+              />
+            </div>
+            <div className="marketing-field">
+              <Label htmlFor="email">Work Email</Label>
+              <Input
+                id="email"
+                onChange={(event) => setEmail(event.target.value)}
+                placeholder="jane@company.com"
+                required
+                type="email"
+                value={email}
+              />
+            </div>
+            <div className="marketing-field">
+              <Label htmlFor="message">How can we help?</Label>
+              <Textarea
+                id="message"
+                onChange={(event) => setMessage(event.target.value)}
+                placeholder="Tell us about your inventory needs..."
+                required
+                value={message}
+              />
+            </div>
+            <Button disabled={isPending} type="submit">
+              {isPending ? 'Sending...' : 'Send Message'}
+            </Button>
+            {status ? (
+              <output className={status.ok ? 'form-success' : 'form-error'}>
+                {status.msg}
+              </output>
+            ) : null}
+          </form>
+        </div>
+      </section>
     </div>
   );
 };

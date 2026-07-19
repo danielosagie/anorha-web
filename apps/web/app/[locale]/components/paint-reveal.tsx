@@ -8,8 +8,11 @@ interface PaintRevealProps {
   color?: string;
   brushSize?: number;
   className?: string;
-  /** Pre-revealed spots as [x, y] in 0–1 (e.g. [0.5, 0.5] = center). 1–2 spots work best. */
-  preRevealedSpots?: [number, number][];
+  /**
+   * Pre-revealed spots as [x, y, radius?] with x/y in 0–1 (edges allowed) and
+   * radius as a fraction of the shorter canvas side (default 0.08). Up to 8 spots.
+   */
+  preRevealedSpots?: [number, number, number?][];
   /** Enable animated living blob pattern (default false for perf) */
   living?: boolean;
   /** Which blob pattern to use */
@@ -115,7 +118,7 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
       const ctx = maskCtxRef.current;
       if (!mask || !ctx) return;
 
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       mask.width = width * dpr;
       mask.height = height * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -126,15 +129,29 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
       ctx.fillRect(0, 0, width, height);
 
       ctx.globalCompositeOperation = 'destination-out';
-      const spotRadius = Math.min(width, height) * 0.08;
-      for (const [nx, ny] of preRevealedSpots.slice(0, 2)) {
-        const x = width * Math.max(0.1, Math.min(0.9, nx));
-        const y = height * Math.max(0.1, Math.min(0.9, ny));
-        ctx.beginPath();
-        ctx.arc(x, y, spotRadius, 0, Math.PI * 2);
-        ctx.fill();
-      }
-      ctx.globalCompositeOperation = 'destination-out';
+      const minDim = Math.min(width, height);
+      // Deterministic jitter so patches keep their shape across resizes.
+      const jitter = (seed: number) => Math.sin(seed * 127.1 + 311.7) * 0.5;
+      preRevealedSpots.slice(0, 8).forEach(([nx, ny, nr], spotIndex) => {
+        const x = width * Math.max(0, Math.min(1, nx));
+        const y = height * Math.max(0, Math.min(1, ny));
+        const radius = minDim * (nr ?? 0.08);
+        const blobs = 5;
+        for (let b = 0; b < blobs; b++) {
+          const seed = spotIndex * 17 + b;
+          const bx = x + jitter(seed) * radius * 0.9;
+          const by = y + jitter(seed + 53) * radius * 0.9;
+          const br = radius * (0.55 + Math.abs(jitter(seed + 97)) * 0.7);
+          const g = ctx.createRadialGradient(bx, by, 0, bx, by, br);
+          g.addColorStop(0, 'rgba(0,0,0,0.95)');
+          g.addColorStop(0.6, 'rgba(0,0,0,0.6)');
+          g.addColorStop(1, 'rgba(0,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath();
+          ctx.arc(bx, by, br, 0, Math.PI * 2);
+          ctx.fill();
+        }
+      });
       dirtyFrameRef.current = true;
     },
     [preRevealedSpots],
@@ -270,7 +287,7 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
       const ctx = topMaskCtxRef.current;
       if (!topMask || !ctx) return;
 
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       topMask.width = width * dpr;
       topMask.height = height * dpr;
       ctx.setTransform(1, 0, 0, 1, 0, 0);
@@ -357,7 +374,7 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
       const height = parent.offsetHeight;
       if (width <= 0 || height <= 0) return;
 
-      const dpr = window.devicePixelRatio || 1;
+      const dpr = Math.min(window.devicePixelRatio || 1, 2);
       sizeRef.current = { width, height };
 
       displayCanvas.width = width * dpr;
@@ -506,7 +523,7 @@ export const PaintReveal: React.FC<PaintRevealProps> = ({
         onTouchMove={handleTouchMove}
         onTouchEnd={handlePointerEnd}
         onClick={handleClick}
-        className={`w-full h-full cursor-crosshair pointer-events-auto touch-none transition-opacity duration-1000 z-0 ${isInitialized ? 'opacity-100' : 'opacity-0'}`}
+        className={`w-full h-full cursor-crosshair pointer-events-auto touch-pan-y transition-opacity duration-1000 z-0 ${isInitialized ? 'opacity-100' : 'opacity-0'}`}
       />
 
       {showControlsToggle && (

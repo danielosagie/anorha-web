@@ -6,6 +6,19 @@ import languine from './languine.json';
 
 const locales = [languine.locale.source, ...languine.locale.targets];
 
+const isValidLanguageTag = (language: string) => {
+  if (!language || language === '*') {
+    return false;
+  }
+
+  try {
+    Intl.getCanonicalLocales(language);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
 const I18nMiddleware = createI18nMiddleware({
   locales,
   defaultLocale: 'en',
@@ -13,7 +26,7 @@ const I18nMiddleware = createI18nMiddleware({
   resolveLocaleFromRequest: (request: NextRequest) => {
     const headers = Object.fromEntries(request.headers.entries());
     const negotiator = new Negotiator({ headers });
-    const acceptedLanguages = negotiator.languages();
+    const acceptedLanguages = negotiator.languages().filter(isValidLanguageTag);
 
     const matchedLocale = matchLocale(acceptedLanguages, locales, 'en');
 

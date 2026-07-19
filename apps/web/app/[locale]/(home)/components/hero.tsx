@@ -145,7 +145,7 @@ export const Hero = ({ dictionary }: HeroProps) => {
                     </AccordionTrigger>
                     <AccordionContent className="pb-3 text-md text-black">
                       <div className="h-32 overflow-auto text-gray-700 text-sm">
-                        Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, or eBay, we’ve got you covered. Add once, sell everywhere — without switching systems or learning a new way to work. We’re constantly adding new integrations so your business never has to slow down just to keep up with the tools.
+                        Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, or eBay, we’ve got you covered. Add once, sell everywhere without switching systems or learning a new way to work. We’re constantly adding new integrations so your business never has to slow down just to keep up with the tools.
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -192,7 +192,7 @@ export const Hero = ({ dictionary }: HeroProps) => {
                       </Avatar>
                     </div>
                   </div>
-                  <p className="text-gray-700 text-sm mb-3">Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, or eBay, we've got you covered. Add once, sell everywhere — without switching systems or learning a new way to work. We're constantly adding new integrations so your business never has to slow down just to keep up with the tools.</p>
+                  <p className="text-gray-700 text-sm mb-3">Anorha plugs into the platforms you already use. Whether your products live on Shopify, Square, or eBay, we've got you covered. Add once, sell everywhere without switching systems or learning a new way to work. We're constantly adding new integrations so your business never has to slow down just to keep up with the tools.</p>
                   {/*
                 <div className="h-[200px] md:h-[420px] lg:h-[420px] rounded-2xl bg-zinc-900" >
                  */}
