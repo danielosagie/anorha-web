@@ -3551,8 +3551,9 @@
     line-height: 26px;
   }
   .hero-illustration-wrap {
+    margin-inline: auto;
     margin-top: -8px;
-    width: 100%;
+    width: 88%;
   }
   .landing-downloads .landing-download-button-row {
     flex-direction: column;
@@ -3676,19 +3677,20 @@
   .sell-anywhere-panel {
     display: flex;
     flex-direction: column;
-    gap: 22px;
-    height: 790px;
-    padding: 48px 24px 0;
+    gap: 16px;
+    height: auto;
+    padding: 40px 20px 28px;
     text-align: center;
   }
   .sell-anywhere-copy {
     max-width: 540px;
   }
   .browser-scene {
-    flex: 0 0 560px;
-    margin: -12px auto 0;
-    transform: scale(0.78);
-    transform-origin: top center;
+    align-self: flex-start;
+    flex: 0 0 300px;
+    margin: -4px 0 0;
+    transform: scale(0.52);
+    transform-origin: top left;
   }
   .sprout-intro {
     padding: 100px 24px;
@@ -3981,8 +3983,9 @@
     width: 168%;
   }
   .hero-illustration-wrap {
+    margin-inline: auto;
     margin-top: -6px;
-    width: 100%;
+    width: 84%;
   }
   .platform-marquee {
     padding-block: 40px;
@@ -4102,8 +4105,8 @@
     width: 58px;
   }
   .sell-anywhere-panel {
-    height: 730px;
-    padding-inline: 20px;
+    height: auto;
+    padding-inline: 18px;
   }
   .desktop-app-explainer {
     text-align: left;
