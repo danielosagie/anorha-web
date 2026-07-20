@@ -706,7 +706,8 @@
 }
 
 .hero-illustration-wrap {
-  margin-top: -110px;
+  margin-top: -8px;
+  overflow: hidden;
   position: relative;
   width: min(1111px, 92vw);
   z-index: 2;
@@ -715,6 +716,9 @@
 .hero-illustration {
   display: block;
   height: auto;
+  /* The source art has ~56% empty white above the figures. Crop it (margin
+     is % of width, so it scales) so the characters sit under the buttons. */
+  margin-top: -24%;
   width: 100%;
 }
 
@@ -3480,7 +3484,7 @@
     line-height: 26px;
   }
   .hero-illustration-wrap {
-    margin-top: -60px;
+    margin-top: -8px;
     width: 112vw;
   }
   .landing-downloads .landing-download-button-row {
@@ -3904,7 +3908,7 @@
     width: 168%;
   }
   .hero-illustration-wrap {
-    margin-top: -120px;
+    margin-top: -6px;
     width: 150vw;
   }
   .platform-marquee {
