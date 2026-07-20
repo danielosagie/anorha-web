@@ -30,7 +30,7 @@ export function LandingHero() {
           className="hero-illustration"
           height={820}
           priority
-          sizes="(max-width: 768px) 118vw, 1110px"
+          sizes="(max-width: 560px) calc(100vw - 36px), (max-width: 820px) calc(100vw - 48px), 1110px"
           src="/assets/landing/hero-illustration.png"
           width={1694}
         />

@@ -601,6 +601,11 @@
   gap: 10px;
 }
 
+.download-device-desktop .download-device-row-main {
+  grid-column: 1 / -1;
+  width: 100%;
+}
+
 .download-device-desktop-actions .download-device-action {
   text-decoration: none;
 }
@@ -719,6 +724,7 @@
   /* The source art has ~56% empty white above the figures. Crop it (margin
      is % of width, so it scales) so the characters sit under the buttons. */
   margin-top: -24%;
+  max-width: 100%;
   width: 100%;
 }
 
@@ -1137,6 +1143,11 @@
   font-size: 15px;
   line-height: 18px;
 }
+.generated-description {
+  color: var(--landing-muted);
+  font-size: 13px;
+  line-height: 18px;
+}
 .price-row {
   align-items: center;
   display: flex;
@@ -1208,6 +1219,7 @@
   align-items: center;
   display: flex;
   gap: 8px;
+  min-width: 0;
 }
 .cart-row img {
   border-radius: 8px;
@@ -1215,14 +1227,27 @@
   object-fit: cover;
   width: 26px;
 }
-.cart-line {
-  width: 65%;
+.cart-item-copy {
+  align-items: baseline;
+  display: flex;
+  flex: 1;
+  gap: 8px;
+  justify-content: space-between;
+  min-width: 0;
 }
-.cart-line-2 {
-  width: 78%;
+.cart-item-copy strong {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.cart-line-3 {
-  width: 55%;
+.cart-item-copy b {
+  color: var(--landing-green-ink);
+  flex-shrink: 0;
+  font-size: 12px;
+  line-height: 16px;
 }
 .bulk-cart button,
 .phone-action {
@@ -1518,6 +1543,48 @@
   font-weight: 500;
   letter-spacing: -0.02em;
   line-height: 1.15;
+}
+
+.desktop-app-explainer {
+  background: #fff;
+  border: 1px solid var(--landing-rule);
+  border-radius: 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 18px;
+}
+
+.desktop-app-explainer > strong {
+  color: var(--landing-green-ink);
+  font: 700 20px / 22px var(--landing-caveat), cursive;
+}
+
+.desktop-app-explainer ul {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.desktop-app-explainer li {
+  align-items: flex-start;
+  color: #54534a;
+  display: flex;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.desktop-app-explainer li::before {
+  background: #7c8a37;
+  border-radius: 50%;
+  content: "";
+  flex: 0 0 20px;
+  height: 6px;
+  margin: 7px 0 0 2px;
+  max-width: 6px;
 }
 
 .browser-scene {
@@ -3485,7 +3552,7 @@
   }
   .hero-illustration-wrap {
     margin-top: -8px;
-    width: 112vw;
+    width: 100%;
   }
   .landing-downloads .landing-download-button-row {
     flex-direction: column;
@@ -3630,10 +3697,12 @@
     padding-inline: 16px;
   }
   .sprout-feature-panel {
+    align-items: center;
     display: flex;
     flex-direction: column;
-    height: 720px;
-    padding: 42px 24px 0;
+    height: auto;
+    min-height: 0;
+    padding: 42px 24px 24px;
   }
   .sprout-feature-copy {
     left: auto;
@@ -3643,10 +3712,14 @@
     top: auto;
   }
   .feature-phone {
-    bottom: -74px;
-    left: 50%;
+    bottom: auto;
+    flex: 0 0 520px;
+    left: auto;
+    margin-top: 30px;
+    max-width: 100%;
+    position: relative;
     top: auto;
-    transform: translateX(-50%);
+    transform: none;
   }
   .keeps-going-inner {
     gap: 36px;
@@ -3909,7 +3982,7 @@
   }
   .hero-illustration-wrap {
     margin-top: -6px;
-    width: 150vw;
+    width: 100%;
   }
   .platform-marquee {
     padding-block: 40px;
@@ -3921,6 +3994,15 @@
   .problem-section h2,
   .sprout-intro h2 {
     font-size: 40px;
+  }
+  .problem-section {
+    padding-bottom: 56px;
+    padding-top: 64px;
+  }
+  .single-bulk-section {
+    gap: 32px;
+    padding-bottom: 48px;
+    padding-top: 64px;
   }
   .problem-section > p {
     font-size: 17px;
@@ -3956,19 +4038,49 @@
     padding: 10px 16px;
   }
   .listing-flow-card {
-    min-height: 570px;
+    min-height: 0;
     padding: 28px 24px;
   }
   .listing-flow {
-    bottom: 24px;
+    bottom: auto;
+    flex-direction: column;
+    flex-wrap: nowrap;
     gap: 16px;
+    left: auto;
+    margin-top: 28px;
+    position: static;
+    right: auto;
+  }
+  .product-photo {
+    flex: 0 0 140px;
+    width: 140px;
   }
   .flow-arrow {
+    flex: 0 0 24px;
+    height: 24px;
     transform: rotate(90deg);
   }
   .generated-listing,
   .bulk-cart {
-    flex-basis: 100%;
+    flex: 0 0 auto;
+    width: 100%;
+  }
+  .generated-description {
+    font-size: 14px;
+    line-height: 20px;
+  }
+  .cart-row img {
+    height: 32px;
+    width: 32px;
+  }
+  .cart-item-copy strong,
+  .cart-item-copy b {
+    font-size: 14px;
+    line-height: 19px;
+  }
+  .bulk-cart button {
+    font-size: 16px;
+    height: 44px;
   }
   .channel-pills span {
     padding-inline: 8px;
@@ -3990,18 +4102,28 @@
     width: 58px;
   }
   .sell-anywhere-panel {
-    height: 690px;
+    height: 730px;
     padding-inline: 20px;
   }
+  .desktop-app-explainer {
+    text-align: left;
+  }
+  .desktop-app-explainer li {
+    font-size: 16px;
+    line-height: 22px;
+  }
   .browser-scene {
-    transform: scale(0.62);
+    transform: scale(0.49);
+  }
+  .sprout-intro {
+    padding: 72px 18px;
   }
   .sprout-feature-panel {
-    height: 680px;
+    height: auto;
+    padding: 36px 20px 22px;
   }
   .feature-phone {
-    transform: translateX(-50%) scale(0.92);
-    transform-origin: bottom center;
+    transform: none;
   }
   .keeps-going-section {
     padding-top: 50px;
@@ -4013,13 +4135,17 @@
     height: 340px;
     padding: 30px;
   }
+  .together-section {
+    padding-bottom: 56px;
+    padding-top: 32px;
+  }
   .team-avatars,
   .partner-symbol {
     left: 30px;
     top: 38px;
   }
   .landing-cta {
-    padding-block: 82px;
+    padding-block: 72px;
   }
   .landing-pricing-heading h2 {
     font-size: 35px;
@@ -4033,8 +4159,15 @@
     min-height: 0;
     padding: 26px;
   }
+  .landing-pricing {
+    padding-bottom: 64px;
+    padding-top: 64px;
+  }
   .download-page-heading h1 {
     font-size: 46px;
+  }
+  .download-page-inner {
+    padding-bottom: 72px;
   }
   .download-device-row,
   .download-device-row-main {
@@ -4067,6 +4200,10 @@
   .footer-main {
     flex-direction: column;
   }
+  .footer-socials a {
+    height: 44px;
+    width: 44px;
+  }
   .footer-brand-column {
     width: 100%;
   }
@@ -4086,7 +4223,7 @@
     min-height: 270px;
   }
   .pricing-section {
-    padding: 70px 16px 90px;
+    padding: 56px 16px 72px;
   }
   .pricing-tier {
     border-radius: 22px;
@@ -4110,6 +4247,9 @@
   .legal-shell > h1 {
     font-size: clamp(38px, 11vw, 48px);
   }
+  .marketing-page-hero {
+    padding: 64px 18px 56px;
+  }
   .marketing-page-hero > p,
   .contact-copy > p,
   .blog-empty p,
@@ -4126,6 +4266,59 @@
   .download-invite-success > p,
   .footer-bottom {
     font-size: 16px;
+  }
+  .footer-links a {
+    align-items: center;
+    display: flex;
+    min-height: 44px;
+  }
+  .download-device-copy p {
+    font-size: 16px;
+    line-height: 24px;
+  }
+  .download-device-desktop .download-device-row-main {
+    grid-template-columns: 50px minmax(0, 1fr);
+  }
+  .download-device-desktop-actions {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
+  }
+  .landing-pricing-card-header p,
+  .landing-pricing-features li,
+  .landing-pricing-price span,
+  .landing-pricing-action,
+  .landing-pricing-comparison,
+  .pricing-action {
+    font-size: 16px;
+  }
+  .landing-pricing-features li {
+    line-height: 24px;
+  }
+  .pricing-compare-scroll {
+    overflow-x: hidden;
+  }
+  .pricing-compare {
+    min-width: 0;
+    width: 100%;
+  }
+  .pricing-compare-head,
+  .pricing-feature-row {
+    grid-template-columns: minmax(112px, 1.35fr) repeat(3, minmax(0, 1fr));
+  }
+  .pricing-compare-head > *,
+  .pricing-feature-row > * {
+    min-width: 0;
+    padding: 14px 6px;
+  }
+  .pricing-compare > div > h3 {
+    padding-inline: 14px;
+  }
+  .pricing-feature-row > span,
+  .pricing-feature-row > div {
+    font-size: 16px;
+    overflow-wrap: anywhere;
   }
 }
 
@@ -4175,7 +4368,7 @@
     font-size: 36px;
   }
   .listing-flow-card {
-    min-height: 590px;
+    min-height: 0;
     padding: 26px 20px;
   }
   .listing-flow {
@@ -4205,7 +4398,7 @@
   }
   .sprout-feature-panel {
     border-radius: 22px;
-    height: 650px;
+    height: auto;
     padding-inline: 18px;
   }
   .sprout-feature-copy h3 {
@@ -4253,6 +4446,12 @@
   }
   .download-device-row {
     padding-block: 26px;
+  }
+  .download-device-desktop-actions {
+    display: grid;
+    grid-column: 1 / -1;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    width: 100%;
   }
   .download-device-icon {
     height: 48px;

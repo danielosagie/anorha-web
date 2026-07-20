@@ -40,9 +40,24 @@ function ProductPhoto({
 }
 
 const bulkThumbs = [
-  { position: '50% 40%', src: '/assets/landing/scan-item-sampler.jpg' },
-  { position: '50% 55%', src: '/assets/landing/scan-item-table.jpg' },
-  { position: '50% 45%', src: '/assets/landing/scan-shelf.jpg' },
+  {
+    position: '50% 40%',
+    price: '$249',
+    src: '/assets/landing/scan-item-sampler.jpg',
+    title: 'EP-133 sampler',
+  },
+  {
+    position: '50% 55%',
+    price: '$180',
+    src: '/assets/landing/scan-item-table.jpg',
+    title: 'Marble bistro table',
+  },
+  {
+    position: '50% 45%',
+    price: '$320',
+    src: '/assets/landing/scan-shelf.jpg',
+    title: 'Parts lot (12)',
+  },
 ];
 
 export function SingleBulkCards() {
@@ -69,8 +84,9 @@ export function SingleBulkCards() {
                 <b>$249</b>
                 <span>priced from comps</span>
               </div>
-              <i className="skeleton-line skeleton-long" />
-              <i className="skeleton-line skeleton-medium" />
+              <p className="generated-description">
+                Portable sampler with original box, tested and ready to play.
+              </p>
               <div className="channel-pills">
                 <span>eBay</span>
                 <span>Shopify</span>
@@ -94,18 +110,22 @@ export function SingleBulkCards() {
                 <strong>Cart</strong>
                 <span>15 ready</span>
               </div>
-              {bulkThumbs.map((thumb, index) => (
+              {bulkThumbs.map((thumb) => (
                 <div className="cart-row" key={thumb.src}>
                   <Image
                     alt=""
                     height={26}
                     src={thumb.src}
-                    style={{ objectFit: 'cover', objectPosition: thumb.position }}
+                    style={{
+                      objectFit: 'cover',
+                      objectPosition: thumb.position,
+                    }}
                     width={26}
                   />
-                  <i
-                    className={`skeleton-line cart-line cart-line-${index + 1}`}
-                  />
+                  <span className="cart-item-copy">
+                    <strong>{thumb.title}</strong>
+                    <b>{thumb.price}</b>
+                  </span>
                 </div>
               ))}
               <button type="button">List all</button>

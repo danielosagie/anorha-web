@@ -14,9 +14,17 @@ export function SellAnywhere() {
         <div className="sell-anywhere-copy">
           <h2>Sell anywhere you can&apos;t</h2>
           <p>
-            Our desktop app fills in your listing on any marketplace, even ones
-            without an official hookup
+            Your phone starts the job. The desktop app posts, edits, and syncs
+            the marketplaces without an official connection.
           </p>
+          <div className="desktop-app-explainer">
+            <strong>Desktop app</strong>
+            <ul>
+              <li>Facebook, Whatnot, Depop: posted for you</li>
+              <li>Runs in the background</li>
+              <li>No API needed</li>
+            </ul>
+          </div>
         </div>
         <div className="browser-scene">
           <svg

@@ -91,7 +91,10 @@ export function DownloadPageClient() {
               </div>
               <div className="download-device-copy">
                 <h2>Desktop</h2>
-                <p>For Mac. Windows soon.</p>
+                <p>
+                  Posts and syncs on marketplaces that have no API. Runs in the
+                  background on your Mac.
+                </p>
               </div>
               <div className="download-device-desktop-actions">
                 <a
