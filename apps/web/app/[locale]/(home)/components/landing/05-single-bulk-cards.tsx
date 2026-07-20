@@ -16,19 +16,34 @@ function Arrow({ muted = false }: { muted?: boolean }) {
   );
 }
 
-function ProductPhoto({ label }: { label: string }) {
+function ProductPhoto({
+  label,
+  src,
+  position = 'center',
+}: {
+  label: string;
+  src: string;
+  position?: string;
+}) {
   return (
     <div className="product-photo">
       <Image
         alt="A photographed inventory item ready to list"
         fill
         sizes="150px"
-        src="/assets/landing/sprout-writes-prices-photo.jpg"
+        src={src}
+        style={{ objectPosition: position }}
       />
       <span>{label}</span>
     </div>
   );
 }
+
+const bulkThumbs = [
+  { position: '50% 40%', src: '/assets/landing/scan-item-sampler.jpg' },
+  { position: '50% 55%', src: '/assets/landing/scan-item-table.jpg' },
+  { position: '50% 45%', src: '/assets/landing/scan-shelf.jpg' },
+];
 
 export function SingleBulkCards() {
   return (
@@ -42,12 +57,16 @@ export function SingleBulkCards() {
           <h3>Single</h3>
           <p>Snap one photo, get a full listing.</p>
           <div className="listing-flow">
-            <ProductPhoto label="photo" />
+            <ProductPhoto
+              label="photo"
+              position="50% 40%"
+              src="/assets/landing/scan-item-sampler.jpg"
+            />
             <Arrow />
             <div className="generated-listing">
-              <strong>Nike Air Max 90</strong>
+              <strong>EP-133 K.O. II sampler</strong>
               <div className="price-row">
-                <b>$74</b>
+                <b>$249</b>
                 <span>priced from comps</span>
               </div>
               <i className="skeleton-line skeleton-long" />
@@ -64,20 +83,24 @@ export function SingleBulkCards() {
           <h3>Bulk</h3>
           <p>A whole pile, priced and listed in one pass.</p>
           <div className="listing-flow">
-            <ProductPhoto label="photos" />
+            <ProductPhoto
+              label="photos"
+              position="50% 45%"
+              src="/assets/landing/scan-shelf.jpg"
+            />
             <Arrow muted />
             <div className="bulk-cart">
               <div className="cart-heading">
                 <strong>Cart</strong>
                 <span>15 ready</span>
               </div>
-              {['one', 'two', 'three'].map((item, index) => (
-                <div className="cart-row" key={item}>
+              {bulkThumbs.map((thumb, index) => (
+                <div className="cart-row" key={thumb.src}>
                   <Image
                     alt=""
                     height={26}
-                    src="/assets/listing_items.png"
-                    style={{ objectPosition: `${index * 35}% center` }}
+                    src={thumb.src}
+                    style={{ objectFit: 'cover', objectPosition: thumb.position }}
                     width={26}
                   />
                   <i

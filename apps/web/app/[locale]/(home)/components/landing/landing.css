@@ -647,7 +647,7 @@
   left: 50%;
   pointer-events: none;
   position: absolute;
-  top: 300px;
+  top: 108px;
   transform: translateX(-50%);
   width: min(1180px, calc(100% - 40px));
   z-index: 1;
@@ -849,7 +849,7 @@
 
 .marquee-row {
   align-items: center;
-  color: #c3c1b2;
+  color: #8f8d80;
   display: flex;
   font-size: 21px;
   font-weight: 600;
@@ -857,6 +857,18 @@
   line-height: 26px;
   padding-right: 46px;
   white-space: nowrap;
+}
+
+.marquee-platform {
+  align-items: center;
+  display: inline-flex;
+  gap: 11px;
+}
+
+.marquee-icon {
+  height: 24px;
+  object-fit: contain;
+  width: 24px;
 }
 
 @keyframes landing-marquee {
@@ -3888,7 +3900,7 @@
     font-size: clamp(31px, 8.4vw, 40px);
   }
   .hero-waves {
-    top: 240px;
+    top: 128px;
     width: 168%;
   }
   .hero-illustration-wrap {
