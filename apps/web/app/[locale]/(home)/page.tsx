@@ -68,7 +68,7 @@ const Home = async ({ params }: HomeProps) => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         type="application/ld+json"
       />
-      <LandingHero locale={locale} />
+      <LandingHero />
       <PlatformMarquee />
       <SectionReveal className="landing-section-shell">
         <ProblemScatterPills />

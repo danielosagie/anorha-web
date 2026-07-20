@@ -101,35 +101,47 @@ function DownloadTargets({
   );
 }
 
-export function DownloadMenu({ locale }: { locale: string }) {
+export function DownloadMenu({
+  locale,
+  desktop = true,
+  mobileLabel = 'Download',
+  mobileClassName = 'landing-nav-download',
+}: {
+  locale: string;
+  desktop?: boolean;
+  mobileLabel?: string;
+  mobileClassName?: string;
+}) {
   const flow = useDownloadFlow();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   return (
     <>
-      <div className="download-menu-desktop">
-        <Popover>
-          <PopoverTrigger asChild>
-            <button className="landing-nav-download" type="button">
-              Download
-            </button>
-          </PopoverTrigger>
-          <PopoverContent
-            align="end"
-            className="download-popover"
-            sideOffset={10}
-          >
-            <p className="download-menu-label">GET ANORHA</p>
-            <DownloadTargets flow={flow} locale={locale} />
-          </PopoverContent>
-        </Popover>
-      </div>
+      {desktop ? (
+        <div className="download-menu-desktop">
+          <Popover>
+            <PopoverTrigger asChild>
+              <button className="landing-nav-download" type="button">
+                Download
+              </button>
+            </PopoverTrigger>
+            <PopoverContent
+              align="end"
+              className="download-popover"
+              sideOffset={10}
+            >
+              <p className="download-menu-label">GET ANORHA</p>
+              <DownloadTargets flow={flow} locale={locale} />
+            </PopoverContent>
+          </Popover>
+        </div>
+      ) : null}
 
       <div className="download-menu-mobile">
         <Sheet onOpenChange={setMobileOpen} open={mobileOpen}>
           <SheetTrigger asChild>
-            <button className="landing-nav-download" type="button">
-              Download
+            <button className={mobileClassName} type="button">
+              {mobileLabel}
             </button>
           </SheetTrigger>
           <SheetContent className="download-bottom-sheet" side="bottom">

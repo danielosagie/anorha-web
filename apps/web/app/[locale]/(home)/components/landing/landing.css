@@ -152,7 +152,8 @@
 }
 
 .landing-nav-login,
-.landing-nav-signup {
+.landing-nav-signup,
+.landing-nav-getapp {
   align-items: center;
   border-radius: 999px;
   display: flex;
@@ -164,19 +165,33 @@
 }
 
 .landing-nav-login {
-  color: #69685f;
-  padding: 0 10px;
-}
-
-.landing-nav-signup {
   background: #f3f2e9;
   color: #34342e;
   padding: 0 16px;
   transition: background-color 180ms cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.landing-nav-signup:hover {
+.landing-nav-login:hover {
   background: #e9e8dc;
+}
+
+.landing-nav-signup,
+.landing-nav-getapp {
+  background: var(--landing-green);
+  color: #f4f6e6;
+  padding: 0 20px;
+  transition: transform 180ms cubic-bezier(0.16, 1, 0.3, 1), background-color
+    180ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.landing-nav-signup:hover,
+.landing-nav-getapp:hover {
+  background: #526318;
+}
+
+.landing-nav-signup:active,
+.landing-nav-getapp:active {
+  transform: scale(0.97);
 }
 
 .landing-nav-primary {
@@ -627,50 +642,15 @@
   position: relative;
 }
 
-.hero-squiggle {
-  height: 300px;
+.hero-waves {
+  height: 220px;
   left: 50%;
-  max-width: 1180px;
+  pointer-events: none;
   position: absolute;
-  top: 18px;
+  top: 300px;
   transform: translateX(-50%);
-  width: calc(100% - 48px);
-}
-
-.hero-wind-wave {
-  transform-box: fill-box;
-}
-
-.hero-wind-wave-one {
-  animation: hero-wind-one 32s linear infinite;
-}
-
-.hero-wind-wave-two {
-  animation: hero-wind-two 38s linear infinite;
-}
-
-@keyframes hero-wind-one {
-  0% {
-    transform: translate3d(0, 0, 0);
-  }
-  50% {
-    transform: translate3d(-590px, 4px, 0);
-  }
-  100% {
-    transform: translate3d(-1180px, 0, 0);
-  }
-}
-
-@keyframes hero-wind-two {
-  0% {
-    transform: translate3d(-1180px, 0, 0);
-  }
-  50% {
-    transform: translate3d(-590px, -3px, 0);
-  }
-  100% {
-    transform: translate3d(0, 0, 0);
-  }
+  width: min(1180px, calc(100% - 40px));
+  z-index: 1;
 }
 
 .hero-copy {
@@ -697,6 +677,7 @@
 
 .hero-copy h1 span {
   display: block;
+  text-wrap: balance;
 }
 
 .hero-copy h1 span:last-child {
@@ -725,7 +706,7 @@
 }
 
 .hero-illustration-wrap {
-  margin-top: -28px;
+  margin-top: -110px;
   position: relative;
   width: min(1111px, 92vw);
   z-index: 2;
@@ -3470,8 +3451,7 @@
     width: 100%;
   }
   .landing-hero {
-    min-height: 690px;
-    padding-top: 64px;
+    padding-top: 56px;
   }
   .hero-copy h1 {
     font-size: clamp(39px, 10vw, 54px);
@@ -3488,14 +3468,16 @@
     line-height: 26px;
   }
   .hero-illustration-wrap {
-    margin-top: 12px;
+    margin-top: -60px;
     width: 112vw;
   }
   .landing-downloads .landing-download-button-row {
     flex-direction: column;
   }
   .landing-downloads .landing-store-button {
-    min-width: min(310px, calc(100vw - 48px));
+    flex: 0 0 auto;
+    height: 58px;
+    min-width: min(310px, calc(100vw - 40px));
     width: 100%;
   }
   .problem-section {
@@ -3682,18 +3664,54 @@
 
 @media (max-width: 768px) {
   .landing-nav-links,
+  .landing-nav-login,
   .landing-nav-signup,
-  .download-menu-desktop,
-  .download-menu-mobile {
+  .download-menu-desktop {
     display: none;
   }
+  .download-menu-mobile,
   .landing-mobile-menu {
     display: block;
   }
-  .landing-nav-primary {
+  .landing-nav-getapp {
     height: 44px;
     min-height: 44px;
     padding-inline: 18px;
+  }
+  .scatter-field {
+    align-items: center;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px 9px;
+    height: auto;
+    justify-content: center;
+    margin: 30px auto 0;
+    max-width: 430px;
+    transform: none;
+    width: 100%;
+  }
+  .scatter-you,
+  .scatter-pill {
+    left: auto;
+    position: static;
+    top: auto;
+    transform: none !important;
+  }
+  .scatter-you {
+    align-items: center;
+    background: var(--landing-green);
+    border-radius: 999px;
+    color: #f4f6e6;
+    display: flex;
+    font-size: 24px;
+    height: 54px;
+    justify-content: center;
+    order: 4;
+    width: 96px;
+  }
+  .scatter-pill {
+    font-size: 14px;
+    padding: 10px 16px;
   }
   .landing-nav-section {
     min-height: 76px;
@@ -3786,7 +3804,7 @@
     justify-content: center;
     min-height: 50px;
   }
-  .marketing-mobile-auth .marketing-mobile-login {
+  .marketing-mobile-auth .marketing-mobile-signup {
     background: var(--landing-green);
     border-color: var(--landing-green);
     color: #f7f8ea;
@@ -3867,15 +3885,15 @@
     gap: 20px;
   }
   .hero-copy h1 {
-    font-size: 39px;
+    font-size: clamp(31px, 8.4vw, 40px);
   }
-  .hero-squiggle {
-    top: 30px;
-    width: 170%;
+  .hero-waves {
+    top: 240px;
+    width: 168%;
   }
   .hero-illustration-wrap {
-    margin-top: 12px;
-    width: 145vw;
+    margin-top: -120px;
+    width: 150vw;
   }
   .platform-marquee {
     padding-block: 40px;
@@ -4108,8 +4126,8 @@
     padding-inline: 13px;
   }
   .hero-copy h1 {
-    font-size: clamp(34px, 9.3vw, 40px);
-    line-height: 1.08;
+    font-size: clamp(29px, 8.2vw, 38px);
+    line-height: 1.1;
   }
   .hero-copy h1 em {
     margin-left: 4px;
@@ -4118,9 +4136,13 @@
     font-size: 16px;
     line-height: 25px;
   }
+  .landing-downloads {
+    width: min(330px, calc(100vw - 36px)) !important;
+  }
   .landing-downloads .landing-store-button {
-    min-width: min(100%, calc(100vw - 36px));
+    min-width: 0;
     padding-inline: 20px;
+    width: 100%;
   }
   .problem-section,
   .single-bulk-section,

@@ -63,18 +63,23 @@ export function LandingNav({ locale }: LandingNavProps) {
 
         <div className="landing-nav-actions">
           <Link
+            className="landing-nav-login"
+            href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}
+          >
+            Log in
+          </Link>
+          <Link
             className="landing-nav-signup"
             href={`${env.NEXT_PUBLIC_APP_URL}/sign-up`}
           >
             Sign up
           </Link>
-          <DownloadMenu locale={locale} />
-          <Link
-            className="landing-nav-primary"
-            href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}
-          >
-            Log in
-          </Link>
+          <DownloadMenu
+            desktop={false}
+            locale={locale}
+            mobileClassName="landing-nav-getapp"
+            mobileLabel="Get the app"
+          />
           <div className="landing-mobile-menu">
             <Sheet>
               <SheetTrigger asChild>

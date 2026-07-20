@@ -60,35 +60,41 @@ export function ScatterField() {
         return;
       }
 
-      for (const pill of pills) {
-        const target = element.querySelector(
-          `.${pill.className.split(' ')[0]}`
-        );
-        if (!target) {
-          continue;
-        }
-
-        gsap.fromTo(
-          target,
-          {
-            rotation: pill.rotation + Math.sign(pill.rotation || 1) * 9,
-            x: pill.dx,
-            y: pill.dy,
-          },
-          {
-            ease: 'none',
-            rotation: pill.rotation,
-            scrollTrigger: {
-              end: 'center 48%',
-              scrub: 0.65,
-              start: 'top 90%',
-              trigger: element,
-            },
-            x: 0,
-            y: 0,
+      // The scatter-and-settle only reads on the wide absolute layout. On
+      // mobile the pills use a static wrapped cluster, so scope the animation
+      // to desktop and let matchMedia revert it below the breakpoint.
+      const mm = gsap.matchMedia();
+      mm.add('(min-width: 769px)', () => {
+        for (const pill of pills) {
+          const target = element.querySelector(
+            `.${pill.className.split(' ')[0]}`
+          );
+          if (!target) {
+            continue;
           }
-        );
-      }
+
+          gsap.fromTo(
+            target,
+            {
+              rotation: pill.rotation + Math.sign(pill.rotation || 1) * 9,
+              x: pill.dx,
+              y: pill.dy,
+            },
+            {
+              ease: 'none',
+              rotation: pill.rotation,
+              scrollTrigger: {
+                end: 'center 48%',
+                scrub: 0.65,
+                start: 'top 90%',
+                trigger: element,
+              },
+              x: 0,
+              y: 0,
+            }
+          );
+        }
+      });
     },
     { scope }
   );
