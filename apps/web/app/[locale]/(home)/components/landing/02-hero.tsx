@@ -1,8 +1,13 @@
+import { env } from '@/env';
 import Image from 'next/image';
-import { Waitlist } from '../waitlist';
+import Link from 'next/link';
 import { HeroIntro } from './hero-intro';
 
-export function LandingHero() {
+type LandingHeroProps = {
+  locale: string;
+};
+
+export function LandingHero({ locale }: LandingHeroProps) {
   return (
     <section className="landing-hero" id="download">
       <svg aria-hidden="true" className="hero-squiggle" viewBox="0 0 1180 300">
@@ -37,8 +42,16 @@ export function LandingHero() {
             One photo and a couple of notes becomes a polished listing, live
             everywhere you sell.
           </p>
-          <div data-hero-line>
-            <Waitlist className="landing-downloads" variant="landing" />
+          <div className="hero-cta" data-hero-line>
+            <Link
+              className="hero-cta-primary"
+              href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}
+            >
+              Log in
+            </Link>
+            <Link className="hero-cta-secondary" href={`/${locale}/download`}>
+              Download the app
+            </Link>
           </div>
         </div>
       </HeroIntro>

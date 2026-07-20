@@ -21,10 +21,8 @@ type LandingNavProps = {
 };
 
 const linkItems = [
-  ['Product', '#product'],
+  ['Features', '#product'],
   ['Pricing', '#pricing'],
-  ['Stories', '#sprout'],
-  ['Blog', 'blog'],
 ] as const;
 
 export function LandingNav({ locale }: LandingNavProps) {
@@ -65,18 +63,18 @@ export function LandingNav({ locale }: LandingNavProps) {
 
         <div className="landing-nav-actions">
           <Link
-            className="landing-nav-login"
-            href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}
-          >
-            Log in
-          </Link>
-          <Link
             className="landing-nav-signup"
             href={`${env.NEXT_PUBLIC_APP_URL}/sign-up`}
           >
             Sign up
           </Link>
           <DownloadMenu locale={locale} />
+          <Link
+            className="landing-nav-primary"
+            href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}
+          >
+            Log in
+          </Link>
           <div className="landing-mobile-menu">
             <Sheet>
               <SheetTrigger asChild>
@@ -102,14 +100,22 @@ export function LandingNav({ locale }: LandingNavProps) {
                       <Link href={getHref(href)}>{label}</Link>
                     </SheetClose>
                   ))}
+                  <SheetClose asChild>
+                    <Link href={`${home}/download`}>Download</Link>
+                  </SheetClose>
                 </nav>
                 <div className="marketing-mobile-auth">
-                  <a href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}>Log in</a>
                   <a
                     className="marketing-mobile-signup"
                     href={`${env.NEXT_PUBLIC_APP_URL}/sign-up`}
                   >
                     Sign up
+                  </a>
+                  <a
+                    className="marketing-mobile-login"
+                    href={`${env.NEXT_PUBLIC_APP_URL}/sign-in`}
+                  >
+                    Log in
                   </a>
                 </div>
               </SheetContent>
