@@ -652,7 +652,7 @@
   left: 50%;
   pointer-events: none;
   position: absolute;
-  top: 108px;
+  top: 28px;
   transform: translateX(-50%);
   width: min(1180px, calc(100% - 40px));
   z-index: 1;
@@ -711,7 +711,7 @@
 }
 
 .hero-illustration-wrap {
-  margin-top: -8px;
+  margin-top: 28px;
   overflow: hidden;
   position: relative;
   width: min(1111px, 92vw);
@@ -3552,7 +3552,7 @@
   }
   .hero-illustration-wrap {
     margin-inline: auto;
-    margin-top: -8px;
+    margin-top: 30px;
     width: 88%;
   }
   .landing-downloads .landing-download-button-row {
@@ -3979,12 +3979,12 @@
     font-size: clamp(31px, 8.4vw, 40px);
   }
   .hero-waves {
-    top: 128px;
+    top: 28px;
     width: 168%;
   }
   .hero-illustration-wrap {
     margin-inline: auto;
-    margin-top: -6px;
+    margin-top: 34px;
     width: 84%;
   }
   .platform-marquee {
