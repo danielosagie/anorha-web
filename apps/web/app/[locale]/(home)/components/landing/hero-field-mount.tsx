@@ -3,7 +3,6 @@
 import dynamic from 'next/dynamic';
 import { useEffect, useState } from 'react';
 import { HeroDriftLayer } from './hero-drift-layer';
-import { HeroStickerField } from './hero-sticker-field';
 
 // DialKit only loads when actually in dial mode, so it never ships in the
 // production landing bundle.
@@ -28,14 +27,5 @@ export function HeroFieldMount() {
     setDialMode(hasDial);
   }, []);
 
-  if (dialMode) {
-    return <HeroDialKit />;
-  }
-
-  return (
-    <>
-      <HeroDriftLayer />
-      <HeroStickerField />
-    </>
-  );
+  return dialMode ? <HeroDialKit /> : <HeroDriftLayer />;
 }

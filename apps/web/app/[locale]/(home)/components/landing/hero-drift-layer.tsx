@@ -1,14 +1,14 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
-import type { Drifter, HeroFieldSettings } from './hero-sticker-config';
+import type { Drifter, HeroFieldSettings } from './hero-drift-config';
 import {
   HERO_DRIFTERS,
   HERO_FIELD_SETTINGS,
   PETAL_FILLS,
   PETAL_PATHS,
   pathFor,
-} from './hero-sticker-config';
+} from './hero-drift-config';
 
 /**
  * Ambient drift layer — tiny petals and a bee that flow left → right across the

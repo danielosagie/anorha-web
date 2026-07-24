@@ -1437,79 +1437,103 @@
 
 .orbit-platforms {
   inset: 0;
+  pointer-events: none;
   position: absolute;
   z-index: 3;
 }
-.orbit-tile {
+
+/* Each chip rides its ring on .orbit-arm while .orbit-chip is the draggable
+   sticker itself, so the orbit and the drag never write the same transform. */
+.orbit-arm {
+  left: 0;
+  position: absolute;
+  top: 0;
+  will-change: transform;
+}
+
+.orbit-chip {
   align-items: center;
-  animation: orbit-drift 6.5s cubic-bezier(0.45, 0, 0.55, 1) infinite alternate;
   background: #fff;
-  border: 1px solid var(--landing-rule);
+  border: 1px solid #eceadf;
   border-radius: 20px;
   box-shadow: 0 12px 24px #1c1b171a;
+  cursor: grab;
   display: flex;
-  font-size: 14px;
-  font-weight: 700;
   height: 74px;
   justify-content: center;
-  position: absolute;
+  pointer-events: auto;
+  position: relative;
+  touch-action: none;
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
   width: 74px;
 }
 
-@keyframes orbit-drift {
-  from {
-    translate: 0 -4px;
-  }
-  to {
-    translate: 0 6px;
-  }
+.orbit-chip.is-held {
+  box-shadow: 0 20px 34px -10px #1c1b174d;
+  cursor: grabbing;
 }
 
-.orbit-ebay {
-  left: 36.5%;
-  top: 15%;
-  transform: rotate(-8deg);
+.orbit-icon {
+  height: 58%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  width: 58%;
 }
-.orbit-shop {
-  color: #5e8e3e;
-  left: 48%;
-  top: 27%;
-  transform: rotate(6deg);
+
+/* Peel corner — pure CSS, no WebGL. Curls as you pull it off the ring. */
+.orbit-chip::before {
+  background: rgba(28, 27, 23, 0.22);
+  border-bottom-right-radius: 19px;
+  bottom: 1px;
+  content: '';
+  filter: blur(3px);
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 1px;
+  transition: all 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 0;
 }
-.orbit-fb {
-  color: #1877f2;
-  left: 38%;
-  top: 42%;
-  transform: rotate(4deg);
+
+.orbit-chip::after {
+  background: linear-gradient(315deg, #dcd7c4 0%, #efeade 42%, #fff 100%);
+  border-bottom-right-radius: 20px;
+  border-top-left-radius: 3px;
+  bottom: 0;
+  box-shadow: -1px -1px 2px rgba(28, 27, 23, 0.1);
+  content: '';
+  height: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  transform-origin: bottom right;
+  transition: all 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 0;
 }
-.orbit-square {
-  left: 50%;
-  top: 59%;
-  transform: rotate(-5deg);
+
+.orbit-chip:hover::after,
+.orbit-chip.is-held::after {
+  height: 26px;
+  width: 26px;
 }
-.orbit-clover {
-  color: #287d10;
-  left: 36%;
-  top: 71%;
-  transform: rotate(7deg);
+
+.orbit-chip:hover::before,
+.orbit-chip.is-held::before {
+  height: 28px;
+  opacity: 0.55;
+  width: 28px;
 }
-.orbit-depop {
-  color: #ff2300;
-  left: 47.5%;
-  top: 82%;
-  transform: rotate(-6deg);
-}
-.orbit-whatnot {
-  color: #d79800;
-  left: 63%;
-  top: 72%;
-  transform: rotate(9deg);
-}
-.square-glyph {
-  border: 4px solid var(--landing-ink);
-  border-radius: 8px;
-  height: 30px;
-  width: 30px;
+
+@media (prefers-reduced-motion: reduce) {
+  .orbit-chip,
+  .orbit-chip::before,
+  .orbit-chip::after {
+    transition: none;
+  }
 }
 
 .sell-anywhere-section {
@@ -3644,36 +3668,6 @@
     top: 48px;
     width: auto;
   }
-  .orbit-platforms {
-    opacity: 0.7;
-  }
-  .orbit-ebay {
-    left: 9%;
-    top: 26%;
-  }
-  .orbit-shop {
-    left: 73%;
-    top: 29%;
-  }
-  .orbit-fb {
-    left: 5%;
-    top: 52%;
-  }
-  .orbit-square {
-    left: 77%;
-    top: 57%;
-  }
-  .orbit-clover {
-    left: 6%;
-    top: 75%;
-  }
-  .orbit-depop {
-    left: 76%;
-    top: 78%;
-  }
-  .orbit-whatnot {
-    display: none;
-  }
   .sell-anywhere-panel {
     display: flex;
     flex-direction: column;
@@ -4100,7 +4094,7 @@
     transform: translateX(-50%) scale(0.9);
     transform-origin: top center;
   }
-  .orbit-tile {
+  .orbit-chip {
     height: 58px;
     width: 58px;
   }
@@ -4470,7 +4464,6 @@
 
 @media (prefers-reduced-motion: reduce) {
   .marquee-track,
-  .orbit-tile,
   .hero-wind-wave {
     animation: none !important;
   }
@@ -4507,122 +4500,6 @@
 }
 
 /* redeploy nudge 3f23bb8 */
-
-/* ============================================================
-   Hero sticker field — draggable leaves + marketplace stickers
-   ============================================================ */
-.hero-sticker-field {
-  inset: 0;
-  pointer-events: none;
-  position: absolute;
-  z-index: 2;
-}
-
-.hero-sticker {
-  cursor: grab;
-  pointer-events: auto;
-  position: absolute;
-  touch-action: none;
-  transform: translate(-50%, -50%);
-  will-change: transform;
-}
-
-.hero-sticker.is-held {
-  cursor: grabbing;
-}
-
-/* Wind layer — ambient sway. Drag lives on the outer .hero-sticker so the two
-   transforms never fight. No parallax (not mouse-reactive). */
-.hero-sticker-sway {
-  will-change: transform;
-}
-
-/* Marketplace icon — a white die-cut sticker chip. Size is dialed via the
-   --hero-chip-size var the field sets per breakpoint. */
-.hero-sticker-chip {
-  align-items: center;
-  background: #fff;
-  border: 1px solid rgba(28, 27, 23, 0.06);
-  border-radius: 16px;
-  box-shadow: 0 2px 8px -3px rgba(28, 27, 23, 0.16);
-  display: flex;
-  height: var(--hero-chip-size, 60px);
-  justify-content: center;
-  position: relative;
-  transition:
-    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
-    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
-  width: var(--hero-chip-size, 60px);
-}
-
-.hero-sticker-icon {
-  height: 60%;
-  object-fit: contain;
-  pointer-events: none;
-  user-select: none;
-  width: 60%;
-}
-
-/* CSS peel corner (bottom-right) — superr.ai-style: pure DOM/CSS, no WebGL.
-   Flat at rest; the corner curls up on hover / grab. ::before is the cast
-   shadow of the lifted flap, ::after is the flap (the sticker's satin back). */
-.hero-sticker-chip::before {
-  background: rgba(28, 27, 23, 0.22);
-  border-bottom-right-radius: 15px;
-  bottom: 1px;
-  content: '';
-  filter: blur(3px);
-  height: 0;
-  opacity: 0;
-  pointer-events: none;
-  position: absolute;
-  right: 1px;
-  transition: all 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
-  width: 0;
-  z-index: 0;
-}
-
-.hero-sticker-chip::after {
-  background: linear-gradient(315deg, #dcd7c4 0%, #efeade 42%, #fff 100%);
-  border-bottom-right-radius: 16px;
-  border-top-left-radius: 3px;
-  bottom: 0;
-  box-shadow: -1px -1px 2px rgba(28, 27, 23, 0.1);
-  content: '';
-  height: 0;
-  pointer-events: none;
-  position: absolute;
-  right: 0;
-  transform-origin: bottom right;
-  transition: all 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
-  width: 0;
-  z-index: 2;
-}
-
-.hero-sticker:hover .hero-sticker-chip::after,
-.hero-sticker.is-held .hero-sticker-chip::after {
-  height: 24px;
-  width: 24px;
-}
-
-.hero-sticker:hover .hero-sticker-chip::before,
-.hero-sticker.is-held .hero-sticker-chip::before {
-  height: 26px;
-  opacity: 0.55;
-  width: 26px;
-}
-
-.hero-sticker.is-held .hero-sticker-chip {
-  box-shadow: 0 12px 24px -10px rgba(28, 27, 23, 0.3);
-  transform: scale(1.06);
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .hero-sticker-chip::before,
-  .hero-sticker-chip::after {
-    transition: none;
-  }
-}
 
 /* Drift layer — tiny petals + a bee flowing left to right, marquee style.
    Ambient only: never interactive, so it can sit over the whole hero. */
@@ -4671,10 +4548,6 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .hero-sticker-chip {
-    transition: none;
-  }
-
   .hero-bee-wings {
     animation: none;
   }
