@@ -1,11 +1,14 @@
 import Image from 'next/image';
 import type { ReactNode } from 'react';
+import { SproutScrollSync } from './sprout-scroll-sync';
 
 type FeaturePanelProps = {
   children: ReactNode;
   className: string;
   description: string;
   floating?: ReactNode;
+  /** stage layer index — the scroll sync cross-fades between these */
+  index: number;
   title: string;
 };
 
@@ -14,10 +17,11 @@ function FeaturePanel({
   className,
   description,
   floating,
+  index,
   title,
 }: FeaturePanelProps) {
   return (
-    <article className={`sprout-feature-panel ${className}`}>
+    <article className={`sprout-feature-panel ${className}`} data-layer={index}>
       <div className="sprout-feature-copy">
         <h3>{title}</h3>
         <p>{description}</p>
@@ -65,8 +69,11 @@ function SproutBadge({
 export function SproutFeatureBlocks() {
   return (
     <section aria-label="What Sprout can do" className="sprout-features">
+      {/* Sticky stage: one card stays pinned while the beats cross-fade. */}
+      <div className="sprout-stage">
       <FeaturePanel
         className="sprout-panel-chat"
+        index={0}
         description="It knows your whole shelf. Ask what's selling, what's stuck, or what to restock."
         floating={
           <>
@@ -100,6 +107,7 @@ export function SproutFeatureBlocks() {
 
       <FeaturePanel
         className="sprout-panel-campaign"
+        index={1}
         description="Time-boxed campaigns drop the price until it moves. No babysitting."
         floating={
           <>
@@ -168,6 +176,7 @@ export function SproutFeatureBlocks() {
 
       <FeaturePanel
         className="sprout-panel-listing"
+        index={2}
         description="One photo in. Title, tags, description, and a price from real sold comps."
         floating={
           <>
@@ -229,6 +238,7 @@ export function SproutFeatureBlocks() {
 
       <FeaturePanel
         className="sprout-panel-buyers"
+        index={3}
         description="Negotiates in your voice, day or night. You approve the big calls."
         floating={
           <>
@@ -262,6 +272,7 @@ export function SproutFeatureBlocks() {
 
       <FeaturePanel
         className="sprout-panel-brief"
+        index={4}
         description="A morning brief, and a nudge when something needs you. No dashboard digging."
         floating={
           <div className="demand-stat">
@@ -309,6 +320,14 @@ export function SproutFeatureBlocks() {
           <div className="phone-action">Review 2 offers</div>
         </Phone>
       </FeaturePanel>
+
+        <div aria-hidden="true" className="sprout-progress">
+          {[0, 1, 2, 3, 4].map((dot) => (
+            <i data-dot={dot} key={dot} />
+          ))}
+        </div>
+      </div>
+      <SproutScrollSync />
     </section>
   );
 }

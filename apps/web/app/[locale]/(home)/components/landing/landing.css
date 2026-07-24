@@ -4749,3 +4749,72 @@
     animation: none;
   }
 }
+
+/* ============================================================
+   Sprout pinned stage — scroll into the feature, not past it
+   ============================================================ */
+
+/* The wrapper is inert by default so the panels keep flowing in the existing
+   stacked layout (mobile + reduced motion). It only becomes a stage below. */
+.sprout-stage {
+  display: contents;
+}
+
+.sprout-progress {
+  display: none;
+}
+
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+  /* The section itself is the scroll runway: one viewport per beat. */
+  .sprout-features {
+    display: block;
+    height: 500vh;
+    padding: 0 24px;
+    position: relative;
+  }
+
+  .sprout-stage {
+    display: block;
+    height: 460px;
+    margin: 0 auto;
+    max-width: 1240px;
+    position: sticky;
+    /* centred in the viewport while pinned */
+    top: calc((100vh - 460px) / 2);
+    width: 100%;
+  }
+
+  /* Beats stack in place and cross-fade; the sync owns opacity. */
+  .sprout-stage .sprout-feature-panel {
+    height: 100%;
+    inset: 0;
+    max-width: none;
+    position: absolute;
+    width: 100%;
+  }
+
+  /* Progress rail: a pinned section needs to show it is advancing. */
+  .sprout-progress {
+    bottom: 38px;
+    display: flex;
+    gap: 7px;
+    left: 56px;
+    position: absolute;
+    z-index: 6;
+  }
+
+  .sprout-progress i {
+    background: rgba(28, 27, 23, 0.16);
+    border-radius: 999px;
+    height: 5px;
+    transition:
+      width 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
+      background-color 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
+    width: 5px;
+  }
+
+  .sprout-progress i.is-active {
+    background: var(--landing-green);
+    width: 20px;
+  }
+}
