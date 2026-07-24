@@ -26,4 +26,8 @@ export const keys = () =>
       NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL:
         process.env.NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL,
     },
+    // Treat empty env vars (e.g. CLERK_WEBHOOK_SECRET="" in a .env template) as
+    // unset. Without this, "" runs .startsWith() and fails boot even though the
+    // field is .optional() — .optional() only skips undefined, not "".
+    emptyStringAsUndefined: true,
   });
