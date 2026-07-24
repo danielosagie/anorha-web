@@ -14,6 +14,7 @@ import { SellTogetherPartner } from './components/landing/11-sell-together-partn
 import { LandingCta } from './components/landing/12-cta';
 import { LandingPricing } from './components/landing/12a-pricing';
 import { SectionReveal } from './components/landing/section-reveal';
+import { SmoothScroll } from './components/landing/smooth-scroll';
 
 type HomeProps = {
   params: Promise<{
@@ -63,6 +64,7 @@ const Home = async ({ params }: HomeProps) => {
 
   return (
     <div className="anorha-landing">
+      <SmoothScroll />
       <script
         // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is serialized and contains no user input.
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
