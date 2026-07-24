@@ -4507,3 +4507,175 @@
 }
 
 /* redeploy nudge 3f23bb8 */
+
+/* ============================================================
+   Hero sticker field — draggable leaves + marketplace stickers
+   ============================================================ */
+.hero-sticker-field {
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.hero-sticker {
+  cursor: grab;
+  pointer-events: auto;
+  position: absolute;
+  touch-action: none;
+  transform: translate(-50%, -50%);
+  will-change: transform;
+}
+
+.hero-sticker.is-held {
+  cursor: grabbing;
+}
+
+/* Wind layer — ambient sway. Drag lives on the outer .hero-sticker so the two
+   transforms never fight. No parallax (not mouse-reactive). */
+.hero-sticker-sway {
+  will-change: transform;
+}
+
+/* Marketplace icon — a white die-cut sticker chip. Size is dialed via the
+   --hero-chip-size var the field sets per breakpoint. */
+.hero-sticker-chip {
+  align-items: center;
+  background: #fff;
+  border: 1px solid rgba(28, 27, 23, 0.06);
+  border-radius: 16px;
+  box-shadow: 0 2px 8px -3px rgba(28, 27, 23, 0.16);
+  display: flex;
+  height: var(--hero-chip-size, 60px);
+  justify-content: center;
+  position: relative;
+  transition:
+    transform 0.22s cubic-bezier(0.2, 0.8, 0.2, 1),
+    box-shadow 0.22s cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: var(--hero-chip-size, 60px);
+}
+
+.hero-sticker-icon {
+  height: 60%;
+  object-fit: contain;
+  pointer-events: none;
+  user-select: none;
+  width: 60%;
+}
+
+/* CSS peel corner (bottom-right) — superr.ai-style: pure DOM/CSS, no WebGL.
+   Flat at rest; the corner curls up on hover / grab. ::before is the cast
+   shadow of the lifted flap, ::after is the flap (the sticker's satin back). */
+.hero-sticker-chip::before {
+  background: rgba(28, 27, 23, 0.22);
+  border-bottom-right-radius: 15px;
+  bottom: 1px;
+  content: '';
+  filter: blur(3px);
+  height: 0;
+  opacity: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 1px;
+  transition: all 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 0;
+  z-index: 0;
+}
+
+.hero-sticker-chip::after {
+  background: linear-gradient(315deg, #dcd7c4 0%, #efeade 42%, #fff 100%);
+  border-bottom-right-radius: 16px;
+  border-top-left-radius: 3px;
+  bottom: 0;
+  box-shadow: -1px -1px 2px rgba(28, 27, 23, 0.1);
+  content: '';
+  height: 0;
+  pointer-events: none;
+  position: absolute;
+  right: 0;
+  transform-origin: bottom right;
+  transition: all 0.26s cubic-bezier(0.2, 0.8, 0.2, 1);
+  width: 0;
+  z-index: 2;
+}
+
+.hero-sticker:hover .hero-sticker-chip::after,
+.hero-sticker.is-held .hero-sticker-chip::after {
+  height: 24px;
+  width: 24px;
+}
+
+.hero-sticker:hover .hero-sticker-chip::before,
+.hero-sticker.is-held .hero-sticker-chip::before {
+  height: 26px;
+  opacity: 0.55;
+  width: 26px;
+}
+
+.hero-sticker.is-held .hero-sticker-chip {
+  box-shadow: 0 12px 24px -10px rgba(28, 27, 23, 0.3);
+  transform: scale(1.06);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-sticker-chip::before,
+  .hero-sticker-chip::after {
+    transition: none;
+  }
+}
+
+/* Drift layer — tiny petals + a bee flowing left to right, marquee style.
+   Ambient only: never interactive, so it can sit over the whole hero. */
+.hero-drift-layer {
+  inset: 0;
+  overflow: hidden;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
+}
+
+.hero-drifter {
+  left: 0;
+  position: absolute;
+  top: 0;
+  will-change: transform;
+}
+
+.hero-drifter-float {
+  will-change: transform;
+}
+
+.hero-petal,
+.hero-bee {
+  display: block;
+  height: 100%;
+  width: 100%;
+}
+
+.hero-bee {
+  overflow: visible;
+}
+
+.hero-bee-wings {
+  animation: hero-bee-wing 0.16s ease-in-out infinite alternate;
+  transform-origin: 17px 10px;
+}
+
+@keyframes hero-bee-wing {
+  from {
+    transform: scaleY(1);
+  }
+  to {
+    transform: scaleY(0.55);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-sticker-chip {
+    transition: none;
+  }
+
+  .hero-bee-wings {
+    animation: none;
+  }
+}

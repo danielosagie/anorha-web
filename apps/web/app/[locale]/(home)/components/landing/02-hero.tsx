@@ -1,5 +1,6 @@
 import Image from 'next/image';
 import { Waitlist } from '../waitlist';
+import { HeroFieldMount } from './hero-field-mount';
 import { HeroIntro } from './hero-intro';
 import { HeroWaves } from './hero-waves';
 
@@ -7,6 +8,7 @@ export function LandingHero() {
   return (
     <section className="landing-hero" id="download">
       <HeroWaves />
+      <HeroFieldMount />
       <HeroIntro>
         <div className="hero-copy">
           <h1>

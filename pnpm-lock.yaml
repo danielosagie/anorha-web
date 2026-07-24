@@ -653,6 +653,9 @@ importers:
       date-fns:
         specifier: ^4.1.0
         version: 4.1.0
+      dialkit:
+        specifier: ^1.4.3
+        version: 1.4.3(motion@12.23.13(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       framer-motion:
         specifier: ^12.34.2
         version: 12.34.2(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -671,6 +674,9 @@ importers:
       mdx-bundler:
         specifier: ^10.1.1
         version: 10.1.1(acorn@8.14.1)(esbuild@0.27.0)
+      motion:
+        specifier: ^12.23.13
+        version: 12.23.13(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
       next:
         specifier: 15.3.6
         version: 15.3.6(@babel/core@7.26.9)(@opentelemetry/api@1.9.0)(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
@@ -7431,6 +7437,7 @@ packages:
   basic-ftp@5.0.5:
     resolution: {integrity: sha512-4Bcg1P8xhUuqcii/S0Z9wiHIrQVPMermM1any+MX5GeGD7faD3/msQUDGLol9wOcz4/jbg/WJnGqoJF6LiBdtg==}
     engines: {node: '>=10.0.0'}
+    deprecated: Security vulnerability fixed in 5.2.1, please upgrade
 
   before-after-hook@2.2.3:
     resolution: {integrity: sha512-NzUnlZexiaH/46WDhANlyR2bXRopNg4F/zuSA3OpZnllCUgRaOF2znDioDWrmbNVsuZk6l9pMquQB38cfBZwkQ==}
@@ -8301,6 +8308,30 @@ packages:
 
   devtools-protocol@0.0.1534754:
     resolution: {integrity: sha512-26T91cV5dbOYnXdJi5qQHoTtUoNEqwkHcAyu/IKtjIAxiEqPMrDiRkDOPWVsGfNZGmlQVHQbZRSjD8sxagWVsQ==}
+
+  dialkit@1.4.3:
+    resolution: {integrity: sha512-9TFWomDi2J7/tONOkoyTfBop9L9vx6tiSZPBl8sSsKrxAs+YYZJ64P4xP1o7dmXMnBEjvhB42Aopl0GxqkKGnA==}
+    peerDependencies:
+      motion: '>=11.0.0'
+      motion-v: '>=2.0.0'
+      react: '>=18.0.0'
+      react-dom: '>=18.0.0'
+      solid-js: '>=1.6.0'
+      svelte: '>=5.8.0'
+      vue: '>=3.3.0'
+    peerDependenciesMeta:
+      motion-v:
+        optional: true
+      react:
+        optional: true
+      react-dom:
+        optional: true
+      solid-js:
+        optional: true
+      svelte:
+        optional: true
+      vue:
+        optional: true
 
   diff-match-patch@1.0.5:
     resolution: {integrity: sha512-IayShXAgj/QMXgB0IWmKx+rOPuGMhqm5w6jvFxmVenXKIzRqTAAsbBPT3kWQeGANj3jGgvcvv4yK6SxqYmikgw==}
@@ -20887,6 +20918,13 @@ snapshots:
       dequal: 2.0.3
 
   devtools-protocol@0.0.1534754: {}
+
+  dialkit@1.4.3(motion@12.23.13(react-dom@19.1.0(react@19.1.0))(react@19.1.0))(react-dom@19.1.0(react@19.1.0))(react@19.1.0):
+    dependencies:
+      motion: 12.23.13(react-dom@19.1.0(react@19.1.0))(react@19.1.0)
+    optionalDependencies:
+      react: 19.1.0
+      react-dom: 19.1.0(react@19.1.0)
 
   diff-match-patch@1.0.5: {}
 
