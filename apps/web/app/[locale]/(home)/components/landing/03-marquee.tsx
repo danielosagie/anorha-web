@@ -30,10 +30,13 @@ export function PlatformMarquee() {
       className="platform-marquee"
     >
       <p>Lists to the places you already sell</p>
-      <div className="marquee-window">
-        <div className="marquee-track">
-          <PlatformRow />
-          <PlatformRow hidden />
+      {/* clip wraps the window so the edge blur can sit outside the mask */}
+      <div className="marquee-clip">
+        <div className="marquee-window">
+          <div className="marquee-track">
+            <PlatformRow />
+            <PlatformRow hidden />
+          </div>
         </div>
       </div>
     </section>

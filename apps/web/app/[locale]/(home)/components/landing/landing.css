@@ -846,9 +846,57 @@
   line-height: 16px;
 }
 
+/* Cropped to just under the hero illustration's width (min(1111px, 92vw)) so
+   the strip reads as a contained band rather than running edge to edge. */
+.marquee-clip {
+  position: relative;
+  width: min(1040px, 92vw);
+}
+
+/* The fade: logos dissolve out at both ends instead of hard-cutting. */
 .marquee-window {
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 9%,
+    #000 91%,
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0%,
+    #000 9%,
+    #000 91%,
+    transparent 100%
+  );
   overflow: hidden;
   width: 100%;
+}
+
+/* The blur: a soft focus pass over each end, itself faded so it never shows
+   an edge. Sits outside the masked window so the mask can't clip it. */
+.marquee-clip::before,
+.marquee-clip::after {
+  backdrop-filter: blur(4px);
+  bottom: 0;
+  content: '';
+  pointer-events: none;
+  position: absolute;
+  top: 0;
+  width: 96px;
+  z-index: 2;
+}
+
+.marquee-clip::before {
+  -webkit-mask-image: linear-gradient(to right, #000, transparent);
+  left: 0;
+  mask-image: linear-gradient(to right, #000, transparent);
+}
+
+.marquee-clip::after {
+  -webkit-mask-image: linear-gradient(to left, #000, transparent);
+  mask-image: linear-gradient(to left, #000, transparent);
+  right: 0;
 }
 
 .marquee-track {
