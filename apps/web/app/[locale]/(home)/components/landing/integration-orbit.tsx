@@ -5,9 +5,10 @@ import { useEffect, useRef } from 'react';
 /**
  * Marketplace integrations riding the orbit rings.
  *
- * They stream along their ring like a marquee — enter low on the right, arc up
- * and out past the top left, wrap around. Grab one and it PEELS OFF its orbit:
- * the ring lets go and the sticker stays wherever you drop it.
+ * They stream along their ring like a marquee — enter below the panel, arc up
+ * and out past the left edge, wrap. Grab one and it peels off: the ring lets go
+ * and it stays wherever you drop it. Drop it back near ANY ring and it rejoins
+ * the spin from that exact angle.
  *
  * Two transform layers so the orbit and the drag never write the same one:
  *   - .orbit-arm   (outer) → orbit position along the ring
@@ -21,6 +22,8 @@ const VIEW_W = 1240;
 const VIEW_H = 640;
 const CX = 240;
 const CY = 620;
+/** how close to a ring (design px) a drop has to land to rejoin the spin */
+const SNAP = 58;
 
 type OrbitItem = { id: string; icon: string; rotate: number };
 
@@ -31,9 +34,8 @@ type Ring = {
   /**
    * Sweep in degrees, screen space (0 = east, negative = up). Per ring, not
    * shared: each radius leaves the panel's left edge at a different angle, so
-   * one range can't wrap cleanly for all three. Start is far enough below the
-   * panel and end far enough past the left edge that the wrap happens
-   * off-screen and reads as a continuous marquee.
+   * one range can't wrap cleanly for all three. Start sits below the panel and
+   * end past the left edge, so the wrap happens off-screen.
    */
   start: number;
   end: number;
@@ -74,14 +76,19 @@ const RINGS: Ring[] = [
   },
 ];
 
-const ALL_ITEMS = RINGS.flatMap((ring) =>
-  ring.items.map((item) => ({ ...item, r: ring.r }))
+const ALL_ITEMS = RINGS.flatMap((ring, ringIndex) =>
+  ring.items.map((item, i) => ({
+    ...item,
+    ringIndex,
+    offset: i / ring.items.length,
+  }))
 );
+
+/** Mutable runtime state — an item can change rings or come off entirely. */
+type ItemState = { ringIndex: number; offset: number; peeled: boolean };
 
 export function IntegrationOrbit() {
   const scopeRef = useRef<HTMLDivElement>(null);
-  // ids that have been pulled off their ring — they stay where they're dropped
-  const peeledRef = useRef<Set<string>>(new Set());
 
   useEffect(() => {
     const scope = scopeRef.current;
@@ -111,58 +118,111 @@ export function IntegrationOrbit() {
       ).matches;
       const panel = scope.closest('.store-manage-panel') ?? scope;
 
+      const state = new Map<string, ItemState>(
+        ALL_ITEMS.map((it) => [
+          it.id,
+          { ringIndex: it.ringIndex, offset: it.offset, peeled: false },
+        ])
+      );
+      // one playhead per ring, kept so a rejoining chip can phase itself in
+      const playheads = RINGS.map(() => ({ t: 0 }));
+
       const armFor = (id: string) =>
         scope.querySelector<HTMLElement>(`[data-arm="${id}"]`);
 
-      // Place one item on its ring at a given sweep progress (0..1).
+      /** Place an item on `ring` at sweep progress 0..1. */
       const place = (ring: Ring, id: string, progress: number) => {
         const arm = armFor(id);
-        if (!arm || peeledRef.current.has(id)) {
+        if (!arm) {
           return;
         }
-        const { r } = ring;
         const rect = panel.getBoundingClientRect();
         const angle = ring.start + (ring.end - ring.start) * progress;
         const rad = (angle * Math.PI) / 180;
-        const x = ((CX + r * Math.cos(rad)) / VIEW_W) * rect.width;
-        const y = ((CY + r * Math.sin(rad)) / VIEW_H) * rect.height;
+        const x = ((CX + ring.r * Math.cos(rad)) / VIEW_W) * rect.width;
+        const y = ((CY + ring.r * Math.sin(rad)) / VIEW_H) * rect.height;
         gsap.set(arm, { x, y, xPercent: -50, yPercent: -50 });
       };
 
-      const tweens: Array<{ kill: () => void }> = [];
-
-      for (const ring of RINGS) {
-        const n = ring.items.length;
-        // Seed static positions first so there's no flash before the first tick.
-        ring.items.forEach((item, i) => place(ring, item.id, i / n));
-
-        if (reduce) {
-          continue;
+      const renderRing = (ringIndex: number) => {
+        const ring = RINGS[ringIndex];
+        const t = playheads[ringIndex].t;
+        for (const [id, s] of state) {
+          if (s.ringIndex === ringIndex && !s.peeled) {
+            place(ring, id, (t + s.offset) % 1);
+          }
         }
+      };
 
-        // One proxy per ring drives every item on it; each item is offset by
-        // i/n so the ring stays evenly populated as they stream through.
-        const proxy = { t: 0 };
-        tweens.push(
-          gsap.to(proxy, {
-            t: 1,
-            duration: ring.dur,
-            ease: 'none',
-            repeat: -1,
-            onUpdate: () => {
-              ring.items.forEach((item, i) => {
-                place(ring, item.id, (proxy.t + i / n) % 1);
-              });
-            },
-          })
-        );
+      // Seed positions before the first tick so nothing flashes at 0,0.
+      RINGS.forEach((_, i) => renderRing(i));
+
+      const tweens: Array<{ kill: () => void }> = [];
+      if (!reduce) {
+        RINGS.forEach((ring, i) => {
+          tweens.push(
+            gsap.to(playheads[i], {
+              t: 1,
+              duration: ring.dur,
+              ease: 'none',
+              repeat: -1,
+              onUpdate: () => renderRing(i),
+            })
+          );
+        });
       }
 
-      // Peel off and place.
+      /**
+       * If the chip was dropped near a ring, rejoin the spin there. The arm is
+       * moved to the chip's current spot and the drag offset zeroed in the same
+       * frame, so it resumes without jumping.
+       */
+      const tryRejoin = (chip: HTMLElement, id: string) => {
+        const s = state.get(id);
+        if (!s) {
+          return;
+        }
+        const pr = panel.getBoundingClientRect();
+        const cr = chip.getBoundingClientRect();
+        const dx =
+          ((cr.left + cr.width / 2 - pr.left) / pr.width) * VIEW_W - CX;
+        const dy =
+          ((cr.top + cr.height / 2 - pr.top) / pr.height) * VIEW_H - CY;
+        const radius = Math.hypot(dx, dy);
+
+        let best = -1;
+        let bestDist = Number.POSITIVE_INFINITY;
+        RINGS.forEach((ring, i) => {
+          const d = Math.abs(radius - ring.r);
+          if (d < bestDist) {
+            bestDist = d;
+            best = i;
+          }
+        });
+        if (best < 0 || bestDist > SNAP) {
+          return; // stays where it was dropped
+        }
+
+        const ring = RINGS[best];
+        const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
+        const raw = (angle - ring.start) / (ring.end - ring.start);
+        const progress = Math.min(1, Math.max(0, raw));
+        const t = playheads[best].t;
+
+        s.ringIndex = best;
+        s.offset = ((progress - t) % 1 + 1) % 1;
+        s.peeled = false;
+        chip.classList.remove('is-peeled');
+
+        // Same frame: arm takes over the position, drag offset goes to zero.
+        place(ring, id, progress);
+        gsap.set(chip, { x: 0, y: 0 });
+      };
+
       const chips = gsap.utils.toArray<HTMLElement>('.orbit-chip', scope);
       const draggables: Array<{ kill: () => void }> = [];
       for (const chip of chips) {
-        const id = chip.dataset.id;
+        const id = chip.dataset.id ?? '';
         const [instance] = Draggable.create(chip, {
           type: 'x,y',
           bounds: panel,
@@ -174,14 +234,23 @@ export function IntegrationOrbit() {
           cursor: 'grab',
           activeCursor: 'grabbing',
           onPress() {
-            if (id) {
-              // the ring lets go of it for good
-              peeledRef.current.add(id);
+            const s = state.get(id);
+            if (s) {
+              s.peeled = true; // the ring lets go
             }
             chip.classList.add('is-held', 'is-peeled');
           },
           onRelease() {
             chip.classList.remove('is-held');
+          },
+          onDragEnd() {
+            // With inertia on, wait for the throw to settle instead.
+            if (reduce) {
+              tryRejoin(chip, id);
+            }
+          },
+          onThrowComplete() {
+            tryRejoin(chip, id);
           },
         });
         if (instance) {
@@ -189,15 +258,12 @@ export function IntegrationOrbit() {
         }
       }
 
-      // Keep un-peeled chips glued to the rings when the panel resizes.
+      // Keep ringed chips glued to the rings when the panel resizes.
       let resizeTimer: ReturnType<typeof setTimeout>;
       const onResize = () => {
         clearTimeout(resizeTimer);
         resizeTimer = setTimeout(() => {
-          for (const ring of RINGS) {
-            const n = ring.items.length;
-            ring.items.forEach((item, i) => place(ring, item.id, i / n));
-          }
+          RINGS.forEach((_, i) => renderRing(i));
         }, 200);
       };
       window.addEventListener('resize', onResize);
@@ -231,7 +297,11 @@ export function IntegrationOrbit() {
           >
             {/* Local trusted brand SVGs; next/image blocks SVG by default. */}
             {/* biome-ignore lint/nursery/noImgElement: static brand SVG */}
-            <img alt="" className="orbit-icon" src={`/assets/platforms/${item.icon}.svg`} />
+            <img
+              alt=""
+              className="orbit-icon"
+              src={`/assets/platforms/${item.icon}.svg`}
+            />
           </span>
         </div>
       ))}
