@@ -50,6 +50,7 @@ const RINGS: Ring[] = [
     end: -160,
     items: [
       { id: 'clover', icon: 'clover', rotate: 7 },
+      { id: 'etsy', icon: 'etsy', rotate: -4 },
       { id: 'depop', icon: 'depop', rotate: -6 },
     ],
   },
@@ -60,7 +61,9 @@ const RINGS: Ring[] = [
     end: -132,
     items: [
       { id: 'facebook', icon: 'facebook', rotate: 4 },
+      { id: 'amazon', icon: 'amazon', rotate: -7 },
       { id: 'square', icon: 'square', rotate: -5 },
+      { id: 'woocommerce', icon: 'woocommerce', rotate: 5 },
     ],
   },
   {
@@ -71,6 +74,7 @@ const RINGS: Ring[] = [
     items: [
       { id: 'ebay', icon: 'ebay', rotate: -8 },
       { id: 'shopify', icon: 'shopify', rotate: 6 },
+      { id: 'grailed', icon: 'grailed', rotate: -3 },
       { id: 'whatnot', icon: 'whatnot', rotate: 9 },
     ],
   },
