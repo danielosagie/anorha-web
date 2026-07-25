@@ -4751,36 +4751,140 @@
 }
 
 /* ============================================================
-   Sprout pinned stage — scroll into the feature, not past it
+   Sprout feature beats
+   Mobile-first: stacked cards (copy top-left, phone below, bleeding off the
+   card's bottom edge). Desktop: a pinned scene where the phone stays anchored
+   right and the copy scrolls up the left. Modelled on bevel.health, which also
+   drops the pin entirely on small screens.
    ============================================================ */
 
-/* The wrapper is inert by default so the panels keep flowing in the existing
-   stacked layout (mobile + reduced motion). It only becomes a stage below. */
+/* ---------- mobile / default: plain stacked cards ---------- */
+
+.sprout-features {
+  align-items: center;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 10px 16px 48px;
+}
+
 .sprout-stage {
   display: contents;
 }
 
-/* Both the progress rail and the desktop copy track are desktop-only. On
-   mobile the panels keep their own in-panel copy and stack normally. */
 .sprout-progress,
 .sprout-copy-track {
   display: none;
 }
 
-@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
-  /* Runway. Its height comes from the copy track (5 beats x 100vh) pulled up
-     over the sticky stage, so no fixed height here. Plain ground so the boxed,
-     gradient-tinted cards stand out. */
+.sprout-feature-panel {
+  /* NOT the `border` shorthand: this block comes after .sprout-panel-*, and the
+     shorthand would reset their tinted border-colors to currentColor (ink). */
+  border-radius: 26px;
+  border-style: solid;
+  border-width: 1px;
+  display: flex;
+  flex-direction: column;
+  height: auto;
+  max-width: 520px;
+  overflow: hidden;
+  padding: 30px 22px 0;
+  position: relative;
+  width: 100%;
+}
+
+/* Copy sits at the top, left aligned (bevel does the same on mobile). */
+.sprout-feature-panel .sprout-feature-copy {
+  align-items: flex-start;
+  gap: 10px;
+  inset: auto;
+  max-width: none;
+  position: static;
+  text-align: left;
+  z-index: 2;
+}
+
+.sprout-feature-panel .sprout-feature-copy h3 {
+  font-size: clamp(26px, 7vw, 34px);
+  line-height: 1.12;
+}
+
+.sprout-feature-panel .sprout-feature-copy p {
+  font-size: 16px;
+  line-height: 25px;
+}
+
+/* Phone centred under the copy, bleeding off the bottom of the card. */
+.sprout-feature-panel .feature-phone {
+  inset: auto;
+  margin: 26px auto -90px;
+  position: relative;
+}
+
+/* Floating callouts are desktop garnish; they collide with the stacked card. */
+.sprout-feature-panel .sprout-floating-badge,
+.sprout-feature-panel .floating-stat,
+.sprout-feature-panel .repricing-badge,
+.sprout-feature-panel .photo-stack,
+.sprout-feature-panel .ready-card,
+.sprout-feature-panel .sold-note,
+.sprout-feature-panel .demand-stat {
+  display: none;
+}
+
+/* ---------- desktop: the pinned scene ---------- */
+
+@media (min-width: 901px) {
   .sprout-features {
-    background: #fff;
     display: block;
-    gap: 0;
     padding: 0 24px;
     position: relative;
   }
 
-  /* Pinned scene: full viewport, holds the anchored phone. Stays put the whole
-     section while the copy scrolls past it. */
+  .sprout-feature-panel {
+    max-width: 1240px;
+    padding: 0;
+  }
+
+  /* Restore the desktop composition: copy left, phone right, callouts back. */
+  .sprout-feature-panel .sprout-feature-copy {
+    gap: 14px;
+    left: 56px;
+    max-width: 400px;
+    position: absolute;
+    top: 160px;
+  }
+
+  .sprout-feature-panel .sprout-feature-copy h3 {
+    font-size: 36px;
+  }
+
+  .sprout-feature-panel .sprout-feature-copy p {
+    font-size: 18px;
+    line-height: 28px;
+  }
+
+  .sprout-feature-panel .feature-phone {
+    left: 65.3%;
+    margin: 0;
+    position: absolute;
+    top: 60px;
+  }
+
+  .sprout-feature-panel .sprout-floating-badge,
+  .sprout-feature-panel .floating-stat,
+  .sprout-feature-panel .repricing-badge,
+  .sprout-feature-panel .photo-stack,
+  .sprout-feature-panel .ready-card,
+  .sprout-feature-panel .sold-note,
+  .sprout-feature-panel .demand-stat {
+    display: flex;
+  }
+}
+
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+  /* Sticky scene. Its runway height comes from the copy track below. */
   .sprout-stage {
     display: block;
     height: 100vh;
@@ -4790,28 +4894,24 @@
     z-index: 1;
   }
 
-  /* Each beat is a boxed card, centred in the scene and cross-faded. The card
-     keeps its per-beat gradient (set on .sprout-panel-*), so the colour shifts
-     as you scroll from beat to beat, bevel-style. The phone sits right
-     (left: 65.3% in .feature-phone), copy scrolls up the left over the card. */
+  /* Beats stack in place and cross-fade. Positioned WITHOUT transform (auto
+     margins + a top offset) so transform stays free for the animation and the
+     two can never fight. */
   .sprout-stage .sprout-feature-panel {
-    box-shadow: 0 32px 70px -44px rgba(28, 27, 23, 0.34);
     height: 460px;
-    left: 50%;
-    margin: 0;
-    max-width: 1240px;
+    left: 0;
+    margin: 0 auto;
     opacity: 0;
-    overflow: hidden;
     pointer-events: none;
     position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%) scale(0.985);
+    right: 0;
+    top: calc(50% - 230px);
+    transform: scale(0.985);
     transition:
       opacity 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
       transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
       visibility 0.55s linear;
     visibility: hidden;
-    width: 100%;
   }
 
   .sprout-stage[data-active='0'] [data-layer='0'],
@@ -4821,16 +4921,15 @@
   .sprout-stage[data-active='4'] [data-layer='4'] {
     opacity: 1;
     pointer-events: auto;
-    transform: translate(-50%, -50%) scale(1);
+    transform: scale(1);
     visibility: visible;
   }
 
-  /* On desktop the copy lives in the scrolling track, not inside the panel. */
+  /* On desktop the copy lives in the scrolling track, not inside the card. */
   .sprout-stage .sprout-feature-copy {
     display: none;
   }
 
-  /* The copy track scrolls up the left, overlapping the pinned scene. */
   .sprout-copy-track {
     display: block;
     margin-top: -100vh;
@@ -4845,6 +4944,7 @@
     margin: 0 auto;
     max-width: 1240px;
     min-height: 100vh;
+    padding-left: 56px;
   }
 
   .sprout-copy-block {
@@ -4853,7 +4953,7 @@
   }
 
   .sprout-copy-block h3 {
-    font-size: clamp(32px, 3vw, 44px);
+    font-size: clamp(30px, 2.6vw, 40px);
     font-weight: 500;
     letter-spacing: -0.02em;
     line-height: 1.1;
@@ -4861,18 +4961,17 @@
 
   .sprout-copy-block p {
     color: var(--landing-muted);
-    font-size: 19px;
-    line-height: 29px;
+    font-size: 18px;
+    line-height: 28px;
     margin-top: 14px;
     max-width: 340px;
   }
 
-  /* Progress rail: pinned to the scene, shows the section advancing. */
   .sprout-progress {
     bottom: 12vh;
     display: flex;
     gap: 7px;
-    left: max(24px, calc(50% - 620px + 24px));
+    left: max(24px, calc(50% - 620px + 56px));
     position: absolute;
     z-index: 6;
   }
