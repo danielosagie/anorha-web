@@ -61,9 +61,7 @@ const RINGS: Ring[] = [
     end: -132,
     items: [
       { id: 'facebook', icon: 'facebook', rotate: 4 },
-      { id: 'amazon', icon: 'amazon', rotate: -7 },
       { id: 'square', icon: 'square', rotate: -5 },
-      { id: 'woocommerce', icon: 'woocommerce', rotate: 5 },
     ],
   },
   {
@@ -74,7 +72,6 @@ const RINGS: Ring[] = [
     items: [
       { id: 'ebay', icon: 'ebay', rotate: -8 },
       { id: 'shopify', icon: 'shopify', rotate: 6 },
-      { id: 'grailed', icon: 'grailed', rotate: -3 },
       { id: 'whatnot', icon: 'whatnot', rotate: 9 },
     ],
   },
@@ -176,14 +173,27 @@ export function IntegrationOrbit() {
         });
       }
 
+      /** px position of a ring's sweep point, in the arm's coordinate space. */
+      const ringPoint = (ring: Ring, progress: number) => {
+        const rect = panel.getBoundingClientRect();
+        const angle = ring.start + (ring.end - ring.start) * progress;
+        const rad = (angle * Math.PI) / 180;
+        return {
+          x: ((CX + ring.r * Math.cos(rad)) / VIEW_W) * rect.width,
+          y: ((CY + ring.r * Math.sin(rad)) / VIEW_H) * rect.height,
+        };
+      };
+
       /**
-       * If the chip was dropped near a ring, rejoin the spin there. The arm is
-       * moved to the chip's current spot and the drag offset zeroed in the same
-       * frame, so it resumes without jumping.
+       * If the chip was dropped near a ring, get pulled back into the spin —
+       * like a planet caught by gravity. The chip glides from where it was
+       * dropped onto the ring, easing in (slow, then accelerating) and settling
+       * smoothly into the orbit's pace, then the ring takes over seamlessly.
        */
       const tryRejoin = (chip: HTMLElement, id: string) => {
         const s = state.get(id);
-        if (!s) {
+        const arm = armFor(id);
+        if (!(s && arm)) {
           return;
         }
         const pr = panel.getBoundingClientRect();
@@ -209,18 +219,43 @@ export function IntegrationOrbit() {
 
         const ring = RINGS[best];
         const angle = (Math.atan2(dy, dx) * 180) / Math.PI;
-        const raw = (angle - ring.start) / (ring.end - ring.start);
-        const progress = Math.min(1, Math.max(0, raw));
-        const t = playheads[best].t;
+        const progress = Math.min(
+          1,
+          Math.max(0, (angle - ring.start) / (ring.end - ring.start))
+        );
 
-        s.ringIndex = best;
-        s.offset = ((progress - t) % 1 + 1) % 1;
-        s.peeled = false;
-        chip.classList.remove('is-peeled');
+        // The arm stays frozen while the chip's own transform glides onto the
+        // ring point, so there is no jump. Distance scales the duration a
+        // little, so a far drop takes a beat longer to be reeled in.
+        const target = ringPoint(ring, progress);
+        const armX = Number(gsap.getProperty(arm, 'x'));
+        const armY = Number(gsap.getProperty(arm, 'y'));
+        const chipX = Number(gsap.getProperty(chip, 'x'));
+        const chipY = Number(gsap.getProperty(chip, 'y'));
+        const reach = Math.hypot(
+          target.x - armX - chipX,
+          target.y - armY - chipY
+        );
+        const duration = Math.min(1.5, 0.7 + reach / 900);
 
-        // Same frame: arm takes over the position, drag offset goes to zero.
-        place(ring, id, progress);
-        gsap.set(chip, { x: 0, y: 0 });
+        gsap.to(chip, {
+          x: target.x - armX,
+          y: target.y - armY,
+          duration,
+          ease: 'power2.inOut', // slow in, accelerate, settle to orbit pace
+          overwrite: true,
+          onComplete() {
+            // Hand off to the orbit at this angle, no visual jump: the chip is
+            // already sitting on the ring point.
+            const t = playheads[best].t;
+            s.ringIndex = best;
+            s.offset = (((progress - t) % 1) + 1) % 1;
+            place(ring, id, progress);
+            gsap.set(chip, { x: 0, y: 0 });
+            s.peeled = false;
+            chip.classList.remove('is-peeled');
+          },
+        });
       };
 
       const chips = gsap.utils.toArray<HTMLElement>('.orbit-chip', scope);
@@ -238,6 +273,8 @@ export function IntegrationOrbit() {
           cursor: 'grab',
           activeCursor: 'grabbing',
           onPress() {
+            // Interrupt an in-flight re-capture cleanly if grabbed again.
+            gsap.killTweensOf(chip);
             const s = state.get(id);
             if (s) {
               s.peeled = true; // the ring lets go
