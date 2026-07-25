@@ -4773,7 +4773,6 @@
   display: contents;
 }
 
-.sprout-progress,
 .sprout-copy-track {
   display: none;
 }
@@ -4930,6 +4929,19 @@
     display: none;
   }
 
+  /* Same for the floating callouts: they were placed around the old in-card
+     composition and read as stray chips beside the scrolling copy. The phone
+     screen carries the story now. */
+  .sprout-stage .sprout-floating-badge,
+  .sprout-stage .floating-stat,
+  .sprout-stage .repricing-badge,
+  .sprout-stage .photo-stack,
+  .sprout-stage .ready-card,
+  .sprout-stage .sold-note,
+  .sprout-stage .demand-stat {
+    display: none;
+  }
+
   .sprout-copy-track {
     display: block;
     margin-top: -100vh;
@@ -4967,33 +4979,6 @@
     max-width: 340px;
   }
 
-  .sprout-progress {
-    bottom: 12vh;
-    display: flex;
-    gap: 7px;
-    left: max(24px, calc(50% - 620px + 56px));
-    position: absolute;
-    z-index: 6;
-  }
-
-  .sprout-progress i {
-    background: rgba(28, 27, 23, 0.16);
-    border-radius: 999px;
-    height: 5px;
-    transition:
-      width 0.32s cubic-bezier(0.2, 0.8, 0.2, 1),
-      background-color 0.32s cubic-bezier(0.2, 0.8, 0.2, 1);
-    width: 5px;
-  }
-
-  .sprout-stage[data-active='0'] [data-dot='0'],
-  .sprout-stage[data-active='1'] [data-dot='1'],
-  .sprout-stage[data-active='2'] [data-dot='2'],
-  .sprout-stage[data-active='3'] [data-dot='3'],
-  .sprout-stage[data-active='4'] [data-dot='4'] {
-    background: var(--landing-green);
-    width: 20px;
-  }
 }
 
 /* Lenis smooth scroll (see smooth-scroll.tsx). Lenis adds .lenis to <html>. */

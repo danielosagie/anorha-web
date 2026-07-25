@@ -353,11 +353,6 @@ export function SproutFeatureBlocks() {
         </Phone>
       </FeaturePanel>
 
-        <div aria-hidden="true" className="sprout-progress">
-          {[0, 1, 2, 3, 4].map((dot) => (
-            <i data-dot={dot} key={dot} />
-          ))}
-        </div>
       </div>
 
       {/* Desktop only: the copy scrolls up the left while the phone stays

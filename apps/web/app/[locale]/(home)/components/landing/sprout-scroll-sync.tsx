@@ -3,18 +3,20 @@
 import { useEffect } from 'react';
 
 /**
- * Drives the pinned Sprout scene (the bevel.health "Intelligence" pattern).
+ * Drives the pinned Sprout scene (the bevel.health "Intelligence" pattern):
+ * the phone stays anchored while the copy scrolls up beside it, and the phone
+ * screen swaps to whichever beat you're reading.
  *
- * The phone is anchored in a sticky scene on the right while the copy scrolls
- * up the left. This sets the stage's `data-active` to whichever copy beat is
- * nearest the viewport centre; a pure-CSS cross-fade (keyed off that attribute)
- * swaps the phone screen + floating badges to match. The reveal is CSS + an SSR
- * default of `data-active="0"`, so it never depends on a JS tick to paint.
+ * Sets the stage's `data-active` to the copy beat nearest the viewport centre.
+ * The cross-fade itself is pure CSS keyed off that attribute, with an SSR
+ * default of `data-active="0"`, so the first beat paints without any JS.
  *
- * ScrollTrigger is used only to sample scroll position — it updates on Lenis
- * scroll events (see smooth-scroll.tsx) and on native scroll. Bails on narrow
- * screens / reduced motion, where the CSS drops the pin and the panels fall
- * back to the stacked layout with their own in-panel copy.
+ * Deliberately a plain scroll listener rather than ScrollTrigger: ScrollTrigger
+ * caches trigger bounds at creation, and if it measures before the section has
+ * its final height the active range is wrong and onUpdate never fires where it
+ * matters — which is exactly what stopped the phone from swapping. A listener
+ * reading live getBoundingClientRect can't go stale. Lenis dispatches native
+ * scroll events, so smooth scrolling drives this too.
  */
 export function SproutScrollSync() {
   useEffect(() => {
@@ -31,53 +33,55 @@ export function SproutScrollSync() {
       return;
     }
 
-    let cleanup = () => {
-      /* replaced once GSAP loads */
-    };
-    let cancelled = false;
+    // Only the pinned desktop layout uses data-active; on mobile every card is
+    // shown stacked and the attribute is inert.
+    const pinned = window.matchMedia(
+      '(min-width: 901px) and (prefers-reduced-motion: no-preference)'
+    );
 
-    (async () => {
-      const { ScrollTrigger } = await import('gsap/dist/ScrollTrigger');
-      const { default: gsap } = await import('gsap');
-      if (cancelled) {
+    let frame = 0;
+
+    const sync = () => {
+      frame = 0;
+      if (!pinned.matches) {
         return;
       }
-      gsap.registerPlugin(ScrollTrigger);
-
-      const sync = () => {
-        const mid = window.innerHeight / 2;
-        let nearest = 0;
-        let best = Number.POSITIVE_INFINITY;
-        beats.forEach((beat, i) => {
-          const rect = beat.getBoundingClientRect();
-          const dist = Math.abs(rect.top + rect.height / 2 - mid);
-          if (dist < best) {
-            best = dist;
-            nearest = i;
-          }
-        });
-        const next = String(nearest);
-        if (stage.dataset.active !== next) {
-          stage.dataset.active = next;
+      const mid = window.innerHeight / 2;
+      let nearest = 0;
+      let best = Number.POSITIVE_INFINITY;
+      for (const [i, beat] of beats.entries()) {
+        const rect = beat.getBoundingClientRect();
+        const dist = Math.abs(rect.top + rect.height / 2 - mid);
+        if (dist < best) {
+          best = dist;
+          nearest = i;
         }
-      };
+      }
+      const next = String(nearest);
+      if (stage.dataset.active !== next) {
+        stage.dataset.active = next;
+      }
+    };
 
-      const trigger = ScrollTrigger.create({
-        trigger: section,
-        start: 'top bottom',
-        end: 'bottom top',
-        onUpdate: sync,
-        onRefresh: sync,
-      });
+    // Coalesce to one measurement per frame.
+    const onScroll = () => {
+      if (!frame) {
+        frame = requestAnimationFrame(sync);
+      }
+    };
 
-      cleanup = () => {
-        trigger.kill();
-      };
-    })();
+    sync();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll, { passive: true });
+    pinned.addEventListener('change', sync);
 
     return () => {
-      cancelled = true;
-      cleanup();
+      if (frame) {
+        cancelAnimationFrame(frame);
+      }
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+      pinned.removeEventListener('change', sync);
     };
   }, []);
 
