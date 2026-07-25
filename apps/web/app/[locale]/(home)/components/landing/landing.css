@@ -4760,46 +4760,57 @@
   display: contents;
 }
 
-.sprout-progress {
+/* Both the progress rail and the desktop copy track are desktop-only. On
+   mobile the panels keep their own in-panel copy and stack normally. */
+.sprout-progress,
+.sprout-copy-track {
   display: none;
 }
 
 @media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
-  /* The section itself is the scroll runway: one viewport per beat. */
+  /* Runway. Its height comes from the copy track (5 beats x 100vh) pulled up
+     over the sticky stage, so no fixed height here. One continuous ground so
+     the phone reads as floating in a single scene, not swapping cards. */
   .sprout-features {
+    background: linear-gradient(180deg, #fff 0%, #f4f7ee 45%, #fff 100%);
     display: block;
-    height: 500vh;
+    gap: 0;
     padding: 0 24px;
     position: relative;
   }
 
+  /* Pinned scene: full viewport, holds the anchored phone. Stays put the whole
+     section while the copy scrolls past it. */
   .sprout-stage {
     display: block;
-    height: 460px;
-    margin: 0 auto;
-    max-width: 1240px;
+    height: 100vh;
+    pointer-events: none;
     position: sticky;
-    /* centred in the viewport while pinned */
-    top: calc((100vh - 460px) / 2);
-    width: 100%;
+    top: 0;
+    z-index: 1;
   }
 
-  /* Beats stack in place and cross-fade. The cross-fade is pure CSS driven by
-     the stage's data-active attribute (the sync only sets that attribute), so
-     the lit beat is correct from SSR — no dependency on a JS tick to reveal
-     the first one. */
+  /* Each beat's phone + floating badges is a layer, centred in the scene and
+     cross-faded. Card tint/border dropped so only the device + badges show.
+     The phone sits right (left: 65.3% in .feature-phone), copy scrolls left. */
   .sprout-stage .sprout-feature-panel {
-    height: 100%;
-    inset: 0;
-    max-width: none;
+    background: none;
+    border: none;
+    box-shadow: none;
+    height: 560px;
+    left: 50%;
+    margin: 0;
+    max-width: 1240px;
     opacity: 0;
+    overflow: visible;
     pointer-events: none;
     position: absolute;
-    transform: translateY(16px) scale(0.985);
+    top: 50%;
+    transform: translate(-50%, -50%) scale(0.99);
     transition:
-      opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
-      transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
-      visibility 0.5s linear;
+      opacity 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.6s cubic-bezier(0.2, 0.8, 0.2, 1),
+      visibility 0.55s linear;
     visibility: hidden;
     width: 100%;
   }
@@ -4811,16 +4822,58 @@
   .sprout-stage[data-active='4'] [data-layer='4'] {
     opacity: 1;
     pointer-events: auto;
-    transform: none;
+    transform: translate(-50%, -50%) scale(1);
     visibility: visible;
   }
 
-  /* Progress rail: a pinned section needs to show it is advancing. */
+  /* On desktop the copy lives in the scrolling track, not inside the panel. */
+  .sprout-stage .sprout-feature-copy {
+    display: none;
+  }
+
+  /* The copy track scrolls up the left, overlapping the pinned scene. */
+  .sprout-copy-track {
+    display: block;
+    margin-top: -100vh;
+    pointer-events: none;
+    position: relative;
+    z-index: 2;
+  }
+
+  .sprout-copy-beat {
+    align-items: center;
+    display: flex;
+    margin: 0 auto;
+    max-width: 1240px;
+    min-height: 100vh;
+  }
+
+  .sprout-copy-block {
+    max-width: 380px;
+    pointer-events: auto;
+  }
+
+  .sprout-copy-block h3 {
+    font-size: clamp(32px, 3vw, 44px);
+    font-weight: 500;
+    letter-spacing: -0.02em;
+    line-height: 1.1;
+  }
+
+  .sprout-copy-block p {
+    color: var(--landing-muted);
+    font-size: 19px;
+    line-height: 29px;
+    margin-top: 14px;
+    max-width: 340px;
+  }
+
+  /* Progress rail: pinned to the scene, shows the section advancing. */
   .sprout-progress {
-    bottom: 38px;
+    bottom: 12vh;
     display: flex;
     gap: 7px;
-    left: 56px;
+    left: max(24px, calc(50% - 620px + 24px));
     position: absolute;
     z-index: 6;
   }

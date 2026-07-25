@@ -3,22 +3,18 @@
 import { useEffect } from 'react';
 
 /**
- * Drives the pinned Sprout stage.
+ * Drives the pinned Sprout scene (the bevel.health "Intelligence" pattern).
  *
- * The section is a tall runway; the stage inside it is sticky (CSS), so one
- * card stays put while the five beats cross-fade through it — you scroll *into*
- * the feature rather than past it (the bevel.health "Intelligence" pattern).
+ * The phone is anchored in a sticky scene on the right while the copy scrolls
+ * up the left. This sets the stage's `data-active` to whichever copy beat is
+ * nearest the viewport centre; a pure-CSS cross-fade (keyed off that attribute)
+ * swaps the phone screen + floating badges to match. The reveal is CSS + an SSR
+ * default of `data-active="0"`, so it never depends on a JS tick to paint.
  *
- * This component only maps scroll progress to the stage's `data-active`
- * attribute. The cross-fade itself is pure CSS keyed off that attribute, so the
- * lit beat is correct from SSR (`data-active="0"`) and never depends on a JS
- * tick to reveal — a GSAP-tween reveal here left the stage blank on first
- * paint. It also means the whole thing degrades gracefully: on narrow screens
- * and under reduced motion the CSS simply doesn't pin or hide anything, so the
- * panels fall back to the stacked layout and `data-active` is inert.
- *
- * ScrollTrigger is used only to read scroll position; it updates on Lenis
- * scroll events (see smooth-scroll.tsx) and on native scroll.
+ * ScrollTrigger is used only to sample scroll position — it updates on Lenis
+ * scroll events (see smooth-scroll.tsx) and on native scroll. Bails on narrow
+ * screens / reduced motion, where the CSS drops the pin and the panels fall
+ * back to the stacked layout with their own in-panel copy.
  */
 export function SproutScrollSync() {
   useEffect(() => {
@@ -28,8 +24,10 @@ export function SproutScrollSync() {
       return;
     }
 
-    const BEATS = section.querySelectorAll('[data-layer]').length;
-    if (BEATS === 0) {
+    const beats = Array.from(
+      section.querySelectorAll<HTMLElement>('.sprout-copy-beat')
+    );
+    if (beats.length === 0) {
       return;
     }
 
@@ -46,8 +44,19 @@ export function SproutScrollSync() {
       }
       gsap.registerPlugin(ScrollTrigger);
 
-      const setActive = (n: number) => {
-        const next = String(Math.min(BEATS - 1, Math.max(0, n)));
+      const sync = () => {
+        const mid = window.innerHeight / 2;
+        let nearest = 0;
+        let best = Number.POSITIVE_INFINITY;
+        beats.forEach((beat, i) => {
+          const rect = beat.getBoundingClientRect();
+          const dist = Math.abs(rect.top + rect.height / 2 - mid);
+          if (dist < best) {
+            best = dist;
+            nearest = i;
+          }
+        });
+        const next = String(nearest);
         if (stage.dataset.active !== next) {
           stage.dataset.active = next;
         }
@@ -55,9 +64,10 @@ export function SproutScrollSync() {
 
       const trigger = ScrollTrigger.create({
         trigger: section,
-        start: 'top top',
-        end: 'bottom bottom',
-        onUpdate: (self) => setActive(Math.floor(self.progress * BEATS)),
+        start: 'top bottom',
+        end: 'bottom top',
+        onUpdate: sync,
+        onRefresh: sync,
       });
 
       cleanup = () => {
