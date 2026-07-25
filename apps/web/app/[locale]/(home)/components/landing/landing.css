@@ -4784,13 +4784,35 @@
     width: 100%;
   }
 
-  /* Beats stack in place and cross-fade; the sync owns opacity. */
+  /* Beats stack in place and cross-fade. The cross-fade is pure CSS driven by
+     the stage's data-active attribute (the sync only sets that attribute), so
+     the lit beat is correct from SSR — no dependency on a JS tick to reveal
+     the first one. */
   .sprout-stage .sprout-feature-panel {
     height: 100%;
     inset: 0;
     max-width: none;
+    opacity: 0;
+    pointer-events: none;
     position: absolute;
+    transform: translateY(16px) scale(0.985);
+    transition:
+      opacity 0.5s cubic-bezier(0.2, 0.8, 0.2, 1),
+      transform 0.55s cubic-bezier(0.2, 0.8, 0.2, 1),
+      visibility 0.5s linear;
+    visibility: hidden;
     width: 100%;
+  }
+
+  .sprout-stage[data-active='0'] [data-layer='0'],
+  .sprout-stage[data-active='1'] [data-layer='1'],
+  .sprout-stage[data-active='2'] [data-layer='2'],
+  .sprout-stage[data-active='3'] [data-layer='3'],
+  .sprout-stage[data-active='4'] [data-layer='4'] {
+    opacity: 1;
+    pointer-events: auto;
+    transform: none;
+    visibility: visible;
   }
 
   /* Progress rail: a pinned section needs to show it is advancing. */
@@ -4813,7 +4835,11 @@
     width: 5px;
   }
 
-  .sprout-progress i.is-active {
+  .sprout-stage[data-active='0'] [data-dot='0'],
+  .sprout-stage[data-active='1'] [data-dot='1'],
+  .sprout-stage[data-active='2'] [data-dot='2'],
+  .sprout-stage[data-active='3'] [data-dot='3'],
+  .sprout-stage[data-active='4'] [data-dot='4'] {
     background: var(--landing-green);
     width: 20px;
   }

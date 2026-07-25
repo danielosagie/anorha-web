@@ -69,8 +69,10 @@ function SproutBadge({
 export function SproutFeatureBlocks() {
   return (
     <section aria-label="What Sprout can do" className="sprout-features">
-      {/* Sticky stage: one card stays pinned while the beats cross-fade. */}
-      <div className="sprout-stage">
+      {/* Sticky stage: one card stays pinned while the beats cross-fade. The
+          data-active attribute (default 0 for SSR) drives the CSS cross-fade;
+          SproutScrollSync updates it on scroll. */}
+      <div className="sprout-stage" data-active="0">
       <FeaturePanel
         className="sprout-panel-chat"
         index={0}

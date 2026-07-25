@@ -5,26 +5,33 @@ import { useEffect } from 'react';
 /**
  * Drives the pinned Sprout stage.
  *
- * The section is a tall runway; the stage inside it is sticky, so one card
- * stays put while the five beats cross-fade through it — you scroll *into* the
- * feature rather than past it (the bevel.health "Intelligence" pattern).
+ * The section is a tall runway; the stage inside it is sticky (CSS), so one
+ * card stays put while the five beats cross-fade through it — you scroll *into*
+ * the feature rather than past it (the bevel.health "Intelligence" pattern).
  *
- * Renders nothing: it only wires ScrollTrigger to markup the server already
- * rendered, so the panels stay server-side and this ships ~nothing.
+ * This component only maps scroll progress to the stage's `data-active`
+ * attribute. The cross-fade itself is pure CSS keyed off that attribute, so the
+ * lit beat is correct from SSR (`data-active="0"`) and never depends on a JS
+ * tick to reveal — a GSAP-tween reveal here left the stage blank on first
+ * paint. It also means the whole thing degrades gracefully: on narrow screens
+ * and under reduced motion the CSS simply doesn't pin or hide anything, so the
+ * panels fall back to the stacked layout and `data-active` is inert.
  *
- * Bails out entirely under reduced motion or on narrow screens, where the CSS
- * falls back to the plain stacked layout and every panel is simply visible.
+ * ScrollTrigger is used only to read scroll position; it updates on Lenis
+ * scroll events (see smooth-scroll.tsx) and on native scroll.
  */
 export function SproutScrollSync() {
   useEffect(() => {
     const section = document.querySelector<HTMLElement>('.sprout-features');
-    if (!section) {
+    const stage = section?.querySelector<HTMLElement>('.sprout-stage');
+    if (!(section && stage)) {
       return;
     }
 
-    const media = window.matchMedia(
-      '(min-width: 901px) and (prefers-reduced-motion: no-preference)'
-    );
+    const BEATS = section.querySelectorAll('[data-layer]').length;
+    if (BEATS === 0) {
+      return;
+    }
 
     let cleanup = () => {
       /* replaced once GSAP loads */
@@ -32,93 +39,29 @@ export function SproutScrollSync() {
     let cancelled = false;
 
     (async () => {
-      const [{ default: gsap }, { ScrollTrigger }] = await Promise.all([
-        import('gsap'),
-        import('gsap/dist/ScrollTrigger'),
-      ]);
+      const { ScrollTrigger } = await import('gsap/dist/ScrollTrigger');
+      const { default: gsap } = await import('gsap');
       if (cancelled) {
         return;
       }
       gsap.registerPlugin(ScrollTrigger);
 
-      const build = () => {
-        const layers = gsap.utils.toArray<HTMLElement>(
-          '[data-layer]',
-          section
-        );
-        const dots = gsap.utils.toArray<HTMLElement>('[data-dot]', section);
-        if (layers.length === 0) {
-          return () => {
-            /* nothing built */
-          };
+      const setActive = (n: number) => {
+        const next = String(Math.min(BEATS - 1, Math.max(0, n)));
+        if (stage.dataset.active !== next) {
+          stage.dataset.active = next;
         }
-
-        // Stacked layout (mobile / reduced motion): show everything, no pin.
-        if (!media.matches) {
-          gsap.set(layers, { clearProps: 'all' });
-          for (const dot of dots) {
-            dot.classList.remove('is-active');
-          }
-          return () => {
-            /* nothing to tear down */
-          };
-        }
-
-        let active = -1;
-        const show = (next: number) => {
-          if (next === active) {
-            return;
-          }
-          active = next;
-          layers.forEach((layer, i) => {
-            const on = i === next;
-            gsap.to(layer, {
-              autoAlpha: on ? 1 : 0,
-              duration: on ? 0.45 : 0.3,
-              ease: on ? 'power2.out' : 'power1.in',
-              // incoming rises slightly — reads as depth, not a slideshow
-              scale: on ? 1 : 0.985,
-              y: on ? 0 : 14,
-              overwrite: 'auto',
-            });
-            layer.style.pointerEvents = on ? 'auto' : 'none';
-          });
-          dots.forEach((dot, i) => {
-            dot.classList.toggle('is-active', i === next);
-          });
-        };
-
-        gsap.set(layers, { autoAlpha: 0, scale: 0.985, y: 14 });
-        show(0);
-
-        const trigger = ScrollTrigger.create({
-          trigger: section,
-          start: 'top top',
-          end: 'bottom bottom',
-          onUpdate: (self) => {
-            // Split the runway evenly across the beats.
-            const raw = Math.floor(self.progress * layers.length);
-            show(Math.min(layers.length - 1, Math.max(0, raw)));
-          },
-        });
-
-        return () => {
-          trigger.kill();
-          gsap.set(layers, { clearProps: 'all' });
-        };
       };
 
-      let teardown = build();
-      const rebuild = () => {
-        teardown();
-        teardown = build();
-        ScrollTrigger.refresh();
-      };
-      media.addEventListener('change', rebuild);
+      const trigger = ScrollTrigger.create({
+        trigger: section,
+        start: 'top top',
+        end: 'bottom bottom',
+        onUpdate: (self) => setActive(Math.floor(self.progress * BEATS)),
+      });
 
       cleanup = () => {
-        media.removeEventListener('change', rebuild);
-        teardown();
+        trigger.kill();
       };
     })();
 
