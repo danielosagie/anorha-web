@@ -3,20 +3,21 @@
 import { useEffect } from 'react';
 
 /**
- * Drives the pinned Sprout scene (the bevel.health "Intelligence" pattern):
- * the phone stays anchored while the copy scrolls up beside it, and the phone
- * screen swaps to whichever beat you're reading.
+ * Drives the pinned Sprout section.
  *
- * Sets the stage's `data-active` to the copy beat nearest the viewport centre.
- * The cross-fade itself is pure CSS keyed off that attribute, with an SSR
- * default of `data-active="0"`, so the first beat paints without any JS.
+ * One card stays pinned in the middle of the viewport and its whole contents —
+ * gradient, copy and phone — cross-fade from beat to beat as you scroll. The
+ * copy lives inside the card so it is always composed with the phone; nothing
+ * scrolls independently past the card.
  *
- * Deliberately a plain scroll listener rather than ScrollTrigger: ScrollTrigger
- * caches trigger bounds at creation, and if it measures before the section has
- * its final height the active range is wrong and onUpdate never fires where it
- * matters — which is exactly what stopped the phone from swapping. A listener
- * reading live getBoundingClientRect can't go stale. Lenis dispatches native
- * scroll events, so smooth scrolling drives this too.
+ * This sets the stage's `data-active` from the section's scroll progress. The
+ * cross-fade itself is pure CSS keyed off that attribute, with an SSR default
+ * of `data-active="0"`, so the first beat paints without any JS.
+ *
+ * A plain scroll listener on purpose: ScrollTrigger caches its bounds at
+ * creation, and measuring before the section reaches its final height left the
+ * active range wrong so the phone never swapped. Reading live geometry can't go
+ * stale. Lenis dispatches native scroll events, so smooth scrolling drives it.
  */
 export function SproutScrollSync() {
   useEffect(() => {
@@ -26,10 +27,8 @@ export function SproutScrollSync() {
       return;
     }
 
-    const beats = Array.from(
-      section.querySelectorAll<HTMLElement>('.sprout-copy-beat')
-    );
-    if (beats.length === 0) {
+    const beats = section.querySelectorAll('[data-layer]').length;
+    if (beats === 0) {
       return;
     }
 
@@ -46,18 +45,16 @@ export function SproutScrollSync() {
       if (!pinned.matches) {
         return;
       }
-      const mid = window.innerHeight / 2;
-      let nearest = 0;
-      let best = Number.POSITIVE_INFINITY;
-      for (const [i, beat] of beats.entries()) {
-        const rect = beat.getBoundingClientRect();
-        const dist = Math.abs(rect.top + rect.height / 2 - mid);
-        if (dist < best) {
-          best = dist;
-          nearest = i;
-        }
-      }
-      const next = String(nearest);
+      const rect = section.getBoundingClientRect();
+      // The card is pinned while the section spans the viewport top; progress
+      // runs 0 -> 1 across exactly that range.
+      const range = rect.height - window.innerHeight;
+      const progress = range > 0 ? -rect.top / range : 0;
+      const index = Math.min(
+        beats - 1,
+        Math.max(0, Math.floor(progress * beats))
+      );
+      const next = String(index);
       if (stage.dataset.active !== next) {
         stage.dataset.active = next;
       }

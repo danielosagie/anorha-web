@@ -4773,10 +4773,6 @@
   display: contents;
 }
 
-.sprout-copy-track {
-  display: none;
-}
-
 .sprout-feature-panel {
   /* NOT the `border` shorthand: this block comes after .sprout-panel-*, and the
      shorthand would reset their tinted border-colors to currentColor (ink). */
@@ -4837,6 +4833,8 @@
 @media (min-width: 901px) {
   .sprout-features {
     display: block;
+    /* Runway. Pin range = height - 100vh, so 5 beats get ~80vh of scroll each. */
+    height: 500vh;
     padding: 0 24px;
     position: relative;
   }
@@ -4924,11 +4922,6 @@
     visibility: visible;
   }
 
-  /* On desktop the copy lives in the scrolling track, not inside the card. */
-  .sprout-stage .sprout-feature-copy {
-    display: none;
-  }
-
   /* Same for the floating callouts: they were placed around the old in-card
      composition and read as stray chips beside the scrolling copy. The phone
      screen carries the story now. */
@@ -4940,43 +4933,6 @@
   .sprout-stage .sold-note,
   .sprout-stage .demand-stat {
     display: none;
-  }
-
-  .sprout-copy-track {
-    display: block;
-    margin-top: -100vh;
-    pointer-events: none;
-    position: relative;
-    z-index: 2;
-  }
-
-  .sprout-copy-beat {
-    align-items: center;
-    display: flex;
-    margin: 0 auto;
-    max-width: 1240px;
-    min-height: 100vh;
-    padding-left: 56px;
-  }
-
-  .sprout-copy-block {
-    max-width: 380px;
-    pointer-events: auto;
-  }
-
-  .sprout-copy-block h3 {
-    font-size: clamp(30px, 2.6vw, 40px);
-    font-weight: 500;
-    letter-spacing: -0.02em;
-    line-height: 1.1;
-  }
-
-  .sprout-copy-block p {
-    color: var(--landing-muted);
-    font-size: 18px;
-    line-height: 28px;
-    margin-top: 14px;
-    max-width: 340px;
   }
 
 }
@@ -5001,4 +4957,66 @@ html.lenis body {
 
 .lenis.lenis-smooth iframe {
   pointer-events: none;
+}
+
+/* ============================================================
+   Store & manage — mobile layout
+   The orbit rings and their chips are positioned from a 1240x640 design
+   viewBox. Scaled into a ~347px panel they scatter across the heading, so on
+   phones the whole orbit is dropped and the section becomes a plain stacked
+   card: copy on top, phone centred below bleeding off the bottom edge.
+   ============================================================ */
+
+@media (max-width: 900px) {
+  .store-manage-section {
+    padding: 10px 16px 40px;
+  }
+
+  .store-manage-panel {
+    border-radius: 26px;
+    display: flex;
+    flex-direction: column;
+    height: auto;
+    overflow: hidden;
+    padding: 30px 22px 0;
+  }
+
+  .orbit-rings,
+  .orbit-platforms {
+    display: none;
+  }
+
+  /* The phone precedes the copy in DOM order, so reorder in the flex column. */
+  .store-manage-copy {
+    inset: auto;
+    max-width: none;
+    order: 1;
+    position: static;
+    text-align: left;
+    width: auto;
+  }
+
+  .store-manage-copy h2 {
+    font-size: clamp(26px, 7vw, 34px);
+    line-height: 1.12;
+  }
+
+  .store-manage-copy p {
+    font-size: 16px;
+    line-height: 25px;
+    margin-top: 10px;
+    max-width: none;
+  }
+
+  .inventory-phone {
+    /* transform: none clears the translateX(-50%) the wider breakpoints use to
+       centre it while absolutely positioned; auto margins centre it in flow. */
+    height: 520px;
+    inset: auto;
+    margin: 26px auto -110px;
+    order: 2;
+    position: relative;
+    transform: none;
+    width: min(280px, 100%);
+  }
 }

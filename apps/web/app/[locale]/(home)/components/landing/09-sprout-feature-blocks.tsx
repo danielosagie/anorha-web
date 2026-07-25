@@ -2,35 +2,6 @@ import Image from 'next/image';
 import type { ReactNode } from 'react';
 import { SproutScrollSync } from './sprout-scroll-sync';
 
-// Copy for the desktop scrolling track — mirrors each panel's in-panel copy,
-// in the same order as the panels below.
-const SPROUT_BEATS = [
-  {
-    title: 'Ask it anything',
-    description:
-      "It knows your whole shelf. Ask what's selling, what's stuck, or what to restock.",
-  },
-  {
-    title: 'Clears difficult inventory',
-    description:
-      'Time-boxed campaigns drop the price until it moves. No babysitting.',
-  },
-  {
-    title: 'Writes and prices it',
-    description:
-      'One photo in. Title, tags, description, and a price from real sold comps.',
-  },
-  {
-    title: 'Talks to buyers',
-    description:
-      'Negotiates in your voice, day or night. You approve the big calls.',
-  },
-  {
-    title: 'Keeps you posted',
-    description:
-      'A morning brief, and a nudge when something needs you. No dashboard digging.',
-  },
-] as const;
 
 type FeaturePanelProps = {
   children: ReactNode;
@@ -353,21 +324,6 @@ export function SproutFeatureBlocks() {
         </Phone>
       </FeaturePanel>
 
-      </div>
-
-      {/* Desktop only: the copy scrolls up the left while the phone stays
-          anchored right and its screen cross-fades (the bevel.health feel).
-          Mirrors the in-panel copy, which the stage hides on desktop; on
-          mobile this track is hidden and the stacked panels show their own. */}
-      <div className="sprout-copy-track">
-        {SPROUT_BEATS.map((beat, i) => (
-          <div className="sprout-copy-beat" data-beat={i} key={beat.title}>
-            <div className="sprout-copy-block">
-              <h3>{beat.title}</h3>
-              <p>{beat.description}</p>
-            </div>
-          </div>
-        ))}
       </div>
 
       <SproutScrollSync />
