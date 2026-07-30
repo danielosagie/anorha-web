@@ -54,6 +54,12 @@ export async function POST(request: Request) {
     // team gets a heads-up. Email is best-effort: a mail hiccup must NEVER fail
     // the request. The signup is already persisted above.
     const accessUrl = process.env.ANDROID_ACCESS_URL?.trim() || undefined;
+    // The sender is a no-reply on a send-only domain, so mailing the heads-up to
+    // RESEND_FROM drops it into a mailbox that cannot receive. The team notice
+    // needs a real inbox, which is a separate address from the sender.
+    const notifyTo =
+      process.env.WAITLIST_NOTIFY_TO?.trim() || env.RESEND_FROM;
+    let emailed = false;
     try {
       await resend.emails.send({
         from: env.RESEND_FROM,
@@ -65,19 +71,28 @@ export async function POST(request: Request) {
       });
       await resend.emails.send({
         from: env.RESEND_FROM,
-        to: env.RESEND_FROM,
+        to: notifyTo,
         subject: `New Android access request: ${email}`,
         replyTo: email,
         text: accessUrl
           ? `New Android access request from ${email} (self-serve opt-in link is live).`
           : `New Android access request from ${email}. Add to Play testers if open testing is not live yet.`,
       });
-    } catch {
-      // Non-critical: the signup is saved; surfacing an email failure would only
-      // scare the user into resubmitting. Swallow and continue.
+      emailed = true;
+    } catch (sendError) {
+      // Still non-fatal: the signup is saved and resubmitting would not help.
+      // But an empty catch is how an unverified RESEND_FROM domain (403 on every
+      // send) stayed invisible for months while the form kept saying "check your
+      // inbox". A mail failure is an operator problem, so log it loudly and tell
+      // the caller whether anything actually went out.
+      console.error(
+        '[waitlist] android access email failed',
+        `from=${env.RESEND_FROM}`,
+        sendError instanceof Error ? sendError.message : sendError
+      );
     }
 
-    return Response.json({ ok: true, accessUrl: accessUrl ?? null });
+    return Response.json({ ok: true, accessUrl: accessUrl ?? null, emailed });
   } catch (error) {
     return Response.json(
       { error: error instanceof Error ? error.message : 'Unknown error' },

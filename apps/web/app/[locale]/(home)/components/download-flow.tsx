@@ -92,6 +92,7 @@ export function useDownloadFlow() {
   const [status, setStatus] = useState<Status>('idle');
   const [message, setMessage] = useState('');
   const [resultUrl, setResultUrl] = useState<string | null>(null);
+  const [emailSent, setEmailSent] = useState(true);
 
   useEffect(() => {
     const query = window.matchMedia('(max-width: 768px)');
@@ -159,6 +160,9 @@ export function useDownloadFlow() {
         setResultUrl(
           typeof data?.accessUrl === 'string' ? data.accessUrl : null
         );
+        // The signup always saves; the confirmation mail may not have gone out.
+        // Never promise an inbox we did not write to.
+        setEmailSent(data?.emailed !== false);
         setStatus('success');
       } catch {
         setStatus('error');
@@ -170,6 +174,7 @@ export function useDownloadFlow() {
 
   return {
     email,
+    emailSent,
     emailValid: EMAIL_PATTERN.test(email),
     isMobileViewport,
     message,
@@ -226,7 +231,11 @@ export function AndroidInvite({
             </Button>
           </>
         ) : (
-          <p>Check your inbox for the install link.</p>
+          <p>
+            {flow.emailSent
+              ? 'Check your inbox for the install link.'
+              : "You're on the list. We'll be in touch."}
+          </p>
         )}
       </div>
     );
