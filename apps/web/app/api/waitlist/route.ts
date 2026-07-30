@@ -29,16 +29,24 @@ export async function POST(request: Request) {
       );
     }
 
-    const res = await fetch(`${env.SUPABASE_URL}/rest/v1/waitlist_signups`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        apikey: env.SUPABASE_SERVICE_ROLE_KEY,
-        Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
-        Prefer: 'return=representation',
-      },
-      body: JSON.stringify({ email, created_at: new Date().toISOString() }),
-    });
+    // `email` is unique, so a second request from the same person used to hit
+    // 23505 and surface as "Something went wrong. Please try again." Signing up
+    // twice is the most natural thing to do when the first attempt looked like
+    // it did nothing, so treat it as the no-op it is: keep the original row
+    // (and its created_at) and carry on to the send.
+    const res = await fetch(
+      `${env.SUPABASE_URL}/rest/v1/waitlist_signups?on_conflict=email`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          apikey: env.SUPABASE_SERVICE_ROLE_KEY,
+          Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
+          Prefer: 'return=representation,resolution=ignore-duplicates',
+        },
+        body: JSON.stringify({ email, created_at: new Date().toISOString() }),
+      }
+    );
 
     if (!res.ok) {
       const msg = await res.text();

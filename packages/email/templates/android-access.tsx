@@ -30,7 +30,7 @@ export const AndroidAccessTemplate = ({
           <Section className="mt-8 rounded-md bg-zinc-200 p-px">
             <Section className="rounded-[5px] bg-white p-8">
               <Text className="mt-0 mb-4 font-semibold text-2xl text-zinc-950">
-                You&apos;re in — welcome to Anorha
+                You&apos;re in. Welcome to Anorha.
               </Text>
 
               {accessUrl ? (
@@ -56,7 +56,7 @@ export const AndroidAccessTemplate = ({
               ) : (
                 <>
                   <Text className="m-0 text-zinc-600">
-                    Thanks for joining the Anorha beta on Android — you&apos;re on
+                    Thanks for joining the Anorha beta on Android. You&apos;re on
                     the list. We&apos;ll email your install link shortly, so keep an
                     eye on your inbox.
                   </Text>
@@ -69,7 +69,7 @@ export const AndroidAccessTemplate = ({
               <Hr className="my-6" />
               <Text className="m-0 text-zinc-400 text-xs">
                 You received this because you requested Android access at
-                anorha.com. If that wasn&apos;t you, you can ignore this email.
+                anorha.app. If that wasn&apos;t you, you can ignore this email.
               </Text>
             </Section>
           </Section>
