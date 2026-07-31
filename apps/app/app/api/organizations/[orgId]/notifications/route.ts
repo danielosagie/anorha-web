@@ -22,17 +22,30 @@ const DEFAULT_SETTINGS = {
   },
 };
 
+// The role on the session belongs to the caller's ACTIVE org, not to whatever
+// org id the URL carries. Checking one and then acting on the other let an admin
+// of any org read or overwrite another org's settings just by editing the path,
+// so both have to refer to the same organization.
+function authorize(orgId: string, activeOrgId: string | null | undefined, orgRole: string | null | undefined) {
+  if (!activeOrgId || activeOrgId !== orgId) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+  if (orgRole !== 'org:admin' && orgRole !== 'org:owner') {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
+  }
+  return null;
+}
+
 export async function GET(
   request: Request,
   context: { params: Promise<{ orgId: string }> }
 ) {
   try {
     const { orgId } = await context.params;
-    const { orgRole } = await auth();
-    
-    if (!orgRole || (orgRole !== 'org:admin' && orgRole !== 'org:owner')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const { orgId: activeOrgId, orgRole } = await auth();
+
+    const denied = authorize(orgId, activeOrgId, orgRole);
+    if (denied) return denied;
 
     const client = await clerkClient();
     const organization = await client.organizations.getOrganization({ organizationId: orgId });
@@ -43,7 +56,7 @@ export async function GET(
   } catch (error: any) {
     console.error('[notifications/GET] Error:', error);
     return NextResponse.json(
-      { error: error?.message || 'Failed to fetch notification settings' },
+      { error: 'Failed to fetch notification settings' },
       { status: 500 }
     );
   }
@@ -55,11 +68,10 @@ export async function PUT(
 ) {
   try {
     const { orgId } = await context.params;
-    const { orgRole } = await auth();
-    
-    if (!orgRole || (orgRole !== 'org:admin' && orgRole !== 'org:owner')) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
-    }
+    const { orgId: activeOrgId, orgRole } = await auth();
+
+    const denied = authorize(orgId, activeOrgId, orgRole);
+    if (denied) return denied;
 
     const body = await request.json();
     
@@ -79,7 +91,7 @@ export async function PUT(
   } catch (error: any) {
     console.error('[notifications/PUT] Error:', error);
     return NextResponse.json(
-      { error: error?.message || 'Failed to update notification settings' },
+      { error: 'Failed to update notification settings' },
       { status: 500 }
     );
   }

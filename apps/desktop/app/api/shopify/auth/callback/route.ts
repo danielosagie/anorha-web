@@ -1,3 +1,4 @@
+import { auth } from '@repo/auth/server';
 import { NextRequest, NextResponse } from 'next/server';
 import crypto from 'crypto';
 
@@ -13,6 +14,18 @@ export async function GET(request: NextRequest) {
 
   if (!code || !hmac || !shop) {
     return NextResponse.json({ error: 'Missing required parameters' }, { status: 400 });
+  }
+
+  // The HMAC proves Shopify sent this, but not who is installing. Storing the
+  // token without a session left the backend guessing which account owns the
+  // shop, so bounce through sign-in first and come straight back. The code has
+  // not been redeemed yet, so the retry completes the exchange normally.
+  const { userId, getToken } = await auth();
+  if (!userId) {
+    const returnUrl = `${request.nextUrl.pathname}${request.nextUrl.search}`;
+    return NextResponse.redirect(
+      new URL(`/sign-in?redirect_url=${encodeURIComponent(returnUrl)}`, request.url)
+    );
   }
 
   try {
@@ -59,10 +72,18 @@ export async function GET(request: NextRequest) {
     const shopData = await shopResponse.json();
     const shopName = shopData.shop.name;
 
-    // Store in backend
+    // Store in backend as the signed-in seller, so the connection lands on their org.
+    const authToken = await getToken();
+    if (!authToken) {
+      throw new Error('No session token for connection store');
+    }
+
     const storeResponse = await fetch(`${API_URL}/api/platform-connections/shopify`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${authToken}`,
+      },
       body: JSON.stringify({
         shop,
         accessToken,

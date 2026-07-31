@@ -1,12 +1,43 @@
 import { env } from '@/env';
 import { resend } from '@repo/email';
 import { AndroidAccessTemplate } from '@repo/email/templates/android-access';
+import { createRateLimiter, slidingWindow } from '@repo/rate-limit';
+import { headers } from 'next/headers';
 import { createElement } from 'react';
 
 export const runtime = 'nodejs';
 
 export async function GET() {
   return Response.json({ ok: true });
+}
+
+/**
+ * Two limits, because they stop different things. The IP limit stops one caller
+ * enumerating or hammering the form. The per-address limit stops the nastier
+ * one: the endpoint sends mail to whatever address it is handed, so repeating a
+ * stranger's address turned this into an email cannon pointed at them (and at
+ * the staff inbox) even though the duplicate insert was already a no-op.
+ */
+async function rateLimited(email: string): Promise<boolean> {
+  if (!(env.UPSTASH_REDIS_REST_URL && env.UPSTASH_REDIS_REST_TOKEN)) {
+    // Upstash is the whole mechanism here, so without it this endpoint is back
+    // to being an open mailer. Say so rather than failing open in silence.
+    console.warn(
+      '[waitlist] UPSTASH_REDIS_REST_URL/TOKEN unset: signup rate limiting is DISABLED'
+    );
+    return false;
+  }
+
+  const ip = (await headers()).get('x-forwarded-for') ?? 'unknown';
+
+  const [byIp, byEmail] = await Promise.all([
+    createRateLimiter({ limiter: slidingWindow(5, '1h'), prefix: 'waitlist_ip' }).limit(ip),
+    createRateLimiter({ limiter: slidingWindow(1, '1d'), prefix: 'waitlist_email' }).limit(
+      email.toLowerCase()
+    ),
+  ]);
+
+  return !(byIp.success && byEmail.success);
 }
 
 export async function POST(request: Request) {
@@ -18,6 +49,12 @@ export async function POST(request: Request) {
       !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)
     ) {
       return Response.json({ error: 'Invalid email' }, { status: 400 });
+    }
+
+    if (await rateLimited(email)) {
+      // Same shape as success: whether an address is already on the list is not
+      // something an anonymous caller should be able to probe.
+      return Response.json({ ok: true, accessUrl: null, emailed: false });
     }
 
     // Persist the signup (source of truth). Keep the insert minimal so it stays
@@ -49,11 +86,10 @@ export async function POST(request: Request) {
     );
 
     if (!res.ok) {
-      const msg = await res.text();
-      return Response.json(
-        { error: `Supabase insert failed: ${msg}` },
-        { status: 502 }
-      );
+      // The raw PostgREST body names tables, columns, and constraints. Operators
+      // need that; anonymous callers do not.
+      console.error('[waitlist] insert failed', await res.text());
+      return Response.json({ error: 'Could not save signup' }, { status: 502 });
     }
 
     // When open testing is live, ANDROID_ACCESS_URL holds the public Play opt-in
@@ -102,9 +138,7 @@ export async function POST(request: Request) {
 
     return Response.json({ ok: true, accessUrl: accessUrl ?? null, emailed });
   } catch (error) {
-    return Response.json(
-      { error: error instanceof Error ? error.message : 'Unknown error' },
-      { status: 500 }
-    );
+    console.error('[waitlist] request failed', error);
+    return Response.json({ error: 'Something went wrong' }, { status: 500 });
   }
 }

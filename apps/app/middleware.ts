@@ -1,5 +1,6 @@
 import { authMiddleware } from '@repo/auth/middleware';
 import {
+  contentSecurityPolicyReportOnly,
   noseconeMiddleware,
   noseconeOptions,
   noseconeOptionsWithToolbar,
@@ -11,9 +12,16 @@ const securityHeaders = env.FLAGS_SECRET
   ? noseconeMiddleware(noseconeOptionsWithToolbar)
   : noseconeMiddleware(noseconeOptions);
 
-export default authMiddleware(() =>
-  securityHeaders()
-) as unknown as NextMiddleware;
+export default authMiddleware(async () => {
+  const response = await securityHeaders();
+
+  response.headers.set(
+    'Content-Security-Policy-Report-Only',
+    contentSecurityPolicyReportOnly()
+  );
+
+  return response;
+}) as unknown as NextMiddleware;
 
 export const config = {
   matcher: [
