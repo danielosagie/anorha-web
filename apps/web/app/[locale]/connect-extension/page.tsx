@@ -26,6 +26,14 @@ const extensionIdPattern = /^[a-p]{32}$/;
 const chromeWebStoreHome =
   'https://chromewebstore.google.com/category/extensions';
 
+// This page mints a pairing grant and hands it to `extensionId`. Letting the URL
+// choose that id meant ?extId=<attacker-extension> pointed a signed-in seller's
+// grant at an extension the attacker controls, and a well-formed id proves
+// nothing about who owns it. The configured id is the only one trusted in
+// production; the override survives in development so local unpacked builds
+// (which get a different id every load) stay testable.
+const allowExtensionOverride = process.env.NODE_ENV !== 'production';
+
 function firstValue(value: string | string[] | undefined): string | undefined {
   return Array.isArray(value) ? value[0] : value;
 }
@@ -40,7 +48,13 @@ export default async function ConnectExtensionPage({
     auth(),
   ]);
   const auto = firstValue(query.auto);
-  const extensionOverride = firstValue(query.extId);
+  const requestedExtension = firstValue(query.extId);
+  const extensionOverride =
+    allowExtensionOverride &&
+    requestedExtension &&
+    extensionIdPattern.test(requestedExtension)
+      ? requestedExtension
+      : undefined;
   const { redirectToSignIn, userId } = session;
 
   if (!userId) {
@@ -60,10 +74,7 @@ export default async function ConnectExtensionPage({
     return redirectToSignIn({ returnBackUrl: returnUrl.toString() });
   }
 
-  const extensionId =
-    extensionOverride && extensionIdPattern.test(extensionOverride)
-      ? extensionOverride
-      : env.NEXT_PUBLIC_ANORHA_EXTENSION_ID;
+  const extensionId = extensionOverride ?? env.NEXT_PUBLIC_ANORHA_EXTENSION_ID;
   const storeUrl = env.NEXT_PUBLIC_ANORHA_EXTENSION_ID
     ? `https://chromewebstore.google.com/detail/${env.NEXT_PUBLIC_ANORHA_EXTENSION_ID}`
     : chromeWebStoreHome;

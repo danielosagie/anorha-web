@@ -16,12 +16,21 @@ import { useEffect, useState } from 'react';
  * `Authorization: Bearer <clerk token>` exactly like every other authed call in
  * this app. No device secret is ever exposed to the web — it stays on the
  * desktop; only the short-lived pairing code travels through here.
+ *
+ * Claiming NEVER happens on page load. A pairing code grants the holder's
+ * computer ongoing access to this account, and the code travels in a URL anyone
+ * can send. Auto-claiming meant an attacker could generate a code on their own
+ * machine, send app.anorha.app/link?code=... to a signed-in seller, and have one
+ * click bind their computer to the seller's account. So we show the code and
+ * make the seller confirm it matches what their own computer is displaying. A
+ * code the seller cannot see on their screen is not their computer.
  */
-type Phase = 'checking' | 'linking' | 'done' | 'error' | 'nocode';
+type Phase = 'checking' | 'confirm' | 'linking' | 'done' | 'error' | 'nocode';
 
 export default function LinkComputer() {
   const { isLoaded, isSignedIn, getToken } = useAuth();
   const [phase, setPhase] = useState<Phase>('checking');
+  const [pairingCode, setPairingCode] = useState<string>('');
   const [computerName, setComputerName] = useState<string>('');
   const [errorMsg, setErrorMsg] = useState<string>('');
 
@@ -40,35 +49,38 @@ export default function LinkComputer() {
       return;
     }
 
-    (async () => {
-      setPhase('linking');
-      try {
-        const authToken = await getToken();
-        if (!authToken) throw new Error('Not signed in.');
-        let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
-        if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
+    setPairingCode(code);
+    setPhase('confirm');
+  }, [isLoaded, isSignedIn]);
 
-        const res = await fetch(`${apiBase}/devices/claim-pairing`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${authToken}`,
-          },
-          body: JSON.stringify({ pairingCode: code }),
-        });
-        if (!res.ok) {
-          const text = await res.text().catch(() => '');
-          throw new Error(text || 'That code didn’t work. Generate a fresh one on your computer.');
-        }
-        const data = (await res.json().catch(() => ({}))) as { name?: string };
-        setComputerName(data?.name || '');
-        setPhase('done');
-      } catch (e) {
-        setErrorMsg(e instanceof Error ? e.message : String(e));
-        setPhase('error');
+  const claim = async () => {
+    setPhase('linking');
+    try {
+      const authToken = await getToken();
+      if (!authToken) throw new Error('Not signed in.');
+      let apiBase = (process.env.NEXT_PUBLIC_API_URL || 'https://api.sssync.app/api').replace(/\/$/, '');
+      if (!apiBase.endsWith('/api')) apiBase = `${apiBase}/api`;
+
+      const res = await fetch(`${apiBase}/devices/claim-pairing`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${authToken}`,
+        },
+        body: JSON.stringify({ pairingCode }),
+      });
+      if (!res.ok) {
+        const text = await res.text().catch(() => '');
+        throw new Error(text || 'That code didn’t work. Generate a fresh one on your computer.');
       }
-    })();
-  }, [isLoaded, isSignedIn, getToken]);
+      const data = (await res.json().catch(() => ({}))) as { name?: string };
+      setComputerName(data?.name || '');
+      setPhase('done');
+    } catch (e) {
+      setErrorMsg(e instanceof Error ? e.message : String(e));
+      setPhase('error');
+    }
+  };
 
   const title =
     phase === 'done'
@@ -77,7 +89,9 @@ export default function LinkComputer() {
         ? 'Link failed'
         : phase === 'nocode'
           ? 'Missing code'
-          : 'Linking your computer…';
+          : phase === 'confirm'
+            ? 'Link this computer?'
+            : 'Linking your computer…';
 
   const body =
     phase === 'done'
@@ -88,7 +102,9 @@ export default function LinkComputer() {
         ? errorMsg
         : phase === 'nocode'
           ? 'This link is missing its pairing code. Open Anorha on your computer and scan the QR again.'
-          : 'Hang tight — connecting this computer to your account.';
+          : phase === 'confirm'
+            ? 'Check that this code matches the one on your computer. If it does not, close this tab.'
+            : 'Hang tight — connecting this computer to your account.';
 
   return (
     <main
@@ -104,6 +120,39 @@ export default function LinkComputer() {
       <div style={{ maxWidth: 340 }}>
         <p style={{ fontSize: 18, fontWeight: 700, color: '#18181B', margin: '0 0 8px' }}>{title}</p>
         <p style={{ color: '#52525b', fontSize: 15, lineHeight: '22px', margin: 0 }}>{body}</p>
+        {phase === 'confirm' && (
+          <>
+            <p
+              style={{
+                fontSize: 28,
+                fontWeight: 700,
+                letterSpacing: '0.12em',
+                color: '#18181B',
+                fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
+                margin: '20px 0',
+              }}
+            >
+              {pairingCode}
+            </p>
+            <button
+              type="button"
+              onClick={claim}
+              style={{
+                width: '100%',
+                padding: '12px 16px',
+                fontSize: 15,
+                fontWeight: 600,
+                color: '#FFFFFF',
+                background: '#18181B',
+                border: 'none',
+                borderRadius: 10,
+                cursor: 'pointer',
+              }}
+            >
+              Link computer
+            </button>
+          </>
+        )}
       </div>
     </main>
   );
