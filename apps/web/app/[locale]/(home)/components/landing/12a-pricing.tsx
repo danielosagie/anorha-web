@@ -8,7 +8,9 @@ type LandingPricingProps = {
 type PricingTier = {
   action: string;
   description: string;
+  featureLabel: string;
   features: readonly string[];
+  members: string;
   name: string;
   popular?: boolean;
   price: string;
@@ -17,42 +19,45 @@ type PricingTier = {
 const tiers: readonly PricingTier[] = [
   {
     action: 'Start free',
-    description: 'For solo resellers just getting going.',
+    description: 'For new sellers.',
+    featureLabel: 'INCLUDED',
     features: [
-      'Unlimited photo-to-listings',
-      'Up to 2 members/partners',
-      'Cross-platform inventory sync',
-      'Sprout assistant, drafts & prices',
-      '100 bulk recognitions / month',
+      'AI usage included',
+      'CSV import',
+      'Cross-platform listings',
+      'Inventory sync',
     ],
-    name: 'Hobby',
+    members: '1 member',
+    name: 'Starter',
     price: 'Free',
   },
   {
-    action: 'Get Individual',
-    description: 'For steady solo sellers.',
+    action: 'Get Growth',
+    description: 'For active sellers.',
+    featureLabel: 'EVERYTHING IN STARTER, PLUS',
     features: [
-      '5x photo-to-listings',
-      'Up to 2 members/partners',
-      'Cross-platform inventory sync',
-      'Sprout assistant, drafts & prices',
-      '100 bulk recognitions / month',
+      'AI usage included',
+      'Team and partner tools',
+      'Sales insights',
+      'Sprout access',
     ],
-    name: 'Individual',
+    members: '2 members included',
+    name: 'Growth',
+    popular: true,
     price: '$20',
   },
   {
-    action: 'Get Pro',
-    description: 'For power sellers & growing teams.',
+    action: 'Get Teams',
+    description: 'For growing teams.',
+    featureLabel: 'EVERYTHING IN GROWTH, PLUS',
     features: [
-      'Unlimited marketplaces',
-      'Cross-org sync: teams & partners',
-      '15x photo-to-listings usage',
-      'Full Sprout automation & campaigns',
-      'Team seats + priority support',
+      '3x AI usage',
+      'Roles and permissions',
+      'Partner workflows',
+      'Priority support',
     ],
-    name: 'Pro',
-    popular: true,
+    members: '5 members included',
+    name: 'Teams',
     price: '$60',
   },
 ];
@@ -86,11 +91,8 @@ export function LandingPricing({ locale }: LandingPricingProps) {
     >
       <div className="landing-pricing-heading">
         <span>PRICING</span>
-        <h2 id="landing-pricing-title">One price. Everything you sell.</h2>
-        <p>
-          Start free while we&apos;re in beta. Pick a plan when you&apos;re
-          ready. Cancel anytime.
-        </p>
+        <h2 id="landing-pricing-title">Simple pricing.</h2>
+        <p>Start free. Upgrade for more people or AI usage. Cancel anytime.</p>
       </div>
 
       <div className="landing-pricing-cards">
@@ -114,12 +116,14 @@ export function LandingPricing({ locale }: LandingPricingProps) {
               {tier.price.startsWith('$') ? <span>/ month</span> : null}
             </div>
 
+            <strong className="landing-pricing-members">{tier.members}</strong>
+
             <Link className="landing-pricing-action" href={signUpUrl}>
               {tier.action}
             </Link>
 
             <div className="landing-pricing-features">
-              {tier.popular ? <p>EVERYTHING IN STARTER, PLUS</p> : null}
+              <p>{tier.featureLabel}</p>
               <ul>
                 {tier.features.map((feature) => (
                   <li key={feature}>
