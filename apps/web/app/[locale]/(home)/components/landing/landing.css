@@ -1071,8 +1071,8 @@
   transform: rotate(6deg);
 }
 
-/* One screen, two shots. The section cycles itself between Single and Bulk
-   every few seconds; the dots below it say which shot you are on. */
+/* One screen, two shots. Off the pin it is an ordinary section and the dots
+   switch the shot directly. */
 .single-bulk-section {
   background: #fff;
   display: flex;
@@ -1088,6 +1088,24 @@
   justify-content: center;
   max-width: 1240px;
   width: 100%;
+}
+
+/* On the pin the section is taller than the viewport so there is scroll to
+   spend, with everything you can see stuck inside it. Scrolling here never
+   moves the stage: it holds on Single, then crosses the mark that swaps it to
+   Bulk. The stage has to sit at the start of the flex line rather than stretch,
+   or it would fill the whole runway and have no room left to stick. */
+@media (min-width: 901px) and (prefers-reduced-motion: no-preference) {
+  .single-bulk-section {
+    align-items: flex-start;
+    height: 230vh;
+    padding-block: 0;
+  }
+  .single-bulk-pin {
+    min-height: 100vh;
+    position: sticky;
+    top: 0;
+  }
 }
 
 .section-heading {

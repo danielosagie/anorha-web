@@ -4,8 +4,13 @@ import Image from 'next/image';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConveyorShowcase } from './conveyor-showcase';
 
-/** How long each shot holds before the section moves itself on. */
-const CYCLE_MS = 5000;
+/** Where inside the section's scroll each shot sits, for the dot buttons. */
+const SHOT_AT = [0.12, 0.74];
+/** How far down the runway Single gives way to Bulk. */
+const FLIP_AT = 0.42;
+/** The one breakpoint where the stage is tall enough to pin. */
+const PIN_QUERY =
+  '(min-width: 901px) and (prefers-reduced-motion: no-preference)';
 
 function Arrow() {
   return (
@@ -59,57 +64,69 @@ const CART_ROWS = [
 ];
 
 export function SingleBulkCards() {
-  // Two shots of one section. The cards share a grid cell so the swap is a
-  // cross-fade in place: nothing beside them moves, and the conveyor keeps
-  // running through both.
+  // The section is taller than the viewport and its stage is pinned, so
+  // scrolling here moves nothing on screen: it holds on Single, then crosses
+  // the one mark that swaps it to Bulk. The cards share a grid cell, so that
+  // swap is a cross-fade in place and the conveyor beside them never flinches.
   const sectionRef = useRef<HTMLElement>(null);
   const [shot, setShot] = useState<0 | 1>(0);
+  // read by the dots, which scroll on the pin and set the shot off it
+  const pinnedRef = useRef(false);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) {
       return;
     }
-    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
-      return;
-    }
+    const pinned = window.matchMedia(PIN_QUERY);
 
-    let timer = 0;
-    const start = () => {
-      if (timer) {
+    const read = () => {
+      pinnedRef.current = pinned.matches;
+      // Off the pin there is no runway to read, so the dots own the shot.
+      if (!pinned.matches) {
         return;
       }
-      timer = window.setInterval(() => {
-        setShot((current) => (current === 0 ? 1 : 0));
-      }, CYCLE_MS);
-    };
-    const stop = () => {
-      window.clearInterval(timer);
-      timer = 0;
+      const rect = section.getBoundingClientRect();
+      const vh = window.innerHeight || document.documentElement.clientHeight;
+      const range = section.offsetHeight - vh;
+      if (range <= 40) {
+        return;
+      }
+      setShot(-rect.top / range > FLIP_AT ? 1 : 0);
     };
 
-    // Only cycles while the section is on screen: a carousel nobody is looking
-    // at is a timer nobody asked for.
-    const observer = new IntersectionObserver(
-      ([entry]) => {
-        if (entry?.isIntersecting) {
-          start();
-        } else {
-          stop();
-        }
-      },
-      { threshold: 0.25 }
-    );
-    observer.observe(section);
+    read();
+    // Polled as well as event-driven: smooth scrolling drives the page from a
+    // rAF loop, and some embedded views never deliver scroll events at all.
+    const poll = window.setInterval(read, 150);
+    window.addEventListener('scroll', read, { passive: true });
+    window.addEventListener('resize', read);
+    pinned.addEventListener('change', read);
 
     return () => {
-      observer.disconnect();
-      stop();
+      window.clearInterval(poll);
+      window.removeEventListener('scroll', read);
+      window.removeEventListener('resize', read);
+      pinned.removeEventListener('change', read);
     };
   }, []);
 
   const goTo = useCallback((next: 0 | 1) => {
-    setShot(next);
+    const section = sectionRef.current;
+    if (!section) {
+      return;
+    }
+    if (!pinnedRef.current) {
+      setShot(next);
+      return;
+    }
+    const range = section.offsetHeight - window.innerHeight;
+    if (range <= 40) {
+      setShot(next);
+      return;
+    }
+    const top = window.scrollY + section.getBoundingClientRect().top;
+    window.scrollTo({ behavior: 'smooth', top: top + range * SHOT_AT[next] });
   }, []);
 
   return (
