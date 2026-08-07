@@ -1,5 +1,8 @@
 import { getServerSupabaseClient } from '@/lib/supabase/server';
 import { currentUser } from '@repo/auth/server';
+import { Button } from '@repo/design-system/components/ui/button';
+import { CableIcon, ScanLineIcon } from 'lucide-react';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { PageWrapper } from '../components/page-wrapper';
 import { InventoryClient } from '../inventory/inventory-client';
@@ -45,7 +48,9 @@ async function fetchInventoryData(userId: string) {
           .in('ProductVariantId', variantIds),
         supabase
           .from('InventoryLevels')
-          .select('ProductVariantId, Quantity, PlatformLocationId')
+          .select(
+            'ProductVariantId, Quantity, PlatformLocationId, PlatformConnectionId, Price'
+          )
           .in('ProductVariantId', variantIds),
         supabase
           .from('PlatformProductMappings')
@@ -72,9 +77,32 @@ async function fetchInventoryData(userId: string) {
       }
     });
 
+  const locationInfoById: Record<
+    string,
+    { name: string; connectionId: string | null }
+  > = {};
+  (locations ?? []).forEach((l: any) => {
+    locationInfoById[String(l.PlatformLocationId)] = {
+      name: l.Name ?? 'Unnamed Location',
+      connectionId: l.PlatformConnectionId ?? null,
+    };
+  });
+
   const quantityByVariant: Record<string, number> = {};
   const locationIdsByVariant: Record<string, Set<string>> = {};
   const connectionIdsByVariant: Record<string, Set<string>> = {};
+  const levelsByVariant: Record<
+    string,
+    Array<{
+      connectionId: string | null;
+      locationId: string | null;
+      locationName: string;
+      connectionName: string;
+      platformType: string;
+      quantity: number;
+      price?: number;
+    }>
+  > = {};
   const platformDataByVariant: Record<
     string,
     Record<string, Record<string, any>>
@@ -90,6 +118,25 @@ async function fetchInventoryData(userId: string) {
         String(lvl.PlatformLocationId)
       );
     }
+
+    const locInfo = lvl.PlatformLocationId
+      ? locationInfoById[String(lvl.PlatformLocationId)]
+      : undefined;
+    const connectionId = lvl.PlatformConnectionId ?? locInfo?.connectionId ?? null;
+    const conn = connectionId ? connectionById[connectionId] : undefined;
+    if (!levelsByVariant[lvl.ProductVariantId]) {
+      levelsByVariant[lvl.ProductVariantId] = [];
+    }
+    levelsByVariant[lvl.ProductVariantId]!.push({
+      connectionId,
+      locationId: lvl.PlatformLocationId ? String(lvl.PlatformLocationId) : null,
+      locationName: locInfo?.name ?? 'Default location',
+      connectionName:
+        conn?.DisplayName ?? conn?.PlatformType ?? 'Channel',
+      platformType: conn?.PlatformType ?? 'Unknown',
+      quantity: lvl.Quantity ?? 0,
+      price: lvl.Price ?? undefined,
+    });
   });
 
   const hasShopifyMapByVariant: Record<string, boolean> = {};
@@ -128,6 +175,7 @@ async function fetchInventoryData(userId: string) {
       connectionIdsByVariant[v.Id] ?? new Set<string>()
     ),
     platformData: platformDataByVariant[v.Id] ?? {},
+    levels: levelsByVariant[v.Id] ?? [],
     onShopify: v.OnShopify,
     onSquare: v.OnSquare,
     onClover: v.OnClover,
@@ -169,7 +217,23 @@ export const InventoryContent = async () => {
   return (
     <PageWrapper
       title="Inventory"
-      description="Products, stock, and channel details in one place."
+      description="Manage products and stock across every connected channel."
+      actions={
+        <>
+          <Button asChild variant="outline">
+            <Link href="/connections">
+              <CableIcon data-icon="inline-start" />
+              Channels
+            </Link>
+          </Button>
+          <Button asChild>
+            <Link href="/products/new">
+              <ScanLineIcon data-icon="inline-start" />
+              Scan item
+            </Link>
+          </Button>
+        </>
+      }
     >
       <InventoryClient
         items={items}

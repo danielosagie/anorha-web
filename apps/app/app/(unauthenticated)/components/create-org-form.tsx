@@ -101,7 +101,7 @@ export function CreateOrgForm({ onComplete }: CreateOrgFormProps) {
 
             <Button
                 type="submit"
-                className="w-full bg-[#647653] hover:bg-[#546346] text-white"
+                className="w-full bg-primary hover:bg-primary/90 text-primary-foreground"
                 disabled={isSubmitting}
             >
                 {isSubmitting ? (

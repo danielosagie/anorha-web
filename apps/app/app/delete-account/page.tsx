@@ -77,7 +77,7 @@ export default function DeleteAccountPage() {
             <h2 className="text-base font-semibold text-foreground mb-2">Public deletion page</h2>
             <p className="text-muted-foreground text-sm leading-relaxed">
               The public account deletion instructions are also available at{' '}
-              <Link className="font-medium text-[#647653] underline underline-offset-4" href="/legal/account-deletion">
+              <Link className="font-medium text-primary underline underline-offset-4" href="/legal/account-deletion">
                 anorha.app/delete-account
               </Link>.
             </p>
@@ -85,7 +85,7 @@ export default function DeleteAccountPage() {
 
           <div className="pt-4">
             <Link href="/">
-              <Button variant="outline" className="text-[#647653] border-[#647653] hover:bg-[#647653]/10">
+              <Button variant="outline" className="text-primary border-primary hover:bg-primary/10">
                 Back to Anorha
               </Button>
             </Link>

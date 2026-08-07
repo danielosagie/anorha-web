@@ -50,6 +50,7 @@ import {
   RefreshCwIcon,
   ScanSearchIcon,
   StoreIcon,
+  Trash2Icon,
   UnplugIcon,
 } from 'lucide-react';
 import Image from 'next/image';
@@ -117,6 +118,17 @@ function isConnectionMessage(value: unknown): value is ConnectionMessage {
     message.type === 'anorha:connection' &&
     (message.status === 'success' || message.status === 'error')
   );
+}
+
+// Mirrors mobile's derivePlatformConnectStatus: a soft-disabled row must not
+// count as connected, or disconnect appears to do nothing.
+const DEAD_STATUSES = new Set(['disconnected', 'revoked', 'disabled']);
+
+function isLiveConnection(connection: Connection): boolean {
+  if (connection.IsEnabled === false) {
+    return false;
+  }
+  return !DEAD_STATUSES.has(connection.Status?.toLowerCase() || '');
 }
 
 function formatStatus(connection: Connection): string {
@@ -199,13 +211,15 @@ function PlatformLogo({ platform }: { platform?: PlatformDefinition }) {
 
 export function ConnectionsClient() {
   const router = useRouter();
-  const { isLoaded: isAuthLoaded, userId } = useAuth();
+  const { getToken, isLoaded: isAuthLoaded, userId } = useAuth();
   const { isLoaded: isOrgLoaded, organization } = useOrganization();
   const [connections, setConnections] = useState<Connection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [disconnectId, setDisconnectId] = useState<string | null>(null);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
+  const [removeId, setRemoveId] = useState<string | null>(null);
+  const [isRemoving, setIsRemoving] = useState(false);
   const [isScanning, setIsScanning] = useState<string | null>(null);
   const [scanStates, setScanStates] = useState<Record<string, ScanState>>({});
   const [shopifyPlatform, setShopifyPlatform] =
@@ -384,9 +398,9 @@ export function ConnectionsClient() {
     };
   }, [activeJobSignature, loadConnections]);
 
-  const openOAuth = (platform: PlatformDefinition, shop?: string) => {
+  const openOAuth = async (platform: PlatformDefinition, shop?: string) => {
     if (
-      !platform.loginPath ||
+      !platform.connectIntentPath ||
       !userId ||
       !organization?.id ||
       !isAuthLoaded ||
@@ -396,27 +410,57 @@ export function ConnectionsClient() {
     }
 
     const finalRedirectUri = `${window.location.origin}/connections/callback`;
-    const url = new URL(platform.loginPath, API_BASE);
-    url.searchParams.set('userId', userId);
-    url.searchParams.set('orgId', organization.id);
-    url.searchParams.set('finalRedirectUri', finalRedirectUri);
-    for (const [key, value] of Object.entries(platform.extraParams || {})) {
-      url.searchParams.set(key, value);
-    }
-    if (shop) {
-      url.searchParams.set('shop', shop);
-    }
-
     const popup = window.open(
-      url.toString(),
+      '',
       `anorha-connect-${platform.key}`,
       'popup=yes,width=640,height=760,menubar=no,toolbar=no,location=yes,resizable=yes,scrollbars=yes'
     );
-    if (!popup) {
-      window.location.assign(url.toString());
-      return;
+
+    try {
+      const token = await getToken();
+      if (!token) {
+        throw new Error('No authenticated session token is available.');
+      }
+
+      const response = await fetch(
+        new URL(platform.connectIntentPath, API_BASE),
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${token}`,
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            finalRedirectUri,
+            ...platform.extraParams,
+            ...(shop ? { shop } : {}),
+          }),
+        }
+      );
+      const result: unknown = await response.json();
+      const startUrl =
+        result &&
+        typeof result === 'object' &&
+        'url' in result &&
+        typeof result.url === 'string'
+          ? result.url
+          : null;
+
+      if (!response.ok || !startUrl) {
+        throw new Error('The secure connection URL could not be created.');
+      }
+
+      if (!popup) {
+        window.location.assign(startUrl);
+        return;
+      }
+      popup.location.assign(startUrl);
+      popup.focus();
+    } catch (connectError) {
+      popup?.close();
+      console.error('[ConnectionsClient] OAuth start failed:', connectError);
+      toast.error('Connection could not be started. Please try again.');
     }
-    popup.focus();
   };
 
   const connectPlatform = (platform: PlatformDefinition) => {
@@ -424,14 +468,14 @@ export function ConnectionsClient() {
       setShopifyPlatform(platform);
       return;
     }
-    openOAuth(platform);
+    void openOAuth(platform);
   };
 
   const connectShopify = () => {
     if (!shopifyPlatform || !shopDomain.trim()) {
       return;
     }
-    openOAuth(shopifyPlatform, shopDomain.trim());
+    void openOAuth(shopifyPlatform, shopDomain.trim());
     setShopifyPlatform(null);
     setShopDomain('');
   };
@@ -459,6 +503,37 @@ export function ConnectionsClient() {
       toast.error('Scan failed.');
     } finally {
       setIsScanning(null);
+    }
+  };
+
+  const removeConnection = async () => {
+    if (!removeId) {
+      return;
+    }
+
+    try {
+      setIsRemoving(true);
+      const response = await fetch(
+        `/api/connections/${encodeURIComponent(removeId)}`,
+        { method: 'DELETE' }
+      );
+      if (!response.ok) {
+        throw new Error('Remove failed');
+      }
+
+      setRemoveId(null);
+      setScanStates((current) => {
+        const next = { ...current };
+        delete next[removeId];
+        return next;
+      });
+      toast.success('Connection removed.');
+      await loadConnections();
+    } catch (removeError) {
+      console.error('[ConnectionsClient] Remove failed:', removeError);
+      toast.error('Remove failed.');
+    } finally {
+      setIsRemoving(false);
     }
   };
 
@@ -497,8 +572,12 @@ export function ConnectionsClient() {
     }
   };
 
+  const liveConnections = connections.filter(isLiveConnection);
+  const disconnectedConnections = connections.filter(
+    (connection) => !isLiveConnection(connection)
+  );
   const connectedKeys = new Set(
-    connections
+    liveConnections
       .map((connection) => getPlatform(connection.PlatformType)?.key)
       .filter((key): key is PlatformKey => Boolean(key))
   );
@@ -524,7 +603,7 @@ export function ConnectionsClient() {
         <CardHeader className="flex flex-row items-start justify-between gap-4">
           <div className="flex flex-col gap-1.5">
             <CardTitle>Connected</CardTitle>
-            <CardDescription>{connections.length} total</CardDescription>
+            <CardDescription>{liveConnections.length} total</CardDescription>
           </div>
           <Button variant="outline" size="sm" onClick={loadConnections}>
             <RefreshCwIcon data-icon="inline-start" />
@@ -540,7 +619,7 @@ export function ConnectionsClient() {
               <Skeleton className="h-16 w-full" />
               <Skeleton className="h-16 w-full" />
             </div>
-          ) : connections.length === 0 ? (
+          ) : liveConnections.length === 0 ? (
             <div className="flex min-h-36 flex-col items-center justify-center gap-2 text-center">
               <StoreIcon
                 className="size-7 text-muted-foreground"
@@ -564,7 +643,7 @@ export function ConnectionsClient() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {connections.map((connection) => {
+                {liveConnections.map((connection) => {
                   const platform = getPlatform(connection.PlatformType);
                   const scan = scanStates[connection.Id];
                   const scanPercent = Math.round((scan?.progress || 0) * 100);
@@ -650,6 +729,66 @@ export function ConnectionsClient() {
         </CardContent>
       </Card>
 
+      {disconnectedConnections.length > 0 ? (
+        <Card>
+          <CardHeader>
+            <CardTitle>Disconnected</CardTitle>
+            <CardDescription>Reconnect or remove.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Table>
+              <TableBody>
+                {disconnectedConnections.map((connection) => {
+                  const platform = getPlatform(connection.PlatformType);
+
+                  return (
+                    <TableRow key={connection.Id}>
+                      <TableCell>
+                        <div className="flex min-w-44 items-center gap-3">
+                          <PlatformLogo platform={platform} />
+                          <div className="min-w-0">
+                            <div className="truncate font-semibold">
+                              {connection.DisplayName ||
+                                platform?.name ||
+                                connection.PlatformType}
+                            </div>
+                            <div className="text-muted-foreground text-xs">
+                              {platform?.name || connection.PlatformType}
+                            </div>
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex justify-end gap-2">
+                          {platform && platform.status === 'ga' ? (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              disabled={!canConnect}
+                              onClick={() => connectPlatform(platform)}
+                            >
+                              Reconnect
+                            </Button>
+                          ) : null}
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => setRemoveId(connection.Id)}
+                          >
+                            <Trash2Icon data-icon="inline-start" />
+                            Remove
+                          </Button>
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      ) : null}
+
       <Card>
         <CardHeader>
           <CardTitle>Platforms</CardTitle>
@@ -731,6 +870,38 @@ export function ConnectionsClient() {
             >
               {isDisconnecting ? <Spinner data-icon="inline-start" /> : null}
               Disconnect
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog
+        open={Boolean(removeId)}
+        onOpenChange={(open) => {
+          if (!open && !isRemoving) {
+            setRemoveId(null);
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove connection?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Deletes this connection for good. Items imported only from it are
+              archived.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={isRemoving}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={isRemoving}
+              onClick={(event) => {
+                event.preventDefault();
+                void removeConnection();
+              }}
+            >
+              {isRemoving ? <Spinner data-icon="inline-start" /> : null}
+              Remove
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

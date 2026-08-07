@@ -150,6 +150,12 @@ export function BillingClient({
     }
   }, [searchParams]);
 
+  useEffect(() => {
+    if (searchParams.get('upgrade') === 'true') {
+      setShowTierSelector(true);
+    }
+  }, [searchParams]);
+
   // Refresh billing data from API
   const refreshBillingData = async () => {
     setIsRefreshing(true);
@@ -373,7 +379,7 @@ export function BillingClient({
 
   return (
     <PageWrapper
-      title="Billing"
+      title="Billing & usage"
       description="Subscription, usage, payment details, and invoices."
     >
       {/* Actions & Refresh Button */}
@@ -485,8 +491,8 @@ export function BillingClient({
                     </TableCell>
                   </TableRow>
 
-                  {/* AI credits row (only if there was any AI usage or configured limit) */}
-                  {hasAiUsage && (
+                  {/* Keep included usage visible before the first scan. */}
+                  {aiCreditsLimit > 0 && (
                     <TableRow>
                       <TableCell>AI Credits Used</TableCell>
                       <TableCell className="text-right">
@@ -510,7 +516,7 @@ export function BillingClient({
                           / {onDemandLimit || 'unlimited'}
                         </span>
                       </TableCell>
-                      <TableCell className="text-right font-medium text-[#647653]">
+                      <TableCell className="text-right font-medium text-primary">
                         Included
                       </TableCell>
                     </TableRow>
@@ -589,11 +595,11 @@ export function BillingClient({
                 <Progress
                   value={
                     aiCreditsLimit > 0
-                      ? (aiCreditsUsed / aiCreditsLimit) * 100
+                      ? Math.min((aiCreditsUsed / aiCreditsLimit) * 100, 100)
                       : 0
                   }
-                  className="h-3 bg-gray-200 bg-yellow-500"
-                  indicatorClassName="bg-yellow-500"
+                  className="h-3 bg-muted"
+                  indicatorClassName="bg-primary"
                 />
               </div>
               {/* On-Demand Usage progress bar (hidden per request) */}
@@ -614,7 +620,7 @@ export function BillingClient({
                         : 0
                     }
                     className="h-3 bg-gray-200"
-                    indicatorClassName="bg-[#647653]"
+                    indicatorClassName="bg-primary"
                   />
                 </div>
               )}
@@ -623,7 +629,7 @@ export function BillingClient({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-fit rounded-md border-2 border-[#647653] bg-[#647653] px-4 py-2 font-normal text-sm text-white transition-all hover:border-[#647653] hover:bg-[#647653] hover:text-white"
+                  className="w-fit rounded-md border-2 border-primary bg-primary px-4 py-2 font-normal text-sm text-white transition-all hover:border-primary hover:bg-primary hover:text-white"
                   onClick={() => setShowCreditsModal(true)}
                 >
                   <PlusCircleIcon className="mr-2 size-4" />
@@ -655,8 +661,8 @@ export function BillingClient({
                             size="sm"
                             className={`px-4 py-2 transition-all ${
                               selectedCreditAmount === amount
-                                ? 'border-2 border-[#647653] bg-[#647653] text-white hover:bg-[#526144]'
-                                : 'border-2 border-gray-300 text-black hover:border-[#647653] hover:bg-[#647653] hover:text-white'
+                                ? 'border-2 border-primary bg-primary text-white hover:bg-primary/90'
+                                : 'border-2 border-gray-300 text-black hover:border-primary hover:bg-primary hover:text-white'
                             }`}
                             onClick={() => setSelectedCreditAmount(amount)}
                           >
@@ -667,7 +673,7 @@ export function BillingClient({
                         ![10, 25, 50, 100].includes(selectedCreditAmount) ? (
                           <div className="relative">
                             <Input
-                              className="w-24 border-2 border-[#647653] focus-visible:ring-[#647653]"
+                              className="w-24 border-2 border-primary focus-visible:ring-primary"
                               type="number"
                               placeholder="Amount"
                               autoFocus
@@ -681,7 +687,7 @@ export function BillingClient({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-2 border-gray-300 px-4 py-2 text-black transition-all hover:border-[#647653] hover:bg-[#647653] hover:text-white"
+                            className="border-2 border-gray-300 px-4 py-2 text-black transition-all hover:border-primary hover:bg-primary hover:text-white"
                             onClick={() => setSelectedCreditAmount(75)}
                           >
                             Custom
@@ -693,7 +699,7 @@ export function BillingClient({
                         <Button
                           size="sm"
                           disabled={!selectedCreditAmount || isTopUpLoading}
-                          className="border-2 border-[#a1a1a1] bg-[#a1a1a1] font-semibold text-white transition-all hover:bg-[#526144]"
+                          className="border-2 border-[#a1a1a1] bg-[#a1a1a1] font-semibold text-white transition-all hover:bg-primary/90"
                           onClick={async () => {
                             if (!selectedCreditAmount) return;
                             setIsTopUpLoading(true);
@@ -773,9 +779,9 @@ export function BillingClient({
               <div className="space-y-4">
                 {/* Upgrade Option */}
                 <div className="flex items-start gap-3 rounded-lg border-2 border-[#000] bg-white p-3">
-                  <TrendingUpIcon className="mt-0.5 size-5 flex-shrink-0 text-[#647653]" />
+                  <TrendingUpIcon className="mt-0.5 size-5 flex-shrink-0 text-primary" />
                   <div className="flex-1">
-                    <p className="font-medium text-[#647653]">
+                    <p className="font-medium text-primary">
                       Start your own plan
                     </p>
                     <p className="text-muted-foreground text-sm">
@@ -787,7 +793,7 @@ export function BillingClient({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowTierSelector(true)}
-                    className="border-2 border-[#000] text-black transition-all hover:border-[#647653] hover:bg-[#647653] hover:text-white"
+                    className="border-2 border-[#000] text-black transition-all hover:border-primary hover:bg-primary hover:text-white"
                   >
                     Upgrade
                   </Button>
@@ -838,7 +844,7 @@ export function BillingClient({
                       size="sm"
                       onClick={handleAddPartnerPaymentMethod}
                       disabled={isAddingPaymentMethod}
-                      className="border-2 border-[#000] text-black transition-all hover:border-[#647653] hover:bg-[#647653] hover:text-white"
+                      className="border-2 border-[#000] text-black transition-all hover:border-primary hover:bg-primary hover:text-white"
                     >
                       {isAddingPaymentMethod ? 'Loading...' : 'Add Card'}
                     </Button>
@@ -927,7 +933,7 @@ export function BillingClient({
                       <Badge
                         className={
                           inv.status === 'paid'
-                            ? 'border-[#647653]/20 bg-[#647653]/10 text-[#647653]'
+                            ? 'border-primary/20 bg-primary/10 text-primary'
                             : undefined
                         }
                       >

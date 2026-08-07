@@ -1,9 +1,9 @@
 'use client';
 
 import { ModeToggle } from '@repo/design-system/components/mode-toggle';
-import type { ReactNode } from 'react';
+import { ShaderGradient, ShaderGradientCanvas } from '@shadergradient/react';
 import Image from 'next/image';
-import { ShaderGradientCanvas, ShaderGradient } from '@shadergradient/react';
+import type { ReactNode } from 'react';
 
 type AuthLayoutProps = {
   readonly children: ReactNode;
@@ -25,7 +25,7 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
         >
           <ShaderGradient
             control="query"
-            urlString="https://www.shadergradient.co/customize?animate=on&axesHelper=off&bgColor1=%23000000&bgColor2=%23000000&brightness=1.2&cAzimuthAngle=180&cDistance=3.6&cPolarAngle=90&cameraZoom=1&color1=%23647653&color2=%23F4F4F5&color3=%234b5d14&embedMode=off&envPreset=city&fov=45&gizmoHelper=hide&grain=on&lightType=3d&pixelDensity=2.6&positionX=0&positionY=0&positionZ=0&range=disabled&rangeEnd=40&rangeStart=0&reflection=0.1&rotationX=0&rotationY=0&rotationZ=0&shader=defaults&type=plane&uDensity=1.3&uFrequency=5.5&uSpeed=0.2&uStrength=4&uTime=0&wireframe=false&zoomOut=false"
+            urlString="https://shadergradient.co/customize?animate=on&axesHelper=off&brightness=1.4&cAzimuthAngle=180&cDistance=3.6&cPolarAngle=90&cameraZoom=1&color1=%238b4a3a&color2=%23db8769&color3=%23dfd5a5&destination=onCanvas&embedMode=off&envPreset=city&format=gif&fov=45&frameRate=10&gizmoHelper=hide&grain=on&lightType=3d&pixelDensity=1&positionX=-1.4&positionY=0&positionZ=0&range=disabled&rangeEnd=40&rangeStart=0&reflection=0.1&rotationX=0&rotationY=10&rotationZ=50&shader=defaults&type=plane&uAmplitude=1&uDensity=1.3&uFrequency=5.5&uSpeed=0.3&uStrength=4&uTime=0&wireframe=false"
           />
         </ShaderGradientCanvas>
       </div>
@@ -39,20 +39,13 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
           height={32}
           className="h-8 w-8"
         />
-        <span className="font-medium text-white text-lg mix-blend-difference">Anorha</span>
+        <span className="font-medium text-lg text-white mix-blend-difference">
+          Anorha
+        </span>
       </div>
 
       <div className="absolute top-4 right-4 z-20">
         <ModeToggle />
-      </div>
-
-      <div className="relative z-20 mt-auto">
-        <blockquote className="space-y-2">
-          <p className="text-lg text-white mix-blend-difference">
-            &ldquo;We cut our listing time in half and I can just focus on selling. Anorha does all the hard work.&rdquo;
-          </p>
-          <footer className="text-sm text-white mix-blend-difference">Sofia Davis — Boutique Owner, LA</footer>
-        </blockquote>
       </div>
     </div>
     <div className="lg:p-8">

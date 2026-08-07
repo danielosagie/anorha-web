@@ -8,14 +8,14 @@ The marketing landing app in `apps/web` is outside this system and must remain u
 
 ## Color
 
-- Brand primary: `#93C822`, expressed as `oklch(0.77 0.17 122)` in web tokens.
-- Brand deep: `#4A7C00` for green text on light surfaces.
+- Web accent: warm terracotta `oklch(0.62 0.14 42)`.
+- Web accent deep: `oklch(0.47 0.11 38)` for accent text and selected navigation.
 - App ground: warm gray `#F4F4F1`.
 - Card and sheet: softly tinted white, never pure `#FFFFFF`.
 - Primary ink: `#18181B`; secondary ink: `#3F3F46`; dim text: `#71717A`.
 - Borders: `#E5E7EB`; field fills: `#F3F4F6`.
 - Success: `#16A34A`; warning: `#BA7517`; destructive: `#DC2626`.
-- Use one saturated color moment per screen. Accent green is reserved for the primary action, selected state, and meaningful progress.
+- Use one saturated color moment per screen. Terracotta is reserved for the primary action, selected state, and meaningful progress.
 
 ## Typography
 

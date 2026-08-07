@@ -4,15 +4,15 @@ import type { Metadata } from 'next';
 import { LandingHero } from './components/landing/02-hero';
 import { PlatformMarquee } from './components/landing/03-marquee';
 import { ProblemScatterPills } from './components/landing/04-problem-scatter-pills';
+import { CoreFeatures } from './components/landing/04a-core-features';
 import { SingleBulkCards } from './components/landing/05-single-bulk-cards';
 import { StoreManagePhone } from './components/landing/06-store-manage-phone';
-import { SellAnywhere } from './components/landing/07-sell-anywhere';
 import { SproutIntro } from './components/landing/08-sprout-intro';
 import { SproutFeatureBlocks } from './components/landing/09-sprout-feature-blocks';
-import { KeepsGoingList } from './components/landing/10-keeps-going-list';
 import { SellTogetherPartner } from './components/landing/11-sell-together-partner';
 import { LandingCta } from './components/landing/12-cta';
 import { LandingPricing } from './components/landing/12a-pricing';
+import { LandingFaq, landingFaqItems } from './components/landing/14-faq';
 import { SectionReveal } from './components/landing/section-reveal';
 import { SmoothScroll } from './components/landing/smooth-scroll';
 
@@ -62,6 +62,19 @@ const Home = async ({ params }: HomeProps) => {
     },
   };
 
+  const faqJsonLd = {
+    '@context': 'https://schema.org',
+    '@type': 'FAQPage',
+    mainEntity: landingFaqItems.map(({ answer, question }) => ({
+      '@type': 'Question',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: answer,
+      },
+      name: question,
+    })),
+  };
+
   return (
     <div className="anorha-landing">
       <SmoothScroll />
@@ -70,10 +83,18 @@ const Home = async ({ params }: HomeProps) => {
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
         type="application/ld+json"
       />
+      <script
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: JSON-LD is serialized and contains no user input.
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(faqJsonLd) }}
+        type="application/ld+json"
+      />
       <LandingHero />
       <PlatformMarquee />
       <SectionReveal className="landing-section-shell">
         <ProblemScatterPills />
+      </SectionReveal>
+      <SectionReveal className="landing-section-shell">
+        <CoreFeatures />
       </SectionReveal>
       <SectionReveal className="landing-section-shell">
         <SingleBulkCards />
@@ -81,17 +102,16 @@ const Home = async ({ params }: HomeProps) => {
       <SectionReveal className="landing-section-shell">
         <StoreManagePhone />
       </SectionReveal>
+      {/*
       <SectionReveal className="landing-section-shell">
         <SellAnywhere />
       </SectionReveal>
+      */}
       <SectionReveal className="landing-section-shell">
         <SproutIntro />
       </SectionReveal>
       <SectionReveal className="landing-section-shell">
         <SproutFeatureBlocks />
-      </SectionReveal>
-      <SectionReveal className="landing-section-shell">
-        <KeepsGoingList />
       </SectionReveal>
       <SectionReveal className="landing-section-shell">
         <SellTogetherPartner />
@@ -101,6 +121,9 @@ const Home = async ({ params }: HomeProps) => {
       </SectionReveal>
       <SectionReveal className="landing-section-shell">
         <LandingCta />
+      </SectionReveal>
+      <SectionReveal className="landing-section-shell">
+        <LandingFaq />
       </SectionReveal>
     </div>
   );

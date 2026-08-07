@@ -1,5 +1,6 @@
 'use client';
 
+import { getPolarProductIds } from '@/lib/polar-config';
 import { Badge } from '@repo/design-system/components/ui/badge';
 import { Button } from '@repo/design-system/components/ui/button';
 import {
@@ -33,20 +34,9 @@ interface TierSelectorProps {
 }
 
 function getTiers(): Tier[] {
-  // Try to get from env vars, fallback to hardcoded IDs from Vercel screenshot
-  const growthId =
-    process.env.NEXT_PUBLIC_POLAR_GROWTH_PRODUCT_ID ||
-    '116402ad-3ea6-4fae-904d-483afdfee9a6';
-  const teamsId =
-    process.env.NEXT_PUBLIC_POLAR_TEAMS_PRODUCT_ID ||
-    'ecf2d388-f89c-4a6c-b6af-ad441bd75e17';
-
-  console.log('[TierSelector] Product IDs:', {
-    growth: growthId,
-    teams: teamsId,
-    env_growth: process.env.NEXT_PUBLIC_POLAR_GROWTH_PRODUCT_ID,
-    env_teams: process.env.NEXT_PUBLIC_POLAR_TEAMS_PRODUCT_ID,
-  });
+  const productIds = getPolarProductIds();
+  const growthId = productIds.growth || 'missing-growth';
+  const teamsId = productIds.teams || 'missing-teams';
 
   return [
     {
@@ -95,43 +85,29 @@ export function TierSelector({
   const TIERS = useMemo(() => getTiers(), []);
 
   const handleSelectTier = (tier: Tier) => {
-    console.log('Selected tier:', tier.id, 'Product ID:', tier.productId);
     setSelectedTierId(tier.id);
   };
 
   const handleCheckout = () => {
     const tier = TIERS.find((t) => t.id === selectedTierId);
     if (!tier) {
-      console.error('[TierSelector] No tier selected');
       return;
     }
 
     if (!tier.productId || tier.productId.startsWith('missing-')) {
-      console.error(
-        '[TierSelector] Invalid product ID for tier:',
-        tier.id,
-        tier.productId
-      );
       alert(
-        'Configuration error: Product ID not set. Please contact support.\n\nMissing: ' +
-          tier.productId
+        `Configuration error: Product ID not set. Please contact support.\n\nMissing: ${tier.productId}`
       );
       return;
     }
 
-    console.log(
-      '[TierSelector] Checking out with tier:',
-      tier.id,
-      'Product ID:',
-      tier.productId
-    );
     onSelectTier(tier);
   };
 
   return (
     <PageWrapper
-      title="Manage Subscription"
-      description="Scale as you grow"
+      title="Choose a plan"
+      description="Select a plan, then continue to secure checkout."
       onBack={onClose}
       backButtonText="Close"
     >
@@ -142,7 +118,7 @@ export function TierSelector({
             <div key={tier.id} className="relative pt-6">
               {/* Badge - Outside card for visibility */}
               {tier.highlighted && (
-                <Badge className="-translate-x-1/2 absolute top-4 left-1/2 z-20 bg-[#647653] text-white hover:bg-[#F4F4F5] hover:text-black">
+                <Badge className="-translate-x-1/2 absolute top-4 left-1/2 z-20 bg-primary text-primary-foreground hover:bg-primary/90">
                   Most Popular
                 </Badge>
               )}
@@ -150,7 +126,7 @@ export function TierSelector({
               <Card
                 className={`relative flex h-full w-full cursor-pointer flex-col content-between border-2 bg-background/95 pb-0 backdrop-blur-sm transition-all ${
                   selectedTierId === tier.id
-                    ? 'border-[#647653] shadow-lg ring-2 ring-[#647653]'
+                    ? 'border-primary shadow-lg ring-2 ring-primary'
                     : 'border-gray-200 hover:shadow-md'
                 }`}
                 onClick={() => handleSelectTier(tier)}
@@ -192,7 +168,7 @@ export function TierSelector({
                           key={idx}
                           className="flex items-start gap-3 text-sm"
                         >
-                          <CheckCircle2Icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#647653]" />
+                          <CheckCircle2Icon className="mt-0.5 h-5 w-5 flex-shrink-0 text-primary" />
                           <span className="text-foreground">{feature}</span>
                         </li>
                       ))}
@@ -203,8 +179,8 @@ export function TierSelector({
                 {/* Selection Indicator - Always at bottom */}
                 <div className="h-full min-h-14 w-full content-end rounded-b-lg text-center">
                   {selectedTierId === tier.id && (
-                    <div className="min-h-14 bg-[#647653]/5">
-                      <p className="min-h-14 content-center justify-center font-semibold text-[#647653] text-sm">
+                    <div className="min-h-14 bg-primary/5">
+                      <p className="min-h-14 content-center justify-center font-semibold text-primary text-sm">
                         ✓ Selected
                       </p>
                     </div>
@@ -234,7 +210,7 @@ export function TierSelector({
             disabled={!selectedTierId || isLoading}
             className={`px-8 transition-colors ${
               selectedTierId
-                ? 'bg-[#647653] text-white hover:bg-[#F4F4F5]'
+                ? 'bg-primary text-primary-foreground hover:bg-primary/90'
                 : 'cursor-not-allowed bg-[#F4F4F5] text-gray-500 hover:bg-[#F4F4F5] '
             }`}
           >

@@ -48,16 +48,27 @@ import {
   DownloadIcon,
   ExternalLinkIcon,
   LoaderCircleIcon,
-  PlusIcon,
   SearchIcon,
+  XIcon,
 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import React from 'react';
 import { toast } from 'sonner';
 import { apiUrl, readError } from '../products/contract';
+import { PriceStockSheet } from './price-stock-sheet';
 
-type InventoryItem = {
+export type VariantLevel = {
+  connectionId: string | null;
+  locationId: string | null;
+  locationName: string;
+  connectionName?: string;
+  platformType?: string;
+  quantity: number;
+  price?: number;
+};
+
+export type InventoryItem = {
   id: string;
   title: string;
   sku?: string;
@@ -69,6 +80,7 @@ type InventoryItem = {
   locationIds: string[];
   connectionIds: string[];
   platformData: Record<string, Record<string, any>>;
+  levels: VariantLevel[];
   onShopify?: boolean;
   onSquare?: boolean;
   onClover?: boolean;
@@ -84,7 +96,7 @@ type Location = {
   platformType?: string;
 };
 
-type Connection = {
+export type Connection = {
   id: string;
   displayName: string;
   platformType: string;
@@ -93,6 +105,8 @@ type Connection = {
 };
 
 const DEFAULT_PLATFORM_ORDER = ['square', 'shopify', 'clover', 'amazon'];
+// Cells that own their own inputs / links must not trigger the row sheet.
+const INTERACTIVE_CELL_KEYS = new Set(['select', 'name', 'sku', 'price']);
 type PlatformField = {
   key: string;
   label: string;
@@ -260,15 +274,20 @@ function toDisplayLabel(value: string) {
 
 function ProductImage({ src, alt }: { src?: string; alt: string }) {
   if (!src) {
-    return <div className="size-9 rounded-lg border bg-muted" />;
+    return (
+      <div
+        className="size-11 shrink-0 rounded-xl border bg-muted"
+        aria-hidden
+      />
+    );
   }
   return (
     <Image
       src={src}
       alt={alt}
-      className="size-9 rounded-lg border object-cover"
-      width={36}
-      height={36}
+      className="size-11 shrink-0 rounded-xl border object-cover"
+      width={44}
+      height={44}
     />
   );
 }
@@ -366,8 +385,34 @@ export function InventoryClient({
   const [bulkPriceOpen, setBulkPriceOpen] = React.useState(false);
   const [bulkPrice, setBulkPrice] = React.useState('');
   const [bulkSaving, setBulkSaving] = React.useState(false);
+  const [sheetItem, setSheetItem] = React.useState<InventoryItem | null>(null);
 
   React.useEffect(() => setRows(items), [items]);
+
+  const applySheetSave = React.useCallback(
+    (
+      itemId: string,
+      patch: {
+        price?: number;
+        totalQuantity: number;
+        levels: InventoryItem['levels'];
+      }
+    ) => {
+      setRows((current) =>
+        current.map((item) =>
+          item.id === itemId
+            ? {
+                ...item,
+                price: patch.price,
+                totalQuantity: patch.totalQuantity,
+                levels: patch.levels,
+              }
+            : item
+        )
+      );
+    },
+    []
+  );
 
   const saveItem = React.useCallback(
     async (id: string, patch: InventoryPatch) => {
@@ -939,11 +984,61 @@ export function InventoryClient({
         menuLabel: 'Quantity',
         className: 'min-w-[110px]',
         sortKey: 'quantity',
-        render: (item: InventoryItem) => (
-          <span className="px-2 font-semibold tabular-nums">
-            {item.totalQuantity}
-          </span>
-        ),
+        render: (item: InventoryItem) => {
+          const stockLabel =
+            item.totalQuantity === 0
+              ? 'Out'
+              : item.totalQuantity <= 5
+                ? 'Low'
+                : 'In stock';
+          return (
+            <span className="flex items-center gap-2 px-2">
+              <span className="font-semibold tabular-nums">
+                {item.totalQuantity}
+              </span>
+              <span
+                className={
+                  item.totalQuantity === 0
+                    ? 'rounded-full bg-destructive/10 px-2 py-0.5 font-semibold text-[0.6875rem] text-destructive'
+                    : item.totalQuantity <= 5
+                      ? 'rounded-full bg-warning/12 px-2 py-0.5 font-semibold text-[0.6875rem] text-warning'
+                      : 'rounded-full bg-success/10 px-2 py-0.5 font-semibold text-[0.6875rem] text-success'
+                }
+              >
+                {stockLabel}
+              </span>
+            </span>
+          );
+        },
+      },
+      {
+        key: 'channels',
+        label: 'Channels',
+        menuLabel: 'Channels',
+        className: 'min-w-[180px]',
+        render: (item: InventoryItem) => {
+          const platforms = Array.from(itemPlatformKeys(item));
+          if (platforms.length === 0) {
+            return <span className="text-muted-foreground text-xs">Not listed</span>;
+          }
+          return (
+            <span className="flex flex-wrap gap-1">
+              {platforms.slice(0, 2).map((platformKey) => (
+                <span
+                  key={platformKey}
+                  className="rounded-full border bg-muted/45 px-2 py-0.5 font-medium text-[0.6875rem] text-muted-foreground"
+                >
+                  {toDisplayLabel(platformKey)}
+                </span>
+              ))}
+              {platforms.length > 2 ? (
+                <span className="rounded-full bg-muted px-2 py-0.5 font-medium text-[0.6875rem] text-muted-foreground">
+                  +{platforms.length - 2}
+                </span>
+              ) : null}
+            </span>
+          );
+        },
       },
       {
         key: 'locations',
@@ -968,6 +1063,7 @@ export function InventoryClient({
     [
       allPageItemsSelected,
       locationSummary,
+      itemPlatformKeys,
       saveItem,
       savingIds,
       selectedIds,
@@ -1007,10 +1103,80 @@ export function InventoryClient({
     [allColumns, hiddenColumnKeys]
   );
 
+  const inventoryUnits = React.useMemo(
+    () => rows.reduce((total, item) => total + item.totalQuantity, 0),
+    [rows]
+  );
+  const inventoryValue = React.useMemo(
+    () =>
+      rows.reduce(
+        (total, item) => total + item.totalQuantity * (item.price ?? 0),
+        0
+      ),
+    [rows]
+  );
+  const lowStockCount = React.useMemo(
+    () =>
+      rows.filter((item) => item.totalQuantity > 0 && item.totalQuantity <= 5)
+        .length,
+    [rows]
+  );
+  const outOfStockCount = React.useMemo(
+    () => rows.filter((item) => item.totalQuantity === 0).length,
+    [rows]
+  );
+  const hasActiveFilters =
+    platform !== 'all' ||
+    query.trim().length > 0 ||
+    selectedConnectionIds.length > 0 ||
+    selectedLocationIds.length > 0 ||
+    stockFilter !== 'all';
+
+  const clearFilters = () => {
+    setPlatform('all');
+    setQuery('');
+    setSelectedConnectionIds([]);
+    setSelectedLocationIds([]);
+    setStockFilter('all');
+  };
+
   return (
     <div className="flex flex-col gap-5">
+      <section
+        aria-label="Inventory summary"
+        className="grid overflow-hidden rounded-[1.125rem] border bg-card sm:grid-cols-2 lg:grid-cols-4"
+      >
+        <div className="border-b px-4 py-3.5 sm:border-r lg:border-b-0">
+          <p className="text-muted-foreground text-xs">Products</p>
+          <p className="mt-1 font-bold text-lg tabular-nums">
+            {rows.length.toLocaleString()}
+          </p>
+        </div>
+        <div className="border-b px-4 py-3.5 lg:border-r lg:border-b-0">
+          <p className="text-muted-foreground text-xs">Units on hand</p>
+          <p className="mt-1 font-bold text-lg tabular-nums">
+            {inventoryUnits.toLocaleString()}
+          </p>
+        </div>
+        <div className="border-b px-4 py-3.5 sm:border-r sm:border-b-0">
+          <p className="text-muted-foreground text-xs">Inventory value</p>
+          <p className="mt-1 font-bold text-lg tabular-nums">
+            {formatPrice(inventoryValue)}
+          </p>
+        </div>
+        <div className="px-4 py-3.5">
+          <p className="text-muted-foreground text-xs">Needs attention</p>
+          <p className="mt-1 font-bold text-lg tabular-nums">
+            {(lowStockCount + outOfStockCount).toLocaleString()}
+          </p>
+          <p className="mt-0.5 text-muted-foreground text-xs">
+            {outOfStockCount} out, {lowStockCount} low
+          </p>
+        </div>
+      </section>
+
       <Tabs value={platform} onValueChange={(value) => setPlatform(value)}>
-        <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1 rounded-2xl bg-muted/70 p-1.5">
+        <TabsList className="h-auto max-w-full flex-wrap justify-start gap-1 rounded-2xl bg-muted/65 p-1.5">
           {platformOptions.map((option) => (
             <TabsTrigger
               key={option}
@@ -1026,7 +1192,7 @@ export function InventoryClient({
         </TabsList>
       </Tabs>
 
-      <div className="flex flex-col gap-3 rounded-xl border bg-card p-3">
+      <div className="flex flex-col gap-3 rounded-[1.125rem] border bg-muted/25 p-3 md:p-4">
         <div className="flex flex-wrap gap-2">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
@@ -1078,13 +1244,15 @@ export function InventoryClient({
               <DropdownMenuSeparator />
               <div className="flex items-center justify-between px-3 py-2 text-sm">
                 <button
-                  className="text-[#34A853]"
+                  type="button"
+                  className="rounded-md px-1 font-semibold text-accent-foreground outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => setSelectedConnectionIds([])}
                 >
                   Clear
                 </button>
                 <button
-                  className="text-[#34A853]"
+                  type="button"
+                  className="rounded-md px-1 font-semibold text-accent-foreground outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() =>
                     setSelectedConnectionIds(
                       visibleConnections.map((c) => c.id)
@@ -1154,13 +1322,15 @@ export function InventoryClient({
               <DropdownMenuSeparator />
               <div className="flex items-center justify-between px-3 py-2 text-sm">
                 <button
-                  className="text-[#34A853]"
+                  type="button"
+                  className="rounded-md px-1 font-semibold text-accent-foreground outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() => setSelectedLocationIds([])}
                 >
                   Clear
                 </button>
                 <button
-                  className="text-[#34A853]"
+                  type="button"
+                  className="rounded-md px-1 font-semibold text-accent-foreground outline-none hover:underline focus-visible:ring-2 focus-visible:ring-ring"
                   onClick={() =>
                     setSelectedLocationIds(
                       filteredLocations.map((loc) => loc.id)
@@ -1178,7 +1348,7 @@ export function InventoryClient({
           <div className="relative min-w-[220px] flex-1">
             <SearchIcon className="-translate-y-1/2 pointer-events-none absolute top-1/2 left-3 size-4 text-muted-foreground" />
             <Input
-              placeholder="Search name or SKU"
+              placeholder="Search products or SKU"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               className="h-10 min-h-10 rounded-lg border-transparent bg-muted/65 pl-10 focus-visible:border-ring"
@@ -1233,12 +1403,16 @@ export function InventoryClient({
             <DownloadIcon data-icon="inline-start" />
             Export
           </Button>
-          <Button asChild className="h-10">
-            <Link href="/products/new">
-              <PlusIcon data-icon="inline-start" />
-              Add
-            </Link>
-          </Button>
+          {hasActiveFilters ? (
+            <Button
+              variant="ghost"
+              className="h-10 text-muted-foreground"
+              onClick={clearFilters}
+            >
+              <XIcon data-icon="inline-start" />
+              Clear
+            </Button>
+          ) : null}
         </div>
       </div>
 
@@ -1320,7 +1494,86 @@ export function InventoryClient({
         </DialogContent>
       </Dialog>
 
-      <div className="overflow-hidden rounded-xl border bg-card">
+      <div className="divide-y overflow-hidden rounded-[1.125rem] border bg-card md:hidden">
+        {pageItems.length === 0 ? (
+          <div className="flex min-h-44 flex-col items-center justify-center px-5 text-center">
+            <p className="font-semibold text-sm">No products found</p>
+            <p className="mt-1 text-muted-foreground text-xs">
+              Try clearing a filter or searching for another SKU.
+            </p>
+            {hasActiveFilters ? (
+              <Button className="mt-4" size="sm" variant="outline" onClick={clearFilters}>
+                Clear filters
+              </Button>
+            ) : null}
+          </div>
+        ) : (
+          pageItems.map((item) => {
+            const platforms = Array.from(itemPlatformKeys(item));
+            return (
+              <div
+                key={item.id}
+                className="flex items-start gap-3 px-4 py-4 data-[selected=true]:bg-primary/8"
+                data-selected={selectedIds.has(item.id)}
+              >
+                <Checkbox
+                  className="mt-3"
+                  aria-label={`Select ${item.title}`}
+                  checked={selectedIds.has(item.id)}
+                  onCheckedChange={(checked) =>
+                    setSelectedIds((current) => {
+                      const next = new Set(current);
+                      if (checked === true) next.add(item.id);
+                      else next.delete(item.id);
+                      return next;
+                    })
+                  }
+                />
+                <button
+                  type="button"
+                  className="flex min-w-0 flex-1 items-start gap-3 rounded-xl text-left outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
+                  onClick={() => setSheetItem(item)}
+                  aria-label={`Edit inventory for ${item.title}`}
+                >
+                  <ProductImage src={item.imageUrl} alt="" />
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate font-semibold text-sm">
+                      {item.title}
+                    </span>
+                    <span className="mt-0.5 block truncate text-muted-foreground text-xs">
+                      {item.sku || 'No SKU'} · {locationSummary(item)}
+                    </span>
+                    <span className="mt-2 flex flex-wrap items-center gap-1.5">
+                      <span className="font-semibold text-sm tabular-nums">
+                        {formatPrice(item.price)}
+                      </span>
+                      {platforms.length > 0 ? (
+                        <span className="rounded-full bg-muted px-2 py-0.5 text-[0.6875rem] text-muted-foreground">
+                          {platforms.slice(0, 2).map(toDisplayLabel).join(', ')}
+                          {platforms.length > 2 ? ` +${platforms.length - 2}` : ''}
+                        </span>
+                      ) : null}
+                    </span>
+                  </span>
+                  <span
+                    className={
+                      item.totalQuantity === 0
+                        ? 'rounded-full bg-destructive/10 px-2 py-1 font-semibold text-destructive text-xs tabular-nums'
+                        : item.totalQuantity <= 5
+                          ? 'rounded-full bg-warning/12 px-2 py-1 font-semibold text-warning text-xs tabular-nums'
+                          : 'rounded-full bg-muted px-2 py-1 font-semibold text-muted-foreground text-xs tabular-nums'
+                    }
+                  >
+                    {item.totalQuantity}
+                  </span>
+                </button>
+              </div>
+            );
+          })
+        )}
+      </div>
+
+      <div className="hidden overflow-hidden rounded-[1.125rem] border bg-card md:block">
         <div className="overflow-x-auto">
           <Table>
             <TableHeader className="bg-muted/45">
@@ -1368,12 +1621,31 @@ export function InventoryClient({
                     data-state={
                       selectedIds.has(item.id) ? 'selected' : undefined
                     }
-                    className="h-12 text-sm hover:bg-muted/35 data-[state=selected]:bg-primary/8"
+                    onClick={() => setSheetItem(item)}
+                    onKeyDown={(event) => {
+                      if (event.target !== event.currentTarget) return;
+                      if (event.key === 'Enter' || event.key === ' ') {
+                        event.preventDefault();
+                        setSheetItem(item);
+                      }
+                    }}
+                    tabIndex={0}
+                    className="h-16 cursor-pointer text-sm outline-none hover:bg-muted/35 focus-visible:bg-muted/45 focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-ring data-[state=selected]:bg-primary/8"
                   >
                     {columns.map((column) => (
                       <TableCell
                         key={`${item.id}-${column.key}`}
                         className={column.className}
+                        onClick={
+                          INTERACTIVE_CELL_KEYS.has(column.key)
+                            ? (event) => event.stopPropagation()
+                            : undefined
+                        }
+                        onKeyDown={
+                          INTERACTIVE_CELL_KEYS.has(column.key)
+                            ? (event) => event.stopPropagation()
+                            : undefined
+                        }
                       >
                         {column.render(item)}
                       </TableCell>
@@ -1432,6 +1704,15 @@ export function InventoryClient({
           </div>
         </div>
       </div>
+
+      <PriceStockSheet
+        item={sheetItem}
+        open={sheetItem !== null}
+        onOpenChange={(open) => {
+          if (!open) setSheetItem(null);
+        }}
+        onSaved={applySheetSave}
+      />
     </div>
   );
 }

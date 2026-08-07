@@ -26,8 +26,8 @@ export default async function OnboardingPage(props: { searchParams: Promise<{ cr
     return (
         <Suspense fallback={
             <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-500 min-h-[400px]">
-                <Loader2 className="h-10 w-10 animate-spin text-[#647653]" />
-                <p className="text-muted-foreground font-medium">Initialising...</p>
+                <Loader2 className="h-10 w-10 animate-spin text-primary" />
+                <p className="text-muted-foreground font-medium">Loading...</p>
             </div>
         }>
             <OnboardingClient />

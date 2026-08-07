@@ -1,6 +1,7 @@
 'use client';
 
 import { env } from '@/env';
+import { IOS_DOWNLOAD_URL } from '@/lib/mobile-downloads';
 import { Button } from '@repo/design-system/components/ui/button';
 import {
   Dialog,
@@ -14,14 +15,13 @@ import { Check, Copy, ExternalLink, Mail, Smartphone } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 
 // Configuration - defaults provided if env vars are missing
-const TESTFLIGHT_URL =
-  env.NEXT_PUBLIC_TESTFLIGHT_URL ||
-  'https://testflight.apple.com/v1/app/6755371742?build=192233562';
 const INVITE_CODE = env.NEXT_PUBLIC_TESTFLIGHT_INVITE_CODE || '';
 
-// Brand colors (matching sidebar active state)
-const BRAND_GREEN = '#93C822';
-const BRAND_GREEN_LIGHT = 'rgba(147, 200, 34, 0.12)';
+const BRAND_ACCENT = '#C66E4E';
+const BRAND_ACCENT_LIGHT = 'rgba(198, 110, 78, 0.12)';
+const MOBILE_USER_AGENT_PATTERN =
+  /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
+const IOS_USER_AGENT_PATTERN = /iPhone|iPad|iPod/i;
 
 // Simple QR Code component using Canvas API with qr-code-generator pattern
 function QRCode({ url, size = 200 }: { url: string; size?: number }) {
@@ -30,7 +30,9 @@ function QRCode({ url, size = 200 }: { url: string; size?: number }) {
 
   useEffect(() => {
     const canvas = canvasRef.current;
-    if (!canvas) return;
+    if (!canvas) {
+      return;
+    }
 
     // Use a reliable external QR code image as fallback
     const img = new Image();
@@ -57,7 +59,7 @@ function QRCode({ url, size = 200 }: { url: string; size?: number }) {
         <span className="px-4 text-center text-gray-500 text-sm">
           QR Code unavailable.
           <br />
-          <a href={url} className="text-[#5c9c00] underline">
+          <a href={url} className="text-[#9a4d34] underline">
             Click here
           </a>
         </span>
@@ -79,14 +81,12 @@ export function TestFlightBanner({
 
   useEffect(() => {
     const ua = navigator.userAgent;
-    setIsMobile(
-      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(ua)
-    );
-    setIsIOS(/iPhone|iPad|iPod/i.test(ua));
+    setIsMobile(MOBILE_USER_AGENT_PATTERN.test(ua));
+    setIsIOS(IOS_USER_AGENT_PATTERN.test(ua));
   }, []);
 
   const handleCopy = async () => {
-    await navigator.clipboard.writeText(INVITE_CODE || TESTFLIGHT_URL);
+    await navigator.clipboard.writeText(INVITE_CODE || IOS_DOWNLOAD_URL);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -96,7 +96,7 @@ export function TestFlightBanner({
       <div className="fade-in zoom-in-95 flex animate-in flex-col items-center space-y-6 rounded-2xl border border-gray-100 bg-white p-8 text-center duration-500">
         <div
           className="mb-2 flex h-16 w-16 items-center justify-center rounded-2xl shadow-sm"
-          style={{ backgroundColor: BRAND_GREEN_LIGHT }}
+          style={{ backgroundColor: BRAND_ACCENT_LIGHT }}
         >
           <Smartphone className="size-8 text-accent-foreground" />
         </div>
@@ -118,10 +118,7 @@ export function TestFlightBanner({
         {isMobile ? (
           isIOS ? (
             <Button className="h-14 w-full max-w-xs text-base" asChild>
-              <a href={TESTFLIGHT_URL}>
-                <span className="text-2xl"></span>
-                Open in TestFlight
-              </a>
+              <a href={IOS_DOWNLOAD_URL}>Open in TestFlight</a>
             </Button>
           ) : (
             <div className="w-full max-w-xs rounded-xl border border-gray-100 bg-gray-50 p-6 text-center">
@@ -136,7 +133,7 @@ export function TestFlightBanner({
           )
         ) : (
           <div className="inline-block rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-            <QRCode url={TESTFLIGHT_URL} size={200} />
+            <QRCode url={IOS_DOWNLOAD_URL} size={200} />
           </div>
         )}
 
@@ -154,7 +151,7 @@ export function TestFlightBanner({
                   variant="ghost"
                   size="icon"
                   onClick={handleCopy}
-                  className="h-6 w-6 text-gray-400 hover:text-green-600"
+                  className="h-6 w-6 text-gray-400 hover:text-accent-foreground"
                 >
                   {copied ? (
                     <Check className="h-4 w-4" />
@@ -169,7 +166,7 @@ export function TestFlightBanner({
           {!isMobile && (
             <Button variant="outline" className="w-full gap-2" asChild>
               <a
-                href={TESTFLIGHT_URL}
+                href={IOS_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
               >
@@ -191,7 +188,7 @@ export function TestFlightBanner({
       <div className="flex items-center gap-4">
         <div
           className="flex size-11 shrink-0 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: BRAND_GREEN_LIGHT }}
+          style={{ backgroundColor: BRAND_ACCENT_LIGHT }}
         >
           <Smartphone className="size-5 text-accent-foreground" />
         </div>
@@ -217,7 +214,7 @@ export function TestFlightBanner({
 
           <div className="flex flex-col items-center justify-center space-y-6 p-4">
             <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
-              <QRCode url={TESTFLIGHT_URL} size={250} />
+              <QRCode url={IOS_DOWNLOAD_URL} size={250} />
             </div>
 
             {INVITE_CODE && (
@@ -233,7 +230,7 @@ export function TestFlightBanner({
                   size="sm"
                   onClick={handleCopy}
                   className="h-8 text-gray-500"
-                  style={{ color: copied ? BRAND_GREEN : undefined }}
+                  style={{ color: copied ? BRAND_ACCENT : undefined }}
                 >
                   {copied ? 'Copied!' : 'Copy'}
                 </Button>
@@ -242,11 +239,11 @@ export function TestFlightBanner({
 
             <div className="text-center">
               <a
-                href={TESTFLIGHT_URL}
+                href={IOS_DOWNLOAD_URL}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-1 font-medium text-sm hover:underline"
-                style={{ color: BRAND_GREEN }}
+                style={{ color: BRAND_ACCENT }}
               >
                 Open TestFlight Link Directly{' '}
                 <ExternalLink className="h-3 w-3" />

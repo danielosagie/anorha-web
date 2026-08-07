@@ -1,12 +1,8 @@
 'use client';
 
-import {
-  OrganizationSwitcher,
-  SignOutButton,
-  UserButton,
-} from '@repo/auth/client';
+import { ANDROID_DOWNLOAD_URL, IOS_DOWNLOAD_URL } from '@/lib/mobile-downloads';
+import { OrganizationSwitcher, UserButton } from '@repo/auth/client';
 import { ModeToggle } from '@repo/design-system/components/mode-toggle';
-import { Button } from '@repo/design-system/components/ui/button';
 import {
   Sidebar,
   SidebarContent,
@@ -21,26 +17,20 @@ import {
   SidebarMenuItem,
 } from '@repo/design-system/components/ui/sidebar';
 import { cn } from '@repo/design-system/lib/utils';
-import { NotificationsTrigger } from '@repo/notifications/components/trigger';
 import {
-  ActivityIcon,
+  AppleIcon,
   BoxesIcon,
-  CableIcon,
-  ChartColumnIcon,
   CreditCardIcon,
+  ExternalLinkIcon,
   LayoutDashboardIcon,
-  LogOutIcon,
-  ReceiptTextIcon,
   Settings2Icon,
-  SproutIcon,
-  UserRoundIcon,
+  SmartphoneIcon,
   UsersIcon,
 } from 'lucide-react';
 import type { LucideIcon } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import type { ReactNode } from 'react';
-import { Search } from './search';
 
 type GlobalSidebarProperties = {
   readonly children: ReactNode;
@@ -52,70 +42,63 @@ type NavItem = {
   readonly icon: LucideIcon;
 };
 
-const workspaceItems: readonly NavItem[] = [
+const platformItems: readonly NavItem[] = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon },
   { title: 'Inventory', url: '/inventory', icon: BoxesIcon },
-  { title: 'Orders', url: '/orders', icon: ReceiptTextIcon },
-  { title: 'Activity', url: '/activity', icon: ActivityIcon },
-  { title: 'Sprout', url: '/sprout', icon: SproutIcon },
-  { title: 'Analytics', url: '/analytics', icon: ChartColumnIcon },
-  { title: 'Connections', url: '/connections', icon: CableIcon },
 ];
 
 const accountItems: readonly NavItem[] = [
   { title: 'Billing & usage', url: '/billing', icon: CreditCardIcon },
   { title: 'Team', url: '/team', icon: UsersIcon },
-  { title: 'Profile', url: '/profile', icon: UserRoundIcon },
   { title: 'Settings', url: '/settings', icon: Settings2Icon },
 ];
 
-function NavigationGroup({
-  label,
+const downloadItems = [
+  {
+    title: 'iPhone app',
+    detail: 'TestFlight',
+    url: IOS_DOWNLOAD_URL,
+    icon: AppleIcon,
+  },
+  {
+    title: 'Android app',
+    detail: 'Google Play',
+    url: ANDROID_DOWNLOAD_URL,
+    icon: SmartphoneIcon,
+  },
+] as const;
+
+function isCurrentRoute(pathname: string, url: string): boolean {
+  return url === '/' ? pathname === '/' : pathname.startsWith(url);
+}
+
+function NavigationItems({
   items,
   pathname,
 }: {
-  label: string;
   items: readonly NavItem[];
   pathname: string;
 }) {
-  return (
-    <SidebarGroup className="px-2 py-1.5">
-      <SidebarGroupLabel className="h-6 px-2 font-semibold text-[0.625rem] text-muted-foreground uppercase tracking-[0.12em]">
-        {label}
-      </SidebarGroupLabel>
-      <SidebarGroupContent>
-        <SidebarMenu className="gap-1">
-          {items.map((item) => {
-            const active =
-              item.url === '/'
-                ? pathname === '/'
-                : pathname.startsWith(item.url);
-
-            return (
-              <SidebarMenuItem key={item.title}>
-                <SidebarMenuButton
-                  asChild
-                  isActive={active}
-                  tooltip={item.title}
-                  className={cn(
-                    'h-9 rounded-lg px-2.5 font-medium text-[0.8125rem] text-sidebar-foreground/72',
-                    'hover:bg-sidebar-accent/65 hover:text-sidebar-accent-foreground',
-                    'data-[active=true]:bg-sidebar-accent data-[active=true]:font-semibold data-[active=true]:text-sidebar-accent-foreground',
-                    '[&>svg]:size-4 [&>svg]:stroke-[1.8]'
-                  )}
-                >
-                  <Link href={item.url}>
-                    <item.icon aria-hidden="true" />
-                    <span>{item.title}</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-            );
-          })}
-        </SidebarMenu>
-      </SidebarGroupContent>
-    </SidebarGroup>
-  );
+  return items.map((item) => (
+    <SidebarMenuItem key={item.title}>
+      <SidebarMenuButton
+        asChild
+        isActive={isCurrentRoute(pathname, item.url)}
+        tooltip={item.title}
+        className={cn(
+          'h-9 rounded-lg px-2.5 font-medium text-[0.8125rem] text-sidebar-foreground/72',
+          'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
+          'data-[active=true]:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:text-sidebar-primary-foreground',
+          '[&>svg]:size-4 [&>svg]:stroke-[1.8]'
+        )}
+      >
+        <Link href={item.url}>
+          <item.icon aria-hidden />
+          <span>{item.title}</span>
+        </Link>
+      </SidebarMenuButton>
+    </SidebarMenuItem>
+  ));
 }
 
 export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
@@ -123,10 +106,9 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
 
   return (
     <>
-      <Sidebar variant="inset" className="bg-background">
-        <SidebarHeader className="gap-2 border-sidebar-border border-b px-2 pt-2 pb-3">
-          <Search />
-          <div className="overflow-hidden rounded-xl border border-sidebar-border bg-card [&>div]:w-full">
+      <Sidebar variant="inset">
+        <SidebarHeader className="px-3 pt-3 pb-2">
+          <div className="h-10 overflow-hidden rounded-lg [&>div]:w-full">
             <OrganizationSwitcher
               hidePersonal
               afterSelectOrganizationUrl="/"
@@ -134,79 +116,100 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                 elements: {
                   rootBox: 'w-full',
                   organizationSwitcherTrigger:
-                    'h-10 w-full justify-between rounded-xl px-2.5 hover:bg-sidebar-accent/60 focus:bg-sidebar-accent/60',
+                    'h-10 w-full justify-between rounded-lg px-2 hover:bg-sidebar-accent focus:bg-sidebar-accent',
                   organizationPreview: 'gap-2',
                   organizationPreviewAvatarBox: 'size-6',
-                  organizationPreviewTextContainer: 'text-sm font-semibold',
+                  organizationPreviewTextContainer:
+                    'text-sm font-semibold text-sidebar-foreground',
                 },
               }}
             />
           </div>
         </SidebarHeader>
 
-        <SidebarContent className="gap-1 py-2">
-          <NavigationGroup
-            label="Workspace"
-            items={workspaceItems}
-            pathname={pathname}
-          />
-          <NavigationGroup
-            label="Account"
-            items={accountItems}
-            pathname={pathname}
-          />
+        <SidebarContent className="gap-0 px-1 py-2">
+          <SidebarGroup>
+            <SidebarGroupLabel>Platform</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu className="gap-1">
+                <NavigationItems items={platformItems} pathname={pathname} />
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <div className="mt-auto">
+            <SidebarGroup>
+              <SidebarGroupLabel>Get the mobile app</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu className="gap-1">
+                  {downloadItems.map((item) => (
+                    <SidebarMenuItem key={item.title}>
+                      <SidebarMenuButton
+                        asChild
+                        tooltip={`${item.title}, ${item.detail}`}
+                        className="h-11 rounded-lg px-2.5 text-sidebar-foreground/72 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&>svg]:size-4"
+                      >
+                        <a
+                          href={item.url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                        >
+                          <item.icon aria-hidden />
+                          <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
+                            <span className="block truncate font-medium text-[0.8125rem]">
+                              {item.title}
+                            </span>
+                            <span className="block text-[0.6875rem] text-sidebar-foreground/50">
+                              {item.detail}
+                            </span>
+                          </span>
+                          <ExternalLinkIcon
+                            className="size-3.5 opacity-45 group-data-[collapsible=icon]:hidden"
+                            aria-hidden
+                          />
+                        </a>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+
+            <SidebarGroup className="border-sidebar-border border-t pt-2">
+              <SidebarGroupContent>
+                <SidebarMenu className="gap-1">
+                  <NavigationItems items={accountItems} pathname={pathname} />
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </div>
         </SidebarContent>
 
-        <SidebarFooter className="border-sidebar-border border-t px-2 pt-2 pb-2">
-          <div className="rounded-xl border border-sidebar-border bg-card p-1.5">
-            <div className="flex min-w-0 items-center gap-1">
-              <div className="min-w-0 flex-1 overflow-hidden px-1">
-                <UserButton
-                  showName
-                  appearance={{
-                    elements: {
-                      rootBox: 'flex w-full min-w-0 overflow-hidden',
-                      userButtonBox:
-                        'flex w-full min-w-0 flex-row-reverse justify-end gap-2',
-                      userButtonOuterIdentifier:
-                        'min-w-0 flex-1 truncate pl-0 text-left text-sm font-semibold text-sidebar-foreground',
-                      userButtonTrigger:
-                        'min-w-0 rounded-lg hover:bg-sidebar-accent/60 focus:bg-sidebar-accent/60',
-                      avatarBox: 'size-7',
-                    },
-                  }}
-                />
-              </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                className="size-8 rounded-lg hover:bg-sidebar-accent"
-                aria-label="Notifications"
-                asChild
-              >
-                <div className="size-4">
-                  <NotificationsTrigger />
-                </div>
-              </Button>
-              <ModeToggle />
+        <SidebarFooter className="border-sidebar-border border-t px-3 py-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <div className="min-w-0 flex-1 overflow-hidden">
+              <UserButton
+                showName
+                appearance={{
+                  elements: {
+                    rootBox: 'flex w-full min-w-0 overflow-hidden',
+                    userButtonBox:
+                      'flex w-full min-w-0 flex-row-reverse justify-end gap-2',
+                    userButtonOuterIdentifier:
+                      'min-w-0 flex-1 truncate pl-0 text-left text-sm font-medium text-sidebar-foreground',
+                    userButtonTrigger:
+                      'min-w-0 rounded-lg hover:bg-sidebar-accent focus:bg-sidebar-accent',
+                    avatarBox: 'size-7',
+                  },
+                }}
+              />
             </div>
-            <SignOutButton redirectUrl="/sign-in">
-              <Button
-                variant="ghost"
-                size="sm"
-                className="mt-1 h-8 w-full justify-start rounded-lg px-2.5 text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              >
-                <LogOutIcon aria-hidden="true" />
-                Log out
-              </Button>
-            </SignOutButton>
+            <ModeToggle />
           </div>
         </SidebarFooter>
       </Sidebar>
 
-      <SidebarInset className="min-h-svh bg-background">
-        {children}
-      </SidebarInset>
+      <SidebarInset className="min-h-svh">{children}</SidebarInset>
     </>
   );
 };

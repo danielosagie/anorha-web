@@ -17,7 +17,7 @@ export function LandingCta() {
         />
       </svg>
       <h2>
-        <span>Ready to clear the</span>
+        <span className={"font-family: Inter"}>Ready to clear the</span>
         <em>
           shelf?
           <svg aria-hidden="true" viewBox="0 0 150 16">

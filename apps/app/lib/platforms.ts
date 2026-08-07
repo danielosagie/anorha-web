@@ -24,7 +24,7 @@ export type PlatformDefinition = {
   key: PlatformKey;
   name: string;
   logo: StaticImageData;
-  loginPath: string | null;
+  connectIntentPath: string | null;
   connectMode: 'oauth' | 'shopify-domain' | null;
   status: PlatformStatus;
   extraParams?: Readonly<Record<string, string>>;
@@ -35,7 +35,7 @@ export const platforms: readonly PlatformDefinition[] = [
     key: 'shopify',
     name: 'Shopify',
     logo: shopifyLogo,
-    loginPath: '/api/auth/shopify/initiate-store-picker',
+    connectIntentPath: '/api/auth/shopify/connect-intent',
     connectMode: 'shopify-domain',
     status: 'ga',
   },
@@ -43,7 +43,7 @@ export const platforms: readonly PlatformDefinition[] = [
     key: 'square',
     name: 'Square',
     logo: squareLogo,
-    loginPath: '/api/auth/square/login',
+    connectIntentPath: '/api/auth/square/connect-intent',
     connectMode: 'oauth',
     status: 'ga',
   },
@@ -51,7 +51,7 @@ export const platforms: readonly PlatformDefinition[] = [
     key: 'clover',
     name: 'Clover',
     logo: cloverLogo,
-    loginPath: '/api/auth/clover/login',
+    connectIntentPath: '/api/auth/clover/connect-intent',
     connectMode: 'oauth',
     status: 'ga',
   },
@@ -59,7 +59,7 @@ export const platforms: readonly PlatformDefinition[] = [
     key: 'ebay',
     name: 'eBay',
     logo: ebayLogo,
-    loginPath: '/api/auth/ebay/login',
+    connectIntentPath: '/api/auth/ebay/connect-intent',
     connectMode: 'oauth',
     status: 'ga',
   },
@@ -67,7 +67,7 @@ export const platforms: readonly PlatformDefinition[] = [
     key: 'facebook',
     name: 'Facebook',
     logo: facebookLogo,
-    loginPath: '/api/auth/facebook/login',
+    connectIntentPath: '/api/auth/facebook/connect-intent',
     connectMode: 'oauth',
     status: 'ga',
     extraParams: { mode: 'personal_marketplace' },
@@ -76,7 +76,7 @@ export const platforms: readonly PlatformDefinition[] = [
     key: 'amazon',
     name: 'Amazon',
     logo: amazonLogo,
-    loginPath: null,
+    connectIntentPath: null,
     connectMode: null,
     status: 'planned',
   },
@@ -84,7 +84,7 @@ export const platforms: readonly PlatformDefinition[] = [
     key: 'whatnot',
     name: 'Whatnot',
     logo: whatnotLogo,
-    loginPath: null,
+    connectIntentPath: null,
     connectMode: null,
     status: 'planned',
   },
@@ -92,7 +92,7 @@ export const platforms: readonly PlatformDefinition[] = [
     key: 'depop',
     name: 'Depop',
     logo: depopLogo,
-    loginPath: null,
+    connectIntentPath: null,
     connectMode: null,
     status: 'planned',
   },

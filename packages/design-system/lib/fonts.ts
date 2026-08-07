@@ -7,3 +7,7 @@ export const fonts = cn(
   GeistMono.variable,
   'touch-manipulation font-sans antialiased'
 );
+
+// For apps that swap the sans face but keep the shared mono (e.g. apps/app
+// uses Inter to match the mobile design system).
+export { GeistMono };

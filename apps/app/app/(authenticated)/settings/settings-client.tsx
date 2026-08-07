@@ -294,7 +294,7 @@ export function SettingsClient({
                   <input
                     type="text"
                     placeholder="Your name"
-                    className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                    className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                   />
                   <p className="mt-1 text-gray-500 text-xs">
                     This is the name that will be displayed on your profile and
@@ -312,7 +312,7 @@ export function SettingsClient({
                       <input
                         type="date"
                         placeholder="Pick a date"
-                        className="rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        className="rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                       />
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -333,7 +333,7 @@ export function SettingsClient({
                   <label className="mb-2 block font-medium text-sm">
                     Language
                   </label>
-                  <select className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]">
+                  <select className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
                     <option>Select Language</option>
                     <option>English</option>
                     <option>Spanish</option>
@@ -382,7 +382,7 @@ export function SettingsClient({
                       <input
                         type="text"
                         placeholder="123 Main Street"
-                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                         value={businessAddress.street1}
                         onChange={(e) =>
                           setBusinessAddress((prev) => ({
@@ -400,7 +400,7 @@ export function SettingsClient({
                       <input
                         type="text"
                         placeholder="Suite 100"
-                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                         value={businessAddress.street2}
                         onChange={(e) =>
                           setBusinessAddress((prev) => ({
@@ -418,7 +418,7 @@ export function SettingsClient({
                       <input
                         type="tel"
                         placeholder="+1 (555) 555-5555"
-                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                         value={businessAddress.phone}
                         onChange={(e) =>
                           setBusinessAddress((prev) => ({
@@ -440,7 +440,7 @@ export function SettingsClient({
                         <input
                           type="text"
                           placeholder="Los Angeles"
-                          className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                          className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                           value={businessAddress.city}
                           onChange={(e) =>
                             setBusinessAddress((prev) => ({
@@ -455,7 +455,7 @@ export function SettingsClient({
                           State
                         </label>
                         <select
-                          className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                          className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                           value={businessAddress.state}
                           onChange={(e) =>
                             setBusinessAddress((prev) => ({
@@ -529,7 +529,7 @@ export function SettingsClient({
                         <input
                           type="text"
                           placeholder="90001"
-                          className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                          className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                           value={businessAddress.postalCode}
                           onChange={(e) =>
                             setBusinessAddress((prev) => ({
@@ -544,7 +544,7 @@ export function SettingsClient({
                           Country
                         </label>
                         <select
-                          className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-[#647653]"
+                          className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
                           value={businessAddress.country}
                           onChange={(e) =>
                             setBusinessAddress((prev) => ({

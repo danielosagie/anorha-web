@@ -7,7 +7,7 @@ import Link from 'next/link';
 import { TestFlightBanner } from '@/app/(authenticated)/components/testflight-banner';
 import { Button } from '@repo/design-system/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@repo/design-system/components/ui/card';
-import { Loader2, LayoutDashboard, Building2, XCircle, Handshake, Package, AlertTriangle, Link as LinkIcon, PartyPopper, Check } from 'lucide-react';
+import { Loader2, Building2, XCircle, Handshake, Package, AlertTriangle, Link as LinkIcon, Check } from 'lucide-react';
 import { toast } from 'sonner';
 
 interface InviteDetails {
@@ -39,7 +39,7 @@ function Stepper({ current, total }: { current: number; total: number }) {
                         <div key={step} className="flex items-center">
                             <div className={`
                                 h-2 rounded-full transition-all duration-300 
-                                ${isActive ? 'bg-[#647653] w-8' : isCompleted ? 'bg-[#647653]/40 w-2' : 'bg-gray-200 w-2'}
+                                ${isActive ? 'bg-primary w-8' : isCompleted ? 'bg-primary/40 w-2' : 'bg-muted w-2'}
                             `} />
                         </div>
                     );
@@ -194,7 +194,7 @@ export default function PartnerAcceptPage() {
     if (isLoading) {
         return (
             <div className="flex flex-col items-center justify-center space-y-4 animate-in fade-in duration-700">
-                <Loader2 className="h-8 w-8 animate-spin text-[#5c9c00]" />
+                <Loader2 className="h-8 w-8 animate-spin text-primary" />
                 <p className="text-muted-foreground">Loading invite...</p>
             </div>
         );
@@ -225,8 +225,8 @@ export default function PartnerAcceptPage() {
         return (
             <div className="flex flex-col space-y-6 animate-in slide-in-from-bottom-8 duration-500 fade-in">
                 <div className="flex flex-col space-y-2 text-center">
-                    <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center mb-2 shadow-sm">
-                        <Handshake className="h-6 w-6 text-[#647653]" />
+                    <div className="mx-auto h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-2 shadow-sm">
+                        <Handshake className="h-6 w-6 text-primary" />
                     </div>
                     <h1 className="text-2xl font-semibold tracking-tight">Accept Partner Invite</h1>
                     <p className="text-sm text-muted-foreground">from <span className="font-medium text-foreground">{senderName}</span></p>
@@ -262,9 +262,9 @@ export default function PartnerAcceptPage() {
                 <div className="space-y-3 pt-2">
                     <Button
                         onClick={() => setCurrentStep(2)}
-                        className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11"
+                        className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11"
                     >
-                        Continue to Connection
+                        Continue
                     </Button>
                     <Button onClick={() => router.push('/')} variant="ghost" className="w-full h-11">
                         Decline
@@ -279,7 +279,7 @@ export default function PartnerAcceptPage() {
         if (!isLoaded) {
             return (
                 <div className="flex flex-col items-center justify-center space-y-4 py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#647653]" />
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     <p className="text-muted-foreground">Verifying account...</p>
                 </div>
             );
@@ -314,7 +314,7 @@ export default function PartnerAcceptPage() {
         if (!orgListLoaded) {
             return (
                 <div className="flex flex-col items-center justify-center space-y-4 py-8">
-                    <Loader2 className="h-6 w-6 animate-spin text-[#647653]" />
+                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
                     <p className="text-muted-foreground">Loading workspaces...</p>
                 </div>
             );
@@ -361,7 +361,7 @@ export default function PartnerAcceptPage() {
                         </div>
                         <p className="text-sm text-amber-700 leading-relaxed">
                             You are currently in <strong>{organization?.name || 'Personal Account'}</strong>.
-                            partnerships must be established with your main business organization.
+                            Partnerships must be established with your main business organization.
                         </p>
                     </div>
 
@@ -430,7 +430,7 @@ export default function PartnerAcceptPage() {
                     <div className="space-y-3">
                         <Button
                             onClick={() => signOut(() => window.location.reload())}
-                            className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11"
+                            className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11"
                         >
                             Sign Out & Switch Account
                         </Button>
@@ -453,8 +453,8 @@ export default function PartnerAcceptPage() {
         return (
             <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4">
                 <div className="text-center space-y-2">
-                    <div className="mx-auto h-12 w-12 rounded-xl bg-[#647653]/10 flex items-center justify-center mb-2">
-                        <LinkIcon className="h-6 w-6 text-[#647653]" />
+                    <div className="mx-auto h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center mb-2">
+                        <LinkIcon className="h-6 w-6 text-primary" />
                     </div>
                     <h2 className="text-xl font-semibold">Ready to Connect</h2>
                     <p className="text-sm text-muted-foreground">
@@ -489,7 +489,7 @@ export default function PartnerAcceptPage() {
                                                 type="checkbox"
                                                 checked={selectedLocationIds.includes(loc.platformLocationId)}
                                                 onChange={() => toggleLocation(loc.platformLocationId)}
-                                                className="h-4 w-4 rounded border-gray-300 text-[#647653] focus:ring-[#647653]"
+                                                className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                                             />
                                             <span>{loc.locationName}</span>
                                         </label>
@@ -506,7 +506,7 @@ export default function PartnerAcceptPage() {
                             id="terms" type="checkbox"
                             checked={termsAccepted}
                             onChange={(e) => setTermsAccepted(e.target.checked)}
-                            className="h-4 w-4 rounded border-gray-300 text-[#647653] focus:ring-[#647653]"
+                            className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
                         />
                     </div>
                     <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">
@@ -524,7 +524,7 @@ export default function PartnerAcceptPage() {
                 <Button
                     onClick={handleAcceptClick}
                     disabled={!termsAccepted || !!isOwnOrg || isAccepting}
-                    className="w-full bg-[#647653] hover:bg-[#546346] text-white h-11"
+                    className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11"
                 >
                     {isAccepting ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
                     {isAccepting ? 'Connecting...' : 'Establish Partnership'}
@@ -536,57 +536,28 @@ export default function PartnerAcceptPage() {
 
     // Step 3: Success & Actions
     const renderStep3 = () => (
-        <div className="flex flex-col space-y-8 text-center animate-in zoom-in-95 slide-in-from-bottom-4 duration-700 fade-in relative">
-            {/* Celebration confetti effect */}
-            <div className="absolute inset-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-2 h-2 bg-[#647653] rounded-full animate-bounce opacity-60" style={{ animationDelay: '0ms', animationDuration: '1.5s' }} />
-                <div className="absolute top-2 right-1/4 w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce opacity-60" style={{ animationDelay: '200ms', animationDuration: '1.8s' }} />
-                <div className="absolute top-4 left-1/3 w-1 h-1 bg-emerald-400 rounded-full animate-bounce opacity-50" style={{ animationDelay: '400ms', animationDuration: '2s' }} />
-                <div className="absolute top-1 right-1/3 w-2 h-2 bg-blue-400 rounded-full animate-bounce opacity-50" style={{ animationDelay: '300ms', animationDuration: '1.7s' }} />
+        <div className="flex flex-col space-y-6 text-center animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <div className="mx-auto h-16 w-16 rounded-full bg-primary/10 flex items-center justify-center">
+                <Check className="h-8 w-8 text-primary" />
             </div>
 
-            {/* Success icon with glow effect */}
-            <div className="relative mx-auto">
-                <div className="absolute inset-0 bg-[#647653]/20 rounded-full blur-xl scale-150 animate-pulse" />
-                <div className="relative h-20 w-20 rounded-full bg-gradient-to-br from-[#647653] to-[#4a5a3c] flex items-center justify-center shadow-lg shadow-[#647653]/25">
-                    <PartyPopper className="h-10 w-10 text-white" />
-                </div>
-            </div>
-
-            {/* Success message with gradient accent */}
-            <div className="flex flex-col space-y-2">
-                <h1 className="text-2xl font-bold bg-gradient-to-r from-gray-900 via-[#647653] to-gray-900 bg-clip-text text-transparent">
-                    Partnership Established!
+            <div className="flex flex-col space-y-1">
+                <h1 className="text-2xl font-semibold tracking-tight text-foreground">
+                    Partnership established.
                 </h1>
                 {linkedCount > 0 && (
                     <p className="text-sm text-muted-foreground">
-                        <span className="inline-flex items-center gap-1.5 bg-[#647653]/10 text-[#647653] px-3 py-1 rounded-full font-medium">
-                            <Check className="h-3 w-3" /> {linkedCount} products ready to sync
-                        </span>
+                        {linkedCount} products ready to sync.
                     </p>
                 )}
             </div>
 
-            {/* Action cards in glassmorphic container */}
             <div className="space-y-4 pt-2">
-                <p className="text-sm font-medium text-gray-700">What would you like to do next?</p>
-
                 <Link href="/" className="block w-full">
-                    <Button
-                        variant="outline"
-                        className="w-full h-14 border-gray-200 hover:bg-gray-50 hover:border-[#647653]/30 flex items-center justify-center gap-3 rounded-xl transition-all duration-200 hover:shadow-md group"
-                    >
-                        <LayoutDashboard className="h-5 w-5 text-gray-500 group-hover:text-[#647653] transition-colors" />
-                        <span className="font-medium">Open Web Dashboard</span>
+                    <Button className="w-full bg-primary hover:bg-primary/90 text-primary-foreground h-11">
+                        Open dashboard
                     </Button>
                 </Link>
-
-                <div className="relative">
-                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-gray-200 to-transparent h-px top-1/2" />
-                    <span className="relative bg-white px-4 text-xs text-gray-400 font-medium uppercase tracking-wider">
-                        or
-                    </span>
-                </div>
 
                 <TestFlightBanner mode="card" />
             </div>

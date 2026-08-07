@@ -5,7 +5,7 @@ import { getAuthenticatedBackendHeaders } from '../../api/billing/_utils';
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Billing | Anorha',
+  title: 'Billing & usage | Anorha',
   description: 'Manage your subscription, usage, and billing information',
   icons: {
     icon: '/favicon.ico',

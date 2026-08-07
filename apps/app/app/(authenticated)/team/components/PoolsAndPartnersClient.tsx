@@ -853,7 +853,7 @@ export default function PoolsAndPartnersClient() {
         <Button
           variant={activeTab === 'partners' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('partners')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'partners' ? "border-[#647653] bg-white text-[#647653] hover:bg-gray-50 hover:text-[#647653]" : "border-transparent text-gray-500")}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'partners' ? "border-primary bg-white text-primary hover:bg-gray-50 hover:text-primary" : "border-transparent text-gray-500")}
         >
           <Link2Icon className="w-4 h-4" />
           Partners
@@ -861,7 +861,7 @@ export default function PoolsAndPartnersClient() {
         <Button
           variant={activeTab === 'pools' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('pools')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'pools' ? "border-[#647653] bg-white text-[#647653] hover:bg-gray-50 hover:text-[#647653]" : "border-transparent text-gray-500")}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'pools' ? "border-primary bg-white text-primary hover:bg-gray-50 hover:text-primary" : "border-transparent text-gray-500")}
         >
           <MapPinIcon className="w-4 h-4" />
           Pools
@@ -869,7 +869,7 @@ export default function PoolsAndPartnersClient() {
         <Button
           variant={activeTab === 'team' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('team')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'team' ? "border-[#647653] bg-white text-[#647653] hover:bg-gray-50 hover:text-[#647653]" : "border-transparent text-gray-500")}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'team' ? "border-primary bg-white text-primary hover:bg-gray-50 hover:text-primary" : "border-transparent text-gray-500")}
         >
           <UsersIcon className="w-4 h-4" />
           Team Access
@@ -896,7 +896,7 @@ export default function PoolsAndPartnersClient() {
                     setEditingPool({ id: 'new', name: '', syncInventory: true, syncPricing: true });
                     setSelectedLocations([]);
                   }}
-                  className="bg-[#647653] hover:bg-[#556145] text-white"
+                  className="bg-primary hover:bg-primary/90 text-white"
                 >
                   <PlusIcon className="w-4 h-4 mr-2" />
                   New Pool
@@ -905,7 +905,7 @@ export default function PoolsAndPartnersClient() {
 
               {/* Pool Editor */}
               {editingPool && (
-                <Card className="border-2 border-[#647653]">
+                <Card className="border-2 border-primary">
                   <CardHeader>
                     <CardTitle>{editingPool.id === 'new' ? 'Create Pool' : 'Edit Pool'}</CardTitle>
                     <CardDescription>Configure your pool settings and select locations.</CardDescription>
@@ -917,7 +917,7 @@ export default function PoolsAndPartnersClient() {
                         placeholder="e.g. West Coast Stores"
                         value={editingPool.name || ''}
                         onChange={(e) => setEditingPool({ ...editingPool, name: e.target.value })}
-                        className="focus:ring-[#647653]"
+                        className="focus:ring-primary"
                       />
                     </div>
 
@@ -968,7 +968,7 @@ export default function PoolsAndPartnersClient() {
                                 }
                                 className={cn(
                                   'flex items-center justify-between p-3 cursor-pointer border-b last:border-b-0 transition-colors',
-                                  isSelected ? 'bg-[#647653]/10' : 'hover:bg-gray-50'
+                                  isSelected ? 'bg-primary/10' : 'hover:bg-gray-50'
                                 )}
                               >
                                 <div className="flex items-center gap-3">
@@ -977,7 +977,7 @@ export default function PoolsAndPartnersClient() {
                                     <div className="text-xs text-gray-500">{loc.connectionName}</div>
                                   </div>
                                 </div>
-                                {isSelected && <CheckIcon className="w-5 h-5 text-[#647653]" />}
+                                {isSelected && <CheckIcon className="w-5 h-5 text-primary" />}
                               </div>
                             );
                           })
@@ -1049,7 +1049,7 @@ export default function PoolsAndPartnersClient() {
                             <Button
                               onClick={createLocation}
                               disabled={isCreatingLocation || !newLocationName.trim() || !newLocationConnectionId}
-                              className="flex-1 bg-[#647653] hover:bg-[#556145] text-white"
+                              className="flex-1 bg-primary hover:bg-primary/90 text-white"
                             >
                               {isCreatingLocation ? (
                                 <><Loader2Icon className="w-4 h-4 mr-2 animate-spin" /> Creating...</>
@@ -1075,7 +1075,7 @@ export default function PoolsAndPartnersClient() {
                       <Button
                         onClick={savePool}
                         disabled={!editingPool.name || selectedLocations.length === 0}
-                        className="bg-[#647653] hover:bg-[#556145] text-white"
+                        className="bg-primary hover:bg-primary/90 text-white"
                       >
                         {editingPool.id === 'new' ? 'Create Pool' : 'Save Changes'}
                       </Button>
@@ -1104,15 +1104,15 @@ export default function PoolsAndPartnersClient() {
                           className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
                         >
                           <div className="flex items-center gap-4">
-                            <div className="w-10 h-10 rounded-lg bg-[#647653]/10 flex items-center justify-center">
-                              <MapPinIcon className="w-5 h-5 text-[#647653]" />
+                            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                              <MapPinIcon className="w-5 h-5 text-primary" />
                             </div>
                             <div>
                               <div className="font-medium">{pool.name}</div>
                               <div className="flex items-center gap-3 text-sm text-gray-500">
                                 <span>{pool.locationIds.length} locations</span>
                                 {pool.syncInventory && (
-                                  <Badge className="bg-[#647653] text-white text-xs">Inventory</Badge>
+                                  <Badge className="bg-primary text-white text-xs">Inventory</Badge>
                                 )}
                                 {pool.syncPricing && (
                                   <Badge className="bg-blue-100 text-blue-800 text-xs">Pricing</Badge>
@@ -1194,7 +1194,7 @@ export default function PoolsAndPartnersClient() {
 
                         {member.role === 'org:admin' ? (
                           <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
-                            <ShieldIcon className="w-4 h-4 text-[#647653]" />
+                            <ShieldIcon className="w-4 h-4 text-primary" />
                             <span>Admins have full access to all pools.</span>
                           </div>
                         ) : (
@@ -1211,7 +1211,7 @@ export default function PoolsAndPartnersClient() {
                                     className={cn(
                                       "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all border",
                                       hasAccess
-                                        ? "bg-[#647653]/10 border-[#647653] text-[#647653] hover:bg-[#647653]/20"
+                                        ? "bg-primary/10 border-primary text-primary hover:bg-primary/20"
                                         : "bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600"
                                     )}
                                   >
@@ -1246,10 +1246,10 @@ export default function PoolsAndPartnersClient() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column: Invite Action */}
                 <div className="lg:col-span-1 space-y-6">
-                  <Card className="border border-gray-200 shadow-sm overflow-hidden sticky top-4 border-t-[#647653] border-2">
+                  <Card className="border border-gray-200 shadow-sm overflow-hidden sticky top-4 border-t-primary border-2">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
-                        <SendIcon className="w-5 h-5 text-[#647653]" />
+                        <SendIcon className="w-5 h-5 text-primary" />
                         Invite Partner
                       </CardTitle>
                       <CardDescription>
@@ -1280,7 +1280,7 @@ export default function PoolsAndPartnersClient() {
                         <label className="block text-sm font-medium mb-1.5 text-gray-700">Share Pool</label>
                         <div className="relative">
                           <select
-                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-[#647653] focus:bg-white transition-all text-sm"
+                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all text-sm"
                             value={invitePoolId}
                             onChange={(e) => setInvitePoolId(e.target.value)}
                           >
@@ -1302,7 +1302,7 @@ export default function PoolsAndPartnersClient() {
                           <Switch
                             checked={inviteCanRevoke}
                             onCheckedChange={setInviteCanRevoke}
-                            className="data-[state=checked]:bg-[#647653]"
+                            className="data-[state=checked]:bg-primary"
                           />
                         </div>
                         <p className="text-xs text-gray-500 leading-relaxed">
@@ -1315,7 +1315,7 @@ export default function PoolsAndPartnersClient() {
                       <Button
                         onClick={sendPartnerInvite}
                         disabled={!inviteEmail || !isValidEmail(inviteEmail) || !invitePoolId || isInviting}
-                        className="w-full bg-[#647653] hover:bg-[#556145] text-white transition-all shadow-sm hover:shadow"
+                        className="w-full bg-primary hover:bg-primary/90 text-white transition-all shadow-sm hover:shadow"
                       >
                         {isInviting ? (
                           <Loader2Icon className="w-4 h-4 mr-2 animate-spin" />
@@ -1425,7 +1425,7 @@ export default function PoolsAndPartnersClient() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => copyToClipboard(invite.inviteLink)}
-                                className="text-gray-600 hover:text-[#647653] hover:border-[#647653]"
+                                className="text-gray-600 hover:text-primary hover:border-primary"
                               >
                                 {linkCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
                                 <span className="ml-2 sm:hidden">Copy Link</span>
@@ -1449,7 +1449,7 @@ export default function PoolsAndPartnersClient() {
                   {/* Active Partnerships Swimlane */}
                   <section>
                     <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-[#647653]" />
+                      <div className="w-2 h-2 rounded-full bg-primary" />
                       Active Partnerships
                     </h3>
 
@@ -1466,13 +1466,13 @@ export default function PoolsAndPartnersClient() {
                         {partnerships.map((partner) => (
                           <div
                             key={partner.id}
-                            className="bg-white border border-gray-200 rounded-xl shadow-sm hover:border-[#647653]/30 hover:shadow-md transition-all duration-200 overflow-hidden"
+                            className="bg-white border border-gray-200 rounded-xl shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200 overflow-hidden"
                           >
                             {/* Card Header / Main Row */}
                             <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                               <div className="flex items-center gap-4 flex-1 min-w-0">
                                 <div className="relative shrink-0">
-                                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-[#647653] to-[#45523e] flex items-center justify-center text-white text-lg font-bold shadow-sm">
+                                  <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white text-lg font-bold shadow-sm">
                                     {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
                                   </div>
                                   <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
@@ -1519,7 +1519,7 @@ export default function PoolsAndPartnersClient() {
                                     "transition-colors",
                                     expandedPartnership === partner.id
                                       ? "bg-gray-100 text-gray-900 border-gray-300"
-                                      : "text-gray-600 hover:text-[#647653] hover:border-[#647653]"
+                                      : "text-gray-600 hover:text-primary hover:border-primary"
                                   )}
                                 >
                                   {loadingLinkedProducts === partner.id ? (
@@ -1541,7 +1541,7 @@ export default function PoolsAndPartnersClient() {
                                   <Switch
                                     checked={!partner.isPaused}
                                     onCheckedChange={() => togglePartnershipPause(partner.id, !!partner.isPaused)}
-                                    className="data-[state=checked]:bg-[#647653]"
+                                    className="data-[state=checked]:bg-primary"
                                   />
                                 </div>
 
@@ -1579,7 +1579,7 @@ export default function PoolsAndPartnersClient() {
                                     <input 
                                       type="text" 
                                       placeholder="Filter products..." 
-                                      className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-[#647653]"
+                                      className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                                     />
                                   </div> */}
                                 </div>
@@ -1659,7 +1659,7 @@ export default function PoolsAndPartnersClient() {
                                                   "h-7 px-2",
                                                   product.visibilityStatus === 'hidden'
                                                     ? "text-gray-400 hover:text-gray-600 bg-gray-50"
-                                                    : "text-[#647653] hover:text-[#556145] hover:bg-[#647653]/5"
+                                                    : "text-primary hover:text-primary/90 hover:bg-primary/5"
                                                 )}
                                                 onClick={() => {
                                                   const linkId = product.links?.[0]?.linkId || product.id;
@@ -1751,14 +1751,14 @@ export default function PoolsAndPartnersClient() {
                 size="sm"
                 variant="outline"
                 onClick={() => copyToClipboard(createdInviteLink)}
-                className="shrink-0 hover:border-[#647653] hover:text-[#647653]"
+                className="shrink-0 hover:border-primary hover:text-primary"
               >
                 {linkCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
               </Button>
             </div>
 
             <Button
-              className="w-full bg-[#647653] hover:bg-[#556145] text-white py-6 text-lg rounded-xl"
+              className="w-full bg-primary hover:bg-primary/90 text-white py-6 text-lg rounded-xl"
               onClick={() => setShowInviteSuccess(false)}
             >
               Done
@@ -1796,7 +1796,7 @@ export default function PoolsAndPartnersClient() {
                   Cancel
                 </Button>
                 <Button
-                  className="flex-1 bg-[#647653] hover:bg-[#556145] text-white"
+                  className="flex-1 bg-primary hover:bg-primary/90 text-white"
                   onClick={createLocation}
                   disabled={!newLocationName || isCreatingLocation}
                 >
@@ -1840,7 +1840,7 @@ export default function PoolsAndPartnersClient() {
                   "flex-1",
                   confirmDialog.destructive
                     ? "bg-red-600 hover:bg-red-700 text-white"
-                    : "bg-[#647653] hover:bg-[#556145] text-white"
+                    : "bg-primary hover:bg-primary/90 text-white"
                 )}
                 onClick={confirmDialog.onConfirm}
               >
@@ -1856,12 +1856,12 @@ export default function PoolsAndPartnersClient() {
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
           <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
             <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <CheckIcon className="w-8 h-8 text-[#647653]" />
+              <CheckIcon className="w-8 h-8 text-primary" />
             </div>
             <h3 className="text-xl font-semibold text-gray-900">{alertModal.title}</h3>
             <p className="text-gray-600 mt-2">{alertModal.message}</p>
             <Button
-              className="w-full mt-6 bg-[#647653] hover:bg-[#556145] text-white"
+              className="w-full mt-6 bg-primary hover:bg-primary/90 text-white"
               onClick={() => setAlertModal(null)}
             >
               OK
