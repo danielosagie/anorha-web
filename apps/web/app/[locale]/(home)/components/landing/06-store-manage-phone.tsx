@@ -37,7 +37,7 @@ export function StoreManagePhone() {
               alt=""
               fill
               sizes="300px"
-              src="/assets/landing/inventory-screen.jpg"
+              src="/assets/landing/inventory-screen.png"
             />
           </span>
         </div>
