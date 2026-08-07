@@ -2828,6 +2828,11 @@
   position: relative;
   text-align: center;
 }
+.landing-cta-text {
+  font-size: 42px;
+  line-height: 48px;
+  font-weight: 500;
+}
 
 .cta-background-stroke {
   height: 200px;
@@ -4307,6 +4312,7 @@
   }
   .landing-cta h2 {
     display: block;
+    
   }
   .landing-cta h2 em {
     display: inline-block;

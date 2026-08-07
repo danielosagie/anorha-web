@@ -130,11 +130,11 @@ export function CoreFeatures() {
     <section aria-label="Core features" className="core-features">
       <div className="section-heading centered-heading">
         <span className="landing-eyebrow">FEATURES</span>
-        <h2>From photo to sold.</h2>
+        <h2>From photo to sold</h2>
       </div>
 
       <div className="cf-grid">
-        <Card blurb="Take one photo." title="Photo" tone="snap">
+        <Card blurb="Snap a photo" title="Snap" tone="snap">
           <AppScreen
             overlay={{
               alt: '',
@@ -146,7 +146,7 @@ export function CoreFeatures() {
             }}
           />
         </Card>
-        <Card blurb="Review a ready listing." title="Listing" tone="review">
+        <Card blurb="We create an optimized listing" title="Listing" tone="review">
           <AppScreen
             screen={{
               alt: 'The finished listing, written and priced',
@@ -154,8 +154,13 @@ export function CoreFeatures() {
             }}
           />
         </Card>
-        <Card blurb="Published on your platforms." title="Live" tone="manage">
-          <LiveMarketplaceListing />
+        <Card blurb="Publish to your platforms" title="Live" tone="manage">
+          <AppScreen
+            screen={{
+              alt: 'The finished listing, written and priced',
+              src: '/assets/landing/ebay-live.png',
+            }}
+          />
         </Card>
       </div>
 
