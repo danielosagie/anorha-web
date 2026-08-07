@@ -138,7 +138,7 @@ export function CoreFeatures() {
           <AppScreen
             overlay={{
               alt: '',
-              src: '/assets/landing/app-cart-sheet-v2.png',
+              src: '/assets/landing/owalla-cart.png',
             }}
             screen={{
               alt: 'Adding a product in the app',
