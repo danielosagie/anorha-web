@@ -90,7 +90,6 @@ export function LandingPricing({ locale }: LandingPricingProps) {
       id="pricing"
     >
       <div className="landing-pricing-heading">
-        <span>PRICING</span>
         <h2 id="landing-pricing-title">Simple pricing.</h2>
         <p>Start free. Upgrade for more people or AI usage. Cancel anytime.</p>
       </div>

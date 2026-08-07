@@ -38,9 +38,9 @@ export function LandingFaq() {
     >
       <div className="landing-faq-inner">
         <div className="landing-faq-copy">
-          <span className="landing-eyebrow">FAQ</span>
-          <h2 id="landing-faq-title">Questions, answered.</h2>
-          <p>Imports, platforms, AI usage, billing, teams, and cancellation.</p>
+
+          <h2 id="landing-faq-title">FAQ</h2>
+          <p>A couple commonly asked questions</p>
         </div>
         <div className="landing-faq-list">
           {landingFaqItems.map(({ answer, question }) => (

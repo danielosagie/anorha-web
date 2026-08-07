@@ -31,7 +31,12 @@ export function SproutIntro() {
             strokeLinecap="round"
             strokeWidth="6"
           />
-          <path d="M43 22H50V41H43Z" fill="#555" />
+          {/* Nose: thin bar, flat top, rounded bottom — matches the brand
+              mark's 1.34 x 4.47 proportions. Never a plain rectangle. */}
+          <path
+            d="M44 21H50V38C50 39.66 48.66 41 47 41C45.34 41 44 39.66 44 38Z"
+            fill="#555"
+          />
         </svg>
       </div>
       <h2>Sprout is here.</h2>

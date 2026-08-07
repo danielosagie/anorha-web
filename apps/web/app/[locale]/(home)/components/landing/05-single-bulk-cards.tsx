@@ -1,16 +1,23 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { ConveyorShowcase } from './conveyor-showcase';
 
-function Arrow({ muted = false }: { muted?: boolean }) {
+/** How long each shot holds before the section moves itself on. */
+const CYCLE_MS = 5000;
+
+function Arrow() {
   return (
-    <svg aria-hidden="true" className="flow-arrow" viewBox="0 0 56 24">
+    <svg
+      aria-hidden="true"
+      className="flow-arrow"
+      viewBox="0 3.176 41.176 17.647"
+    >
       <path
-        d="M2 12H50M50 12L40 4M50 12L40 20"
+        d="M1.473 11.999H36.768M36.768 11.999L29.415 6.181M36.768 11.999L29.415 17.818"
         fill="none"
-        stroke={muted ? '#8B93AB' : '#9AA36B'}
+        stroke="#9AA36B"
         strokeLinecap="round"
         strokeLinejoin="round"
         strokeWidth="2.5"
@@ -19,208 +26,199 @@ function Arrow({ muted = false }: { muted?: boolean }) {
   );
 }
 
-function ProductPhoto({
-  label,
+function UploadedPhoto({
+  count,
+  position,
   src,
-  position = 'center',
 }: {
-  label: string;
+  count: string;
+  position: string;
   src: string;
-  position?: string;
 }) {
   return (
     <div className="product-photo">
       <Image
         alt="A photographed inventory item ready to list"
         fill
-        sizes="150px"
+        sizes="160px"
         src={src}
         style={{ objectPosition: position }}
       />
-      <span>{label}</span>
+      <span>{count}</span>
     </div>
   );
 }
 
-const bulkThumbs = [
-  {
-    position: '50% 40%',
-    price: '$249',
-    src: '/assets/landing/scan-item-sampler.jpg',
-    title: 'EP-133 sampler',
-  },
-  {
-    position: '50% 55%',
-    price: '$180',
-    src: '/assets/landing/scan-item-table.jpg',
-    title: 'Marble bistro table',
-  },
-  {
-    position: '50% 45%',
-    price: '$320',
-    src: '/assets/landing/scan-shelf.jpg',
-    title: 'Parts lot (12)',
-  },
+const CART_ROWS = [
+  { price: '$249', title: '4 HVAC Blowers' },
+  { price: '$53', title: '700298 HVAC' },
+  { price: '$47', title: 'Evaporador Frontal' },
+  { price: '$55', title: 'FOUR SEASONS 75855' },
+  { price: '$55', title: '75855 Flange Kit' },
+  { price: '$45', title: '75860 Motor Assembly' },
 ];
 
-/** Where inside the section's scroll each shot sits, for the dot buttons. */
-const SHOT_AT = [0.12, 0.74];
-
 export function SingleBulkCards() {
-  // The section is taller than the viewport and its stage is pinned, so
-  // scrolling here moves nothing on screen: it only crosses the mark that
-  // flips Single to Bulk, and the conveyor punches out to every belt with it.
+  // Two shots of one section. The cards share a grid cell so the swap is a
+  // cross-fade in place: nothing beside them moves, and the conveyor keeps
+  // running through both.
   const sectionRef = useRef<HTMLElement>(null);
-  const [phase, setPhase] = useState<0 | 1>(0);
+  const [shot, setShot] = useState<0 | 1>(0);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) {
       return;
     }
-    const read = () => {
-      const rect = section.getBoundingClientRect();
-      const vh = window.innerHeight || document.documentElement.clientHeight;
-      if (!vh) {
+    if (window.matchMedia?.('(prefers-reduced-motion: reduce)')?.matches) {
+      return;
+    }
+
+    let timer = 0;
+    const start = () => {
+      if (timer) {
         return;
       }
-      const range = section.offsetHeight - vh;
-      // Below the pin breakpoint the section is no taller than the screen, so
-      // fall back to how far it has risen through the viewport.
-      const progress =
-        range > 40
-          ? -rect.top / range
-          : (vh * 0.8 - rect.top) / Math.max(1, rect.height);
-      setPhase(progress > 0.42 ? 1 : 0);
+      timer = window.setInterval(() => {
+        setShot((current) => (current === 0 ? 1 : 0));
+      }, CYCLE_MS);
     };
-    read();
-    // Polled as well as event-driven: smooth scrolling drives the page from a
-    // rAF loop, and some embedded views never deliver scroll events at all.
-    const poll = window.setInterval(read, 150);
-    window.addEventListener('scroll', read, { passive: true });
-    window.addEventListener('resize', read);
+    const stop = () => {
+      window.clearInterval(timer);
+      timer = 0;
+    };
+
+    // Only cycles while the section is on screen: a carousel nobody is looking
+    // at is a timer nobody asked for.
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
+          start();
+        } else {
+          stop();
+        }
+      },
+      { threshold: 0.25 }
+    );
+    observer.observe(section);
+
     return () => {
-      window.clearInterval(poll);
-      window.removeEventListener('scroll', read);
-      window.removeEventListener('resize', read);
+      observer.disconnect();
+      stop();
     };
   }, []);
 
-  const goTo = (shot: 0 | 1) => {
-    const section = sectionRef.current;
-    if (!section) {
-      return;
-    }
-    const range = section.offsetHeight - window.innerHeight;
-    if (range <= 40) {
-      setPhase(shot);
-      return;
-    }
-    const top = window.scrollY + section.getBoundingClientRect().top;
-    window.scrollTo({ behavior: 'smooth', top: top + range * SHOT_AT[shot] });
-  };
+  const goTo = useCallback((next: 0 | 1) => {
+    setShot(next);
+  }, []);
 
   return (
     <section
-      className={`single-bulk-section${phase === 1 ? ' is-bulk' : ' is-single'}`}
+      className={`single-bulk-section${shot === 1 ? ' is-bulk' : ' is-single'}`}
       id="product"
       ref={sectionRef}
     >
       <div className="single-bulk-pin">
         <div className="section-heading centered-heading">
-          <span className="landing-eyebrow">ANALYZE</span>
-          <h2>One item, or a hundred.</h2>
+          <h2>Analyze 1 or 100 items at once</h2>
         </div>
         <div className="single-bulk-split">
           <div className="single-bulk-rail">
             <article
               className="listing-flow-card listing-flow-single"
-              data-emphasis={phase === 0 ? 'on' : 'off'}
+              data-emphasis={shot === 0 ? 'on' : 'off'}
             >
               <h3>Single</h3>
               <p>Snap one photo, get a full listing.</p>
               <div className="listing-flow">
-                <ProductPhoto
-                  label="photo"
+                <UploadedPhoto
+                  count="1 uploaded photo"
                   position="50% 40%"
                   src="/assets/landing/scan-item-sampler.jpg"
                 />
                 <Arrow />
                 <div className="generated-listing">
+                  <div className="listing-thumb">
+                    <Image
+                      alt=""
+                      fill
+                      sizes="140px"
+                      src="/assets/landing/scan-item-sampler.jpg"
+                      style={{ objectPosition: '50% 40%' }}
+                    />
+                  </div>
                   <strong>EP-133 K.O. II sampler</strong>
                   <div className="price-row">
                     <b>$249</b>
-                    <span>priced from comps</span>
                   </div>
                   <p className="generated-description">
                     Portable sampler with original box, tested and ready to
                     play.
                   </p>
-                  <div className="channel-pills">
-                    <span>eBay</span>
-                    <span>Shopify</span>
-                    <span>Depop</span>
+                  <div className="channel-logos">
+                    <span>
+                      {/* biome-ignore lint/nursery/noImgElement: static brand SVG, no optimization needed */}
+                      <img alt="eBay" src="/assets/platforms/ebay.svg" />
+                    </span>
+                    <span>
+                      {/* biome-ignore lint/nursery/noImgElement: static brand SVG, no optimization needed */}
+                      <img alt="Shopify" src="/assets/platforms/shopify.svg" />
+                    </span>
                   </div>
                 </div>
               </div>
             </article>
             <article
               className="listing-flow-card listing-flow-bulk"
-              data-emphasis={phase === 1 ? 'on' : 'off'}
+              data-emphasis={shot === 1 ? 'on' : 'off'}
             >
               <h3>Bulk</h3>
               <p>A whole pile, priced and listed in one pass.</p>
               <div className="listing-flow">
-                <ProductPhoto
-                  label="photos"
+                <UploadedPhoto
+                  count="1 uploaded photo"
                   position="50% 45%"
                   src="/assets/landing/scan-shelf.jpg"
                 />
-                <Arrow muted />
+                <Arrow />
                 <div className="bulk-cart">
                   <div className="cart-heading">
                     <strong>Cart</strong>
-                    <span>15 ready</span>
+                    <span>28 Items</span>
                   </div>
-                  {bulkThumbs.map((thumb) => (
-                    <div className="cart-row" key={thumb.src}>
-                      <Image
-                        alt=""
-                        height={26}
-                        src={thumb.src}
-                        style={{
-                          objectFit: 'cover',
-                          objectPosition: thumb.position,
-                        }}
-                        width={26}
-                      />
-                      <span className="cart-item-copy">
-                        <strong>{thumb.title}</strong>
-                        <b>{thumb.price}</b>
-                      </span>
+                  {CART_ROWS.map((row) => (
+                    <div className="cart-row" key={row.title}>
+                      <strong>{row.title}</strong>
+                      <b>{row.price}</b>
                     </div>
                   ))}
-                  <button type="button">List all</button>
+                  <div className="cart-foot">
+                    <div className="cart-subtotal">
+                      <span>Subtotal</span>
+                      <b>$1919</b>
+                    </div>
+                    <button type="button">List all</button>
+                  </div>
                 </div>
               </div>
             </article>
           </div>
           <div className="single-bulk-visual">
-            <ConveyorShowcase phase={phase} />
+            <ConveyorShowcase phase={1} />
           </div>
         </div>
         <div className="single-bulk-dots">
           <button
             aria-label="Show the single item shot"
-            aria-pressed={phase === 0}
-            className={phase === 0 ? 'is-active' : undefined}
+            aria-pressed={shot === 0}
+            className={shot === 0 ? 'is-active' : undefined}
             onClick={() => goTo(0)}
             type="button"
           />
           <button
             aria-label="Show the bulk shot"
-            aria-pressed={phase === 1}
-            className={phase === 1 ? 'is-active' : undefined}
+            aria-pressed={shot === 1}
+            className={shot === 1 ? 'is-active' : undefined}
             onClick={() => goTo(1)}
             type="button"
           />
