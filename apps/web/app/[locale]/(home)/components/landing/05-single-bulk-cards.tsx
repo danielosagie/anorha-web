@@ -8,9 +8,6 @@ import { ConveyorShowcase } from './conveyor-showcase';
 const SHOT_AT = [0.12, 0.74];
 /** How far down the runway Single gives way to Bulk. */
 const FLIP_AT = 0.42;
-/** The one breakpoint where the stage is tall enough to pin. */
-const PIN_QUERY =
-  '(min-width: 901px) and (prefers-reduced-motion: no-preference)';
 
 function Arrow() {
   return (
@@ -70,29 +67,29 @@ export function SingleBulkCards() {
   // swap is a cross-fade in place and the conveyor beside them never flinches.
   const sectionRef = useRef<HTMLElement>(null);
   const [shot, setShot] = useState<0 | 1>(0);
-  // read by the dots, which scroll on the pin and set the shot off it
-  const pinnedRef = useRef(false);
+
+  // Scroll is the only thing that sets the shot, on the pin and off it, so
+  // every visitor sees both states without touching anything.
+  const progressAt = useCallback((section: HTMLElement) => {
+    const rect = section.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    const range = section.offsetHeight - vh;
+    // On the pin the runway is the overhang below the viewport. Off it the
+    // section is no taller than the screen, so read how far it has risen
+    // through the viewport instead.
+    return range > 40
+      ? -rect.top / range
+      : (vh * 0.8 - rect.top) / Math.max(1, rect.height);
+  }, []);
 
   useEffect(() => {
     const section = sectionRef.current;
     if (!section) {
       return;
     }
-    const pinned = window.matchMedia(PIN_QUERY);
 
     const read = () => {
-      pinnedRef.current = pinned.matches;
-      // Off the pin there is no runway to read, so the dots own the shot.
-      if (!pinned.matches) {
-        return;
-      }
-      const rect = section.getBoundingClientRect();
-      const vh = window.innerHeight || document.documentElement.clientHeight;
-      const range = section.offsetHeight - vh;
-      if (range <= 40) {
-        return;
-      }
-      setShot(-rect.top / range > FLIP_AT ? 1 : 0);
+      setShot(progressAt(section) > FLIP_AT ? 1 : 0);
     };
 
     read();
@@ -101,32 +98,31 @@ export function SingleBulkCards() {
     const poll = window.setInterval(read, 150);
     window.addEventListener('scroll', read, { passive: true });
     window.addEventListener('resize', read);
-    pinned.addEventListener('change', read);
 
     return () => {
       window.clearInterval(poll);
       window.removeEventListener('scroll', read);
       window.removeEventListener('resize', read);
-      pinned.removeEventListener('change', read);
     };
-  }, []);
+  }, [progressAt]);
 
+  // The dots are indicators first. Pressing one still works, but it scrolls to
+  // where that shot lives rather than setting it, so scroll stays the one
+  // source of truth and the poll never argues with a click.
   const goTo = useCallback((next: 0 | 1) => {
     const section = sectionRef.current;
     if (!section) {
       return;
     }
-    if (!pinnedRef.current) {
-      setShot(next);
-      return;
-    }
-    const range = section.offsetHeight - window.innerHeight;
-    if (range <= 40) {
-      setShot(next);
-      return;
-    }
-    const top = window.scrollY + section.getBoundingClientRect().top;
-    window.scrollTo({ behavior: 'smooth', top: top + range * SHOT_AT[next] });
+    const rect = section.getBoundingClientRect();
+    const vh = window.innerHeight || document.documentElement.clientHeight;
+    const range = section.offsetHeight - vh;
+    const sectionTop = window.scrollY + rect.top;
+    const top =
+      range > 40
+        ? sectionTop + range * SHOT_AT[next]
+        : sectionTop - vh * 0.8 + rect.height * SHOT_AT[next];
+    window.scrollTo({ behavior: 'smooth', top: Math.max(0, top) });
   }, []);
 
   return (
@@ -137,7 +133,19 @@ export function SingleBulkCards() {
     >
       <div className="single-bulk-pin">
         <div className="section-heading centered-heading">
-          <h2>Analyze 1 or 100 items at once</h2>
+          {/* One sentence throughout. Only which number carries the accent
+              changes, so the heading reads the shot you are on. */}
+          <h2 className="analyze-heading">
+            Analyze{' '}
+            <span className="analyze-count" data-active={shot === 0}>
+              1
+            </span>{' '}
+            or{' '}
+            <span className="analyze-count" data-active={shot === 1}>
+              100
+            </span>{' '}
+            items at once
+          </h2>
         </div>
         <div className="single-bulk-split">
           <div className="single-bulk-rail">
@@ -221,7 +229,9 @@ export function SingleBulkCards() {
             </article>
           </div>
           <div className="single-bulk-visual">
-            <ConveyorShowcase phase={1} />
+            {/* The scene swaps with the shot: tight on one item for Single,
+                pulled back to every belt for Bulk. */}
+            <ConveyorShowcase phase={shot} />
           </div>
         </div>
         <div className="single-bulk-dots">

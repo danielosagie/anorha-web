@@ -22,15 +22,7 @@ export function StoreManagePhone() {
             Shopify store data) — replaces the hand-built mock list. The shell
             keeps its own status row; the capture starts below the real one. */}
         <div aria-hidden="true" className="inventory-phone phone-shell">
-          <div className="phone-status">
-            <span>7:07</span>
-            <i className="phone-island" />
-            <span className="phone-signal">
-              <i />
-              <i />
-              <i />
-            </span>
-          </div>
+
 
           <span className="inventory-shot">
             <Image

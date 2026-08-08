@@ -511,10 +511,7 @@ export function SproutFeatureBlocks() {
                       />
                       <b className="sprout-scan-line" />
                     </span>
-                    <span className="sprout-wrote sprout-sequence-two">
-                      <AnorhaFace />
-                      Sprout wrote this
-                    </span>
+                    
                     <strong className="sprout-hero-title sprout-sequence-two">
                       Nike Air Max 97 Off-White, size 11M, great condition
                     </strong>
