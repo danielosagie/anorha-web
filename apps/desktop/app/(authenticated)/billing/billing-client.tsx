@@ -237,7 +237,7 @@ export function BillingClient({
     window.location.href = `/api/polar/checkout?products=${encodeURIComponent(tier.productId)}`;
   };
 
-  // Open the managed subscription portal (Stripe or Polar) via backend route
+  // Open the managed Polar subscription portal via backend route
   const handleManageSubscription = async () => {
     setActionError(null);
     try {

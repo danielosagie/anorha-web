@@ -57,8 +57,8 @@ const legalContent: Record<
             <li>Business name, address, and contact details</li>
             <li>
               Billing identifiers, subscription status, plan, invoices, and
-              payment method status processed through Stripe, Polar, Shopify, or
-              another approved billing provider depending on where you subscribe
+              payment method status processed through Polar, Shopify, or another
+              approved billing provider depending on where you subscribe
             </li>
             <li>
               Team membership, organization roles, partner invites, and
@@ -177,7 +177,7 @@ const legalContent: Record<
           <ul className="list-disc space-y-2 pl-6">
             <li>
               <strong>Service Providers:</strong> Cloud hosting
-              (Vercel/Supabase), Auth (Clerk), Payments (Stripe/Polar),
+              (Vercel/Supabase), Auth (Clerk), Payments (Polar),
               analytics and crash reporting (PostHog, Sentry, Vercel Analytics),
               push notifications (Expo), email or text delivery providers,
               support tooling, and AI processing providers.

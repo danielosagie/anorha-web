@@ -1,5 +1,5 @@
 import { CustomerPortal } from "@polar-sh/nextjs";
-import { keys } from '@repo/payments/keys';
+import { keys, polarServer } from '@repo/payments/keys';
 import { auth, currentUser } from '@clerk/nextjs/server';
 import { createClient } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
@@ -141,7 +141,7 @@ const polarPortal = CustomerPortal({
     console.error(`[Portal] FAIL: User ${userId} (internal: ${internalUserId}) does not have a Polar customer ID in Users or Subscriptions`);
     throw new Error('No Polar subscription found. Please subscribe first.');
   },
-  server: (process.env.POLAR_API_SERVER as 'production' | 'sandbox') || 'production',
+  server: polarServer(),
 });
 
 export async function GET(req: NextRequest) {

@@ -2,13 +2,12 @@
   "name": "api",
   "private": true,
   "scripts": {
-    "dev": "concurrently \"npm:next\" \"npm:stripe\"",
+    "dev": "next dev -p 3002 --turbopack",
     "next": "next dev -p 3002 --turbopack",
     "build": "next build",
     "start": "next start",
     "analyze": "ANALYZE=true npm run build",
     "test": "NODE_ENV=test vitest run",
-    "stripe": "stripe listen --forward-to localhost:3002/webhooks/payments",
     "clean": "git clean -xdf .cache .turbo dist node_modules",
     "typecheck": "tsc --noEmit --emitDeclarationOnly false"
   },
@@ -19,7 +18,6 @@
     "@repo/design-system": "workspace:*",
     "@repo/next-config": "workspace:*",
     "@repo/observability": "workspace:*",
-    "@repo/payments": "workspace:*",
     "@repo/testing": "workspace:*",
     "@sentry/nextjs": "^9.22.0",
     "@t3-oss/env-nextjs": "^0.13.4",

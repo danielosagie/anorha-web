@@ -28,7 +28,7 @@ export function BillingActions({
         await onManageSubscription();
         return;
       }
-      // Default: hit backend portal route which decides Polar vs Stripe and redirects
+      // Default: hit backend portal route, which resolves the Polar customer and redirects
       window.location.href = '/api/billing/portal';
     } catch (err) {
       console.error('Error opening portal:', err);

@@ -1,6 +1,6 @@
 import { Checkout } from '@polar-sh/nextjs';
 import { auth } from '@repo/auth/server';
-import { keys } from '@repo/payments/keys';
+import { PolarConfigError, keys, polarServer } from '@repo/payments/keys';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getPolarProductIds } from '@/lib/polar-config';
 
@@ -12,6 +12,38 @@ import { getPolarProductIds } from '@/lib/polar-config';
  * Errors stay generic on purpose: the previous version echoed the vendor
  * exception and server mode straight back to the caller.
  */
+
+function firstHeaderValue(value: string | null): string | undefined {
+  return value?.split(',')[0]?.trim() || undefined;
+}
+
+/**
+ * Polar sends the seller here after paying, so it has to be the origin they are
+ * actually on. NEXT_PUBLIC_APP_URL is baked in at build time and ships as
+ * http://localhost:3000, which dropped paying customers on a machine that isn't
+ * there. The forwarded host is the one value that is right on production, on
+ * preview deployments, and in local dev at once; Vercel only routes a request
+ * here when its host is a domain attached to this project, so it cannot be
+ * pointed somewhere else.
+ */
+function resolveOrigin(req: NextRequest): string {
+  const host = firstHeaderValue(
+    req.headers.get('x-forwarded-host') ?? req.headers.get('host')
+  );
+
+  if (host) {
+    const protocol =
+      firstHeaderValue(req.headers.get('x-forwarded-proto')) ??
+      (host.startsWith('localhost') || host.startsWith('127.0.0.1')
+        ? 'http'
+        : 'https');
+
+    return `${protocol}://${host}`;
+  }
+
+  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
+}
+
 export const GET = async (req: NextRequest) => {
   const { userId } = await auth();
   if (!userId) {
@@ -37,11 +69,25 @@ export const GET = async (req: NextRequest) => {
     return NextResponse.json({ error: 'Unknown product' }, { status: 400 });
   }
 
+  let server: 'production' | 'sandbox';
+  try {
+    server = polarServer();
+  } catch (error) {
+    if (error instanceof PolarConfigError) {
+      console.error(`[polar/checkout] ${error.message}`);
+      return NextResponse.json(
+        { error: 'Checkout unavailable' },
+        { status: 500 }
+      );
+    }
+    throw error;
+  }
+
   try {
     const checkout = Checkout({
       accessToken: keys().POLAR_ACCESS_TOKEN,
-      successUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/billing/success`,
-      server: (process.env.POLAR_API_SERVER as 'production' | 'sandbox') || 'sandbox',
+      successUrl: `${resolveOrigin(req)}/billing/success`,
+      server,
       theme: 'light',
     });
 
