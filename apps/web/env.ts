@@ -25,6 +25,10 @@ export const env = createEnv({
       .default('https://merry-buffalo-800.convex.cloud'),
     SUPABASE_URL: z.string().url().optional(),
     SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
+    // Comma-separated Chrome extension ids that /connect-extension will accept
+    // from ?extId in production. Server-only on purpose: the browser never
+    // needs the full list, only the one id the page resolved.
+    ANORHA_CONNECT_EXTID_ALLOWLIST: z.string().optional(),
   },
   client: {
     NEXT_PUBLIC_ANORHA_EXTENSION_ID: z
@@ -38,5 +42,6 @@ export const env = createEnv({
     SUPABASE_SERVICE_ROLE_KEY: process.env.SUPABASE_SERVICE_ROLE_KEY,
     NEXT_PUBLIC_ANORHA_EXTENSION_ID:
       process.env.NEXT_PUBLIC_ANORHA_EXTENSION_ID,
+    ANORHA_CONNECT_EXTID_ALLOWLIST: process.env.ANORHA_CONNECT_EXTID_ALLOWLIST,
   },
 });
