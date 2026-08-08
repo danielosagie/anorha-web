@@ -509,7 +509,6 @@ export function SproutFeatureBlocks() {
                         sizes="238px"
                         src="/assets/landing/sprout-item-airmax.jpg"
                       />
-                      <b className="sprout-scan-line" />
                     </span>
                     
                     <strong className="sprout-hero-title sprout-sequence-two">

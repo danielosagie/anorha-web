@@ -130,11 +130,11 @@ export function CoreFeatures() {
     <section aria-label="Core features" className="core-features">
       <div className="section-heading centered-heading">
         <span className="landing-eyebrow">FEATURES</span>
-        <h2>From photo to sold</h2>
+        <h2>From photo to live in seconds</h2>
       </div>
 
       <div className="cf-grid">
-        <Card blurb="Snap a photo" title="Snap" tone="snap">
+        <Card blurb="Take your photos & we research it" title="Snap" tone="snap">
           <AppScreen
             overlay={{
               alt: '',
@@ -154,7 +154,7 @@ export function CoreFeatures() {
             }}
           />
         </Card>
-        <Card blurb="Publish to your platforms" title="Live" tone="manage">
+        <Card blurb="1 click publish to your platforms" title="Live" tone="manage">
           <AppScreen
             screen={{
               alt: 'The finished listing, written and priced',

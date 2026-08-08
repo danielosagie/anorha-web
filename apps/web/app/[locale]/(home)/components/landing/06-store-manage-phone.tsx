@@ -29,7 +29,7 @@ export function StoreManagePhone() {
               alt=""
               fill
               sizes="300px"
-              src="/assets/landing/inventory-screen.png"
+              src="/assets/landing/app-inventory-v2.png"
             />
           </span>
         </div>

@@ -1711,6 +1711,7 @@
   overflow: hidden;
   position: relative;
   background-color: #F2F2F7;
+  padding-top: 5%;
 }
 
 .inventory-shot img {
@@ -5695,11 +5696,16 @@ html.lenis body {
 
 .anorha-landing .sprout-sheet {
   background: #fff;
+  min-height: fit-content;
   border-bottom: 1px solid #ededea;
   border-top: 1px solid #ededea;
   display: flex;
   flex-direction: column;
   margin: 12px 0 0;
+  padding: 3%;
+  gap: 12px;
+  border-radius: 12px;
+  
 }
 
 .anorha-landing .sprout-screen-listing .sprout-sheet:first-of-type {
@@ -5711,7 +5717,7 @@ html.lenis body {
   border-radius: 14px;
   display: block;
   flex: 0 0 100px;
-  height: 100px;
+  height: 200px;
   overflow: hidden;
   position: relative;
 }
