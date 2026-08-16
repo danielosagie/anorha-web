@@ -37,6 +37,7 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional(),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
     NEXT_PUBLIC_API_URL: z.string().optional(),
+    NEXT_PUBLIC_WEB_URL: z.string().url().optional(),
     NEXT_PUBLIC_TESTFLIGHT_URL: z.string().url().optional(),
     NEXT_PUBLIC_TESTFLIGHT_INVITE_CODE: z.string().optional(),
     NEXT_PUBLIC_ANDROID_ACCESS_URL: z.string().url().optional(),
@@ -47,6 +48,7 @@ export const env = createEnv({
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
     NEXT_PUBLIC_API_URL: process.env.NEXT_PUBLIC_API_URL,
+    NEXT_PUBLIC_WEB_URL: process.env.NEXT_PUBLIC_WEB_URL,
     NEXT_PUBLIC_TESTFLIGHT_URL: process.env.NEXT_PUBLIC_TESTFLIGHT_URL,
     NEXT_PUBLIC_TESTFLIGHT_INVITE_CODE:
       process.env.NEXT_PUBLIC_TESTFLIGHT_INVITE_CODE,

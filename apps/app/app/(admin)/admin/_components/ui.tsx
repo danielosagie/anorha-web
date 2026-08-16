@@ -34,13 +34,19 @@ export function EmptyState({ children }: { children: ReactNode }) {
   return <div className="admin-empty">{children}</div>;
 }
 
-export function Status({ value }: { value: string }) {
+export function Status({
+  value,
+  tone,
+}: {
+  value: string;
+  tone?: 'good' | 'warn' | 'bad' | 'neutral';
+}) {
   return (
     <span className="admin-status">
       <span
         aria-hidden="true"
         className="admin-status-dot"
-        data-tone={statusTone(value)}
+        data-tone={tone ?? statusTone(value)}
       />
       <span>{value}</span>
     </span>

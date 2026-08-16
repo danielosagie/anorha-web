@@ -523,7 +523,36 @@
 }
 
 .admin-tester-grid {
-  grid-template-columns: minmax(250px, 1fr) 140px 140px 170px 190px;
+  grid-template-columns:
+    minmax(220px, 1fr) minmax(220px, 1fr) 120px 140px minmax(220px, 1fr)
+    224px;
+}
+
+.admin-tester-table {
+  min-width: 1260px;
+}
+
+.admin-data-row.admin-tester-grid {
+  min-height: 68px;
+  height: auto;
+  padding-top: 10px;
+  padding-bottom: 10px;
+}
+
+.admin-tester-email {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.admin-data-row > .admin-tester-error {
+  overflow: visible;
+  color: var(--admin-text-muted);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.admin-data-row > .admin-tester-error[data-has-error="true"] {
+  color: var(--admin-bad);
 }
 
 .admin-gdpr-grid {
@@ -552,6 +581,8 @@
   align-items: center;
   gap: 7px;
   color: var(--admin-text-secondary);
+  font-size: 14px;
+  line-height: 20px;
 }
 
 .admin-status-dot {
@@ -887,6 +918,60 @@
   flex-direction: column;
   gap: 16px;
   padding: 18px 22px 22px;
+}
+
+.admin-send-dialog {
+  --admin-panel: #ffffff;
+  --admin-border: #e8e8ec;
+  --admin-button-border: #d8d8de;
+  --admin-text: #131315;
+  --admin-text-secondary: #6e6e73;
+  --admin-accent-fill: #93c822;
+  width: min(440px, calc(100vw - 40px));
+  gap: 0;
+  padding: 0;
+  overflow: hidden;
+  color: var(--admin-text);
+  border: 1px solid var(--admin-border);
+  border-radius: 14px;
+  background: var(--admin-panel);
+  box-shadow: 0 24px 80px rgb(19 19 21 / 18%);
+  font-family: var(--admin-font-sans), "Inter Tight", system-ui, sans-serif;
+}
+
+.admin-send-dialog-header {
+  gap: 4px;
+  padding: 20px 22px 16px;
+  border-bottom: 1px solid var(--admin-border);
+  text-align: left;
+}
+
+.admin-send-dialog-header [data-slot="alert-dialog-title"] {
+  color: var(--admin-text);
+  font-size: 16px;
+  font-weight: 600;
+  line-height: 22px;
+}
+
+.admin-send-dialog-header [data-slot="alert-dialog-description"] {
+  color: var(--admin-text-secondary);
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.admin-send-dialog-header strong {
+  color: var(--admin-text);
+  overflow-wrap: anywhere;
+}
+
+.admin-send-dialog form {
+  padding: 18px 22px 22px;
+}
+
+.admin-send-dialog-actions {
+  flex-direction: row;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .admin-dialog-actions,

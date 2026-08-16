@@ -1,5 +1,6 @@
 import { Filter } from 'lucide-react';
 import Link from 'next/link';
+import { SendTesterInvite } from '../_components/send-tester-invite';
 import {
   CursorPagination,
   EmptyState,
@@ -13,7 +14,7 @@ import type {
   AdminTesterQueueItem,
 } from '../_lib/contracts';
 import { firstParam, formatDate } from '../_lib/format';
-import { markTesterAddedAction, sendTesterInviteAction } from '../actions';
+import { markTesterAddedAction } from '../actions';
 
 type SearchParams = Promise<Record<string, string | string[] | undefined>>;
 
@@ -26,6 +27,30 @@ function pageHref(values: Record<string, string | undefined>): string {
   }
   const query = params.toString();
   return query ? `/admin/testers?${query}` : '/admin/testers';
+}
+
+function testerStatus(status: string): {
+  label: string;
+  tone: 'good' | 'warn' | 'neutral';
+} {
+  if (status === 'invite_sent') {
+    return { label: 'Invite sent', tone: 'good' };
+  }
+  if (status === 'invite_sending') {
+    return { label: 'Sending invite', tone: 'warn' };
+  }
+  if (status === 'tester_added') {
+    return { label: 'Tester added', tone: 'neutral' };
+  }
+  if (status === 'pending') {
+    return { label: 'Pending', tone: 'neutral' };
+  }
+  return { label: status, tone: 'neutral' };
+}
+
+function TesterStatus({ status }: { status: string }) {
+  const display = testerStatus(status);
+  return <Status tone={display.tone} value={display.label} />;
 }
 
 export default async function AdminTestersPage({
@@ -117,9 +142,10 @@ export default async function AdminTestersPage({
               </EmptyState>
             ) : (
               <div className="admin-table-wrap">
-                <div className="admin-data-table">
+                <div className="admin-data-table admin-tester-table">
                   <div className="admin-data-head admin-tester-grid">
-                    <span>Request</span>
+                    <span>Account email</span>
+                    <span>Tester email</span>
                     <span>Source</span>
                     <span>Status</span>
                     <span>Last error</span>
@@ -131,12 +157,18 @@ export default async function AdminTestersPage({
                       key={item.id}
                     >
                       <div className="admin-row-primary">
-                        <strong>{item.email}</strong>
+                        <strong>{item.accountEmail ?? 'Not linked'}</strong>
                         <span>{formatDate(item.createdAt)}</span>
                       </div>
+                      <strong className="admin-tester-email">
+                        {item.email}
+                      </strong>
                       <span>{item.source}</span>
-                      <Status value={item.status} />
-                      <span title={item.lastError ?? undefined}>
+                      <TesterStatus status={item.status} />
+                      <span
+                        className="admin-tester-error"
+                        data-has-error={Boolean(item.lastError)}
+                      >
                         {item.lastError ?? 'None'}
                       </span>
                       <div className="admin-inline-actions">
@@ -149,27 +181,18 @@ export default async function AdminTestersPage({
                           />
                           <button
                             className="admin-button admin-button-secondary"
-                            disabled={Boolean(item.testerAddedAt)}
+                            disabled={item.status !== 'pending'}
                             type="submit"
                           >
-                            {item.testerAddedAt ? 'Added' : 'Mark added'}
+                            {item.status === 'pending' ? 'Mark added' : 'Added'}
                           </button>
                         </form>
-                        <form action={sendTesterInviteAction}>
-                          <input name="id" type="hidden" value={item.id} />
-                          <input
-                            name="returnTo"
-                            type="hidden"
-                            value={returnTo}
-                          />
-                          <button
-                            className="admin-button admin-button-primary"
-                            disabled={Boolean(item.inviteSentAt)}
-                            type="submit"
-                          >
-                            {item.inviteSentAt ? 'Sent' : 'Send invite'}
-                          </button>
-                        </form>
+                        <SendTesterInvite
+                          email={item.email}
+                          requestId={item.id}
+                          returnTo={returnTo}
+                          status={item.status}
+                        />
                       </div>
                     </div>
                   ))}
