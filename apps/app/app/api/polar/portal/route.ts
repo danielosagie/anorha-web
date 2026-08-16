@@ -1,31 +1,76 @@
-import { CustomerPortal } from "@polar-sh/nextjs";
-import { keys, polarServer } from '@repo/payments/keys';
 import { auth, currentUser } from '@clerk/nextjs/server';
+import { polar } from '@repo/payments';
+import { PolarConfigError } from '@repo/payments/keys';
 import { createClient } from '@supabase/supabase-js';
-import { NextRequest, NextResponse } from 'next/server';
+import { type NextRequest, NextResponse } from 'next/server';
 
-// Wrap CustomerPortal with error handling
-const polarPortal = CustomerPortal({
-  accessToken: keys().POLAR_ACCESS_TOKEN,
-  getCustomerId: async (req) => {
-    // Get the current authenticated user from Clerk
-    const { userId } = await auth();
-    const clerkUser = await currentUser();
-    
-    if (!userId) {
-      throw new Error('User not authenticated');
+class PolarPortalRouteError extends Error {
+  constructor(
+    readonly reasonCode: string,
+    readonly status: number,
+    message: string
+  ) {
+    super(message);
+  }
+}
+
+const failureResponse = (
+  reasonCode: string,
+  status: number,
+  message: string
+) => NextResponse.json({ error: message, reasonCode }, { status });
+
+export async function GET(_request: NextRequest) {
+  try {
+    const [{ userId }, clerkUser] = await Promise.all([auth(), currentUser()]);
+    if (!userId || !clerkUser) {
+      return failureResponse(
+        'POLAR_PORTAL_UNAUTHORIZED',
+        401,
+        'Authentication is required.'
+      );
     }
 
-    console.log(`[Portal] Starting getCustomerId for Clerk user: ${userId}`);
+    if (!process.env.POLAR_ACCESS_TOKEN?.trim()) {
+      console.error('[polar/portal] POLAR_ACCESS_TOKEN is not set');
+      throw new PolarPortalRouteError(
+        'POLAR_PORTAL_CONFIG_MISSING',
+        503,
+        'Subscription portal is not configured.'
+      );
+    }
+    if (
+      process.env.POLAR_API_SERVER !== 'production' &&
+      process.env.POLAR_API_SERVER !== 'sandbox'
+    ) {
+      console.error('[polar/portal] POLAR_API_SERVER is not set or invalid');
+      throw new PolarPortalRouteError(
+        'POLAR_PORTAL_CONFIG_INVALID',
+        503,
+        'Subscription portal is not configured.'
+      );
+    }
 
-    // Get Supabase client with service role for reliable access
-    const supabase = createClient(
-      process.env.NEXT_PUBLIC_SUPABASE_URL || '',
-      process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
-    );
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL?.trim();
+    const supabaseKey = (
+      process.env.SUPABASE_SERVICE_ROLE_KEY ||
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+    )?.trim();
+    if (!supabaseUrl || !supabaseKey) {
+      console.error(
+        '[polar/portal] NEXT_PUBLIC_SUPABASE_URL or SUPABASE_SERVICE_ROLE_KEY/NEXT_PUBLIC_SUPABASE_ANON_KEY is not set'
+      );
+      throw new PolarPortalRouteError(
+        'POLAR_PORTAL_DATABASE_CONFIG_MISSING',
+        503,
+        'Subscription portal is not configured.'
+      );
+    }
 
-    // First, get the user's internal ID and PolarCustomerId from Users table
-    console.log(`[Portal] Attempt 1: Query Users by ClerkUserId=${userId}`);
+    console.log(`[polar/portal] Resolving customer for Clerk user ${userId}`);
+    const supabase = createClient(supabaseUrl, supabaseKey);
+    let lookupFailed = false;
+
     const { data: userData, error: userError } = await supabase
       .from('Users')
       .select('Id, PolarCustomerId')
@@ -33,17 +78,18 @@ const polarPortal = CustomerPortal({
       .maybeSingle();
 
     if (userError) {
-      console.error('[Portal] Supabase error fetching user by ClerkUserId:', userError);
-    } else {
-      console.log(`[Portal] Attempt 1 result: ${userData ? `Found Users.Id=${userData.Id}, PolarCustomerId=${userData.PolarCustomerId}` : 'No match'}`);
+      lookupFailed = true;
+      console.error(
+        '[polar/portal] Users lookup by ClerkUserId failed:',
+        userError
+      );
     }
 
     let internalUserId = userData?.Id as string | undefined;
     let polarCustomerId = userData?.PolarCustomerId as string | undefined;
 
-    // Fallback 1: try to resolve internal user via OrgMemberships by clerk_user_id
+    // Preserve the existing resolution chain: membership, then Clerk email.
     if (!internalUserId) {
-      console.log(`[Portal] Attempt 2: Query OrgMemberships by clerk_user_id=${userId}`);
       const { data: membership, error: membershipError } = await supabase
         .from('OrgMemberships')
         .select('UserId')
@@ -51,21 +97,23 @@ const polarPortal = CustomerPortal({
         .maybeSingle();
 
       if (membershipError) {
-        console.error('[Portal] Supabase error fetching membership:', membershipError);
+        lookupFailed = true;
+        console.error(
+          '[polar/portal] OrgMemberships lookup failed:',
+          membershipError
+        );
       } else {
-        console.log(`[Portal] Attempt 2 result: ${membership ? `Found OrgMemberships.UserId=${membership.UserId}` : 'No match'}`);
+        internalUserId = membership?.UserId || undefined;
       }
-
-      internalUserId = membership?.UserId || undefined;
     }
 
-    // Fallback 2: try to resolve by email from Clerk
-    if (!internalUserId && clerkUser?.emailAddresses?.length) {
-      const primaryEmail = clerkUser.emailAddresses.find((e) => e.id === clerkUser.primaryEmailAddressId)?.emailAddress
-        || clerkUser.emailAddresses[0]?.emailAddress;
-      
+    if (!internalUserId && clerkUser.emailAddresses.length > 0) {
+      const primaryEmail =
+        clerkUser.emailAddresses.find(
+          (email) => email.id === clerkUser.primaryEmailAddressId
+        )?.emailAddress || clerkUser.emailAddresses[0]?.emailAddress;
+
       if (primaryEmail) {
-        console.log(`[Portal] Attempt 3: Query Users by Email (ilike) = ${primaryEmail}`);
         const { data: emailMatch, error: emailError } = await supabase
           .from('Users')
           .select('Id, PolarCustomerId, ClerkUserId')
@@ -73,86 +121,116 @@ const polarPortal = CustomerPortal({
           .maybeSingle();
 
         if (emailError) {
-          console.error('[Portal] Supabase error fetching user by email:', emailError);
-        } else {
-          console.log(`[Portal] Attempt 3 result: ${emailMatch ? `Found Users.Id=${emailMatch.Id}, PolarCustomerId=${emailMatch.PolarCustomerId}` : 'No match'}`);
-        }
-
-        if (emailMatch?.Id) {
+          lookupFailed = true;
+          console.error(
+            '[polar/portal] Users lookup by email failed:',
+            emailError
+          );
+        } else if (emailMatch?.Id) {
           internalUserId = emailMatch.Id;
           polarCustomerId = emailMatch.PolarCustomerId as string | undefined;
 
-          // Backfill ClerkUserId to keep mappings tight
-          console.log(`[Portal] Backfilling Users.ClerkUserId=${userId} for Users.Id=${internalUserId}`);
-          await supabase
-            .from('Users')
-            .update({ ClerkUserId: userId })
-            .eq('Id', internalUserId);
-
-          // Backfill membership linkage if missing
-          console.log(`[Portal] Backfilling OrgMemberships.clerk_user_id=${userId} for UserId=${internalUserId}`);
-          await supabase
-            .from('OrgMemberships')
-            .update({ clerk_user_id: userId })
-            .eq('UserId', internalUserId);
+          const [userBackfill, membershipBackfill] = await Promise.all([
+            supabase
+              .from('Users')
+              .update({ ClerkUserId: userId })
+              .eq('Id', internalUserId),
+            supabase
+              .from('OrgMemberships')
+              .update({ clerk_user_id: userId })
+              .eq('UserId', internalUserId),
+          ]);
+          if (userBackfill.error) {
+            console.error(
+              '[polar/portal] Users ClerkUserId backfill failed:',
+              userBackfill.error
+            );
+          }
+          if (membershipBackfill.error) {
+            console.error(
+              '[polar/portal] OrgMemberships ClerkUserId backfill failed:',
+              membershipBackfill.error
+            );
+          }
         }
-      } else {
-        console.log(`[Portal] No primary email found in Clerk user`);
       }
     }
 
-    if (polarCustomerId) {
-      console.log(`[Portal] SUCCESS: Found PolarCustomerId=${polarCustomerId}`);
-      return polarCustomerId;
+    if (!polarCustomerId && internalUserId) {
+      const { data: subscription, error: subscriptionError } = await supabase
+        .from('Subscriptions')
+        .select('PolarCustomerId, PolarSubscriptionId, Status')
+        .eq('UserId', internalUserId)
+        .maybeSingle();
+
+      if (subscriptionError) {
+        console.error(
+          '[polar/portal] Subscriptions lookup failed:',
+          subscriptionError
+        );
+        throw new PolarPortalRouteError(
+          'POLAR_PORTAL_CUSTOMER_LOOKUP_FAILED',
+          503,
+          'Subscription details are temporarily unavailable.'
+        );
+      }
+
+      if (subscription?.PolarCustomerId) {
+        polarCustomerId = subscription.PolarCustomerId;
+        const { error: syncError } = await supabase
+          .from('Users')
+          .update({
+            PolarCustomerId: polarCustomerId,
+            ClerkUserId: userId,
+          })
+          .eq('Id', internalUserId);
+        if (syncError) {
+          console.error(
+            '[polar/portal] PolarCustomerId backfill failed:',
+            syncError
+          );
+        }
+      }
     }
 
-    if (!internalUserId) {
-      console.error(`[Portal] FAIL: User ${userId} not found in Users, OrgMemberships, or by email fallback. ClerkUser email addresses: ${clerkUser?.emailAddresses?.map(e => e.emailAddress).join(', ') || 'none'}`);
-      throw new Error('User not found. Please contact support.');
+    if (!polarCustomerId) {
+      if (lookupFailed) {
+        throw new PolarPortalRouteError(
+          'POLAR_PORTAL_CUSTOMER_LOOKUP_FAILED',
+          503,
+          'Subscription details are temporarily unavailable.'
+        );
+      }
+      throw new PolarPortalRouteError(
+        'POLAR_PORTAL_CUSTOMER_NOT_FOUND',
+        404,
+        'No Polar subscription was found.'
+      );
     }
 
-    // Fallback: Check Subscriptions table for PolarCustomerId
-    console.log(`[Portal] Attempt 4: Query Subscriptions for UserId=${internalUserId}`);
-    const { data: subData, error: subError } = await supabase
-      .from('Subscriptions')
-      .select('PolarCustomerId, PolarSubscriptionId, Status')
-      .eq('UserId', internalUserId)
-      .maybeSingle();
-
-    if (subError) {
-      console.error('[Portal] Supabase error fetching subscription:', subError);
-    } else {
-      console.log(`[Portal] Attempt 4 result: ${subData ? `Found Subscriptions.PolarCustomerId=${subData.PolarCustomerId}` : 'No match'}`);
+    const session = await polar().customerSessions.create({
+      customerId: polarCustomerId,
+    });
+    return NextResponse.redirect(session.customerPortalUrl);
+  } catch (error) {
+    if (error instanceof PolarPortalRouteError) {
+      console.error(`[polar/portal] ${error.reasonCode}`);
+      return failureResponse(error.reasonCode, error.status, error.message);
+    }
+    if (error instanceof PolarConfigError) {
+      console.error(`[polar/portal] ${error.message}`);
+      return failureResponse(
+        'POLAR_PORTAL_CONFIG_INVALID',
+        503,
+        'Subscription portal is not configured.'
+      );
     }
 
-    if (subData?.PolarCustomerId) {
-      console.log(`[Portal] SUCCESS: Found PolarCustomerId=${subData.PolarCustomerId} on Subscriptions`);
-      
-      // Sync the PolarCustomerId back to Users table for future lookups
-      console.log(`[Portal] Syncing PolarCustomerId back to Users.Id=${internalUserId}`);
-      await supabase
-        .from('Users')
-        .update({ PolarCustomerId: subData.PolarCustomerId, ClerkUserId: userId })
-        .eq('Id', internalUserId);
-      
-      return subData.PolarCustomerId;
-    }
-    
-    console.error(`[Portal] FAIL: User ${userId} (internal: ${internalUserId}) does not have a Polar customer ID in Users or Subscriptions`);
-    throw new Error('No Polar subscription found. Please subscribe first.');
-  },
-  server: polarServer(),
-});
-
-export async function GET(req: NextRequest) {
-  try {
-    return await polarPortal(req);
-  } catch (error: any) {
-    console.error('Polar portal error:', error);
-    // Return a redirect to billing page with error message instead of 500
-    const errorMessage = encodeURIComponent(error?.message || 'Unable to access subscription portal');
-    return NextResponse.redirect(
-      new URL(`/billing?error=${errorMessage}`, req.url)
+    console.error('[polar/portal] POLAR_PORTAL_UPSTREAM_FAILED', error);
+    return failureResponse(
+      'POLAR_PORTAL_UPSTREAM_FAILED',
+      502,
+      'Unable to open the subscription portal.'
     );
   }
 }
