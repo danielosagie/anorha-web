@@ -28,9 +28,9 @@ export const env = createEnv({
   ],
   server: {
     // Internal/ops plane: deny-by-default allowlist of Clerk user ids for /admin, plus the
-    // external Langfuse dashboard URL to embed/link. Both optional — an unset ADMIN_USER_IDS
-    // means the /admin route admits no one.
-    ADMIN_USER_IDS: z.string().optional(),
+    // external Langfuse dashboard URL to link. Both optional. An unset
+    // ADMIN_CLERK_USER_IDS means the /admin route admits no one.
+    ADMIN_CLERK_USER_IDS: z.string().optional(),
     LANGFUSE_DASHBOARD_URL: z.string().url().optional(),
   },
   client: {
@@ -42,7 +42,7 @@ export const env = createEnv({
     NEXT_PUBLIC_ANDROID_ACCESS_URL: z.string().url().optional(),
   },
   runtimeEnv: {
-    ADMIN_USER_IDS: process.env.ADMIN_USER_IDS,
+    ADMIN_CLERK_USER_IDS: process.env.ADMIN_CLERK_USER_IDS,
     LANGFUSE_DASHBOARD_URL: process.env.LANGFUSE_DASHBOARD_URL,
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL,
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,

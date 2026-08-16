@@ -1,6 +1,6 @@
 # anorha-web
 
-The **Anorha** web presence and internal operations plane — a [next-forge](https://github.com/vercel/next-forge) Turborepo monorepo (pnpm + Turbo) on Vercel. It houses the public marketing site, an internal `/admin` ops dashboard (deny-by-default, with an embedded Langfuse view of the AI agent's traces), a webhooks/payments API, and a desktop Electron shell.
+The **Anorha** web presence and internal operations plane is a [next-forge](https://github.com/vercel/next-forge) Turborepo monorepo (pnpm + Turbo) on Vercel. It houses the public marketing site, a deny-by-default `/admin` ops dashboard with a Langfuse link, a webhooks/payments API, and a desktop Electron shell.
 
 > The git repo is `anorha-web`; the root package is still named `next-forge` (this is a fork of next-forge v5, customized for Anorha).
 
@@ -12,7 +12,7 @@ The **Anorha** web presence and internal operations plane — a [next-forge](htt
 
 | App | Port | Purpose |
 |-----|------|---------|
-| `apps/app` | 3000 | **Admin / ops dashboard.** Clerk-authenticated. The `/admin` route is **deny-by-default** (gated by `ADMIN_USER_IDS`, returns 404 — not 403 — to non-staff) and embeds the Langfuse LLM-observability dashboard. |
+| `apps/app` | 3000 | **Admin / ops dashboard.** Clerk-authenticated. The `/admin` route is **deny-by-default** (gated by `ADMIN_CLERK_USER_IDS`, returns 404 to non-staff) and links to the Langfuse LLM-observability dashboard. |
 | `apps/web` | 3001 | **Public marketing site.** BaseHub CMS, i18n (next-international), Arcjet rate-limiting. |
 | `apps/api` | 3002 | **API.** Stripe + Polar payment webhooks, Svix. No UI. |
 | `apps/docs` | 3004 | Documentation (Mintlify). |
@@ -82,13 +82,13 @@ apps/api/.env.example  →  apps/api/.env.local
 
 Major groups (**names only**): Clerk (`CLERK_SECRET_KEY`, `NEXT_PUBLIC_CLERK_*`), database (`DATABASE_URL`, `DIRECT_URL`), Sentry/BetterStack, PostHog/GA, Stripe + Polar, Knock, Arcjet, Liveblocks, Svix, Resend, BaseHub, Vercel Blob, OpenAI, and the shared URLs (`NEXT_PUBLIC_APP_URL`, `NEXT_PUBLIC_WEB_URL`, `NEXT_PUBLIC_API_URL`, …).
 
-**Anorha-specific** (in `apps/app`): `ADMIN_USER_IDS` (comma-separated Clerk user ids for the `/admin` allowlist), `LANGFUSE_DASHBOARD_URL` (the embedded observability view), plus `NEXT_PUBLIC_SUPABASE_*` and `NEXT_PUBLIC_TESTFLIGHT_*`.
+**Anorha-specific** (in `apps/app`): `ADMIN_CLERK_USER_IDS` (comma-separated Clerk user ids for the `/admin` allowlist), `LANGFUSE_DASHBOARD_URL` (the observability view), plus `NEXT_PUBLIC_SUPABASE_*` and `NEXT_PUBLIC_TESTFLIGHT_*`.
 
 ---
 
 ## What's customized vs. vanilla next-forge
 
-- **`apps/app/.../admin`** — internal ops plane: deny-by-default allowlist (404 to non-staff) with an embedded **Langfuse** dashboard for inspecting the AI agent's traces (one trace per turn, tool-call + model-generation spans).
+- **`apps/app/app/(admin)/admin`**: internal ops plane with a deny-by-default allowlist, founder operations tables, and a **Langfuse** dashboard link.
 - **`apps/desktop`** — an Electron app (not part of stock next-forge) wrapping the Next.js app with a tray sign-in flow.
 - Anorha branding and a handful of internal data-flow guides under `apps/app/`.
 
