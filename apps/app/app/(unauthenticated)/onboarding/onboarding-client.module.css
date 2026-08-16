@@ -1,0 +1,297 @@
+.readyShell {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  display: flex;
+  min-height: 100dvh;
+  overflow: auto;
+  background: #ffffff;
+  color: #131315;
+  font-family: system-ui, sans-serif;
+  -moz-osx-font-smoothing: grayscale;
+  -webkit-font-smoothing: antialiased;
+}
+
+.readyRail {
+  display: flex;
+  width: 300px;
+  min-height: 100dvh;
+  flex: 0 0 300px;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 28px;
+  border-right: 1px solid #e8e8ec;
+  background: #f5f5f7;
+}
+
+.brand {
+  display: flex;
+  height: 28px;
+  align-items: center;
+  gap: 10px;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.brandMark {
+  display: flex;
+  width: 28px;
+  height: 28px;
+  flex: 0 0 28px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 8px;
+  background: #131315;
+  color: #ffffff;
+}
+
+.stepLabel {
+  color: #a0a0a5;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 14px;
+}
+
+.readyMain {
+  display: flex;
+  min-width: 0;
+  min-height: 100dvh;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  background: #ffffff;
+}
+
+.mobileHeader {
+  display: none;
+}
+
+.readyContent {
+  display: flex;
+  width: 380px;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.readyContent h1 {
+  margin: 0;
+  color: #131315;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 28px;
+}
+
+.readyIcon {
+  display: flex;
+  width: 46px;
+  height: 46px;
+  flex: 0 0 46px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #f2f8e4;
+  color: #4a7c00;
+}
+
+.platforms {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.readyContent .platformButton,
+.readyContent .continueButton,
+.readyContent .requestButton {
+  width: 100%;
+  height: 34px;
+  min-height: 34px;
+  border-radius: 999px;
+  box-shadow: none;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.readyContent .platformButton,
+.readyContent .continueButton {
+  border: 1px solid #d8d8de;
+  background: #ffffff;
+  color: #131315;
+  font-weight: 500;
+}
+
+.readyContent .platformButton[data-selected="true"],
+.readyContent .requestButton {
+  border-color: #93c822;
+  background: #93c822;
+  color: #ffffff;
+  font-weight: 600;
+}
+
+.readyContent .platformButton svg {
+  width: 15px;
+  height: 15px;
+}
+
+.androidPanel {
+  display: flex;
+  flex-direction: column;
+}
+
+.androidForm {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.field label {
+  color: #a0a0a5;
+  font-family: "Geist Mono", ui-monospace, monospace;
+  font-size: 11px;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  line-height: 14px;
+  text-transform: uppercase;
+}
+
+.field input {
+  width: 100%;
+  height: 40px;
+  border: 1px solid #e8e8ec;
+  border-radius: 10px;
+  background: #fafafa;
+  box-shadow: none;
+  color: #131315;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.field input[aria-invalid="true"] {
+  border-color: #d8434f;
+}
+
+.savedState {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px;
+  border-radius: 14px;
+  background: #f2f8e4;
+  color: #131315;
+}
+
+.savedCheck {
+  display: flex;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: #93c822;
+  color: #ffffff;
+}
+
+.savedState strong {
+  display: block;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 18px;
+}
+
+.savedState p {
+  margin: 2px 0 0;
+  color: #6e6e73;
+  font-size: 13px;
+  line-height: 18px;
+}
+
+.error {
+  margin: 0;
+  color: #d8434f;
+  font-size: 12px;
+  line-height: 18px;
+}
+
+.spinnerSlot {
+  display: inline-flex;
+  width: 14px;
+  height: 14px;
+}
+
+.readyContent .spinnerSlot svg {
+  width: 14px;
+  height: 14px;
+  color: currentColor;
+}
+
+.readyContent .platformButton:focus-visible,
+.readyContent .continueButton:focus-visible,
+.readyContent .requestButton:focus-visible,
+.field input:focus-visible {
+  border-color: #7bb304;
+  outline: 3px solid rgb(147 200 34 / 28%);
+  outline-offset: 2px;
+  box-shadow: none;
+}
+
+@media (hover: hover) {
+  .readyContent .platformButton:hover,
+  .readyContent .continueButton:hover {
+    background: #f5f5f7;
+    color: #131315;
+  }
+
+  .readyContent .platformButton[data-selected="true"]:hover,
+  .readyContent .requestButton:hover {
+    border-color: #7bb304;
+    background: #7bb304;
+    color: #ffffff;
+  }
+}
+
+@media (max-width: 679px) {
+  .readyRail {
+    display: none;
+  }
+
+  .readyMain {
+    display: block;
+    padding: 24px;
+  }
+
+  .mobileHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .readyContent {
+    width: 100%;
+    padding: 88px 0 32px;
+  }
+
+  .readyContent .platformButton,
+  .readyContent .continueButton,
+  .readyContent .requestButton,
+  .field input {
+    height: 44px;
+    min-height: 44px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .readyShell * {
+    scroll-behavior: auto;
+    transition-duration: 0.01ms;
+  }
+}

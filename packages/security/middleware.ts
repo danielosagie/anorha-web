@@ -54,6 +54,7 @@ function originOf(value: string | undefined): string[] {
 export function contentSecurityPolicyReportOnly(): string {
   const vendorOrigins = [
     ...originOf(process.env.NEXT_PUBLIC_API_URL),
+    ...originOf(process.env.NEXT_PUBLIC_WEB_URL),
     ...originOf(process.env.NEXT_PUBLIC_SUPABASE_URL),
     ...originOf(process.env.NEXT_PUBLIC_CLERK_FRONTEND_API),
     ...originOf(process.env.NEXT_PUBLIC_POSTHOG_HOST),
