@@ -1,6 +1,6 @@
 import { Checkout } from '@polar-sh/nextjs';
 import { auth } from '@repo/auth/server';
-import { PolarConfigError, keys, polarServer } from '@repo/payments/keys';
+import { polarServer } from '@repo/payments/keys';
 import { type NextRequest, NextResponse } from 'next/server';
 import { getPolarProductIds } from '@/lib/polar-config';
 
@@ -61,7 +61,13 @@ export const GET = async (req: NextRequest) => {
     console.error(
       '[polar/checkout] No product ids configured: set NEXT_PUBLIC_POLAR_GROWTH_PRODUCT_ID and NEXT_PUBLIC_POLAR_TEAMS_PRODUCT_ID'
     );
-    return NextResponse.json({ error: 'Checkout unavailable' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Checkout unavailable',
+        reasonCode: 'POLAR_CHECKOUT_PRODUCT_CONFIG_MISSING',
+      },
+      { status: 503 }
+    );
   }
 
   if (!requested || !allowed.includes(requested)) {
@@ -69,31 +75,63 @@ export const GET = async (req: NextRequest) => {
     return NextResponse.json({ error: 'Unknown product' }, { status: 400 });
   }
 
+  const accessToken = process.env.POLAR_ACCESS_TOKEN?.trim();
+  if (!accessToken) {
+    console.error('[polar/checkout] POLAR_ACCESS_TOKEN is not set');
+    return NextResponse.json(
+      {
+        error: 'Checkout unavailable',
+        reasonCode: 'POLAR_CHECKOUT_CONFIG_MISSING',
+      },
+      { status: 503 }
+    );
+  }
+
   let server: 'production' | 'sandbox';
   try {
     server = polarServer();
   } catch (error) {
-    if (error instanceof PolarConfigError) {
-      console.error(`[polar/checkout] ${error.message}`);
-      return NextResponse.json(
-        { error: 'Checkout unavailable' },
-        { status: 500 }
-      );
-    }
-    throw error;
+    console.error('[polar/checkout] POLAR_API_SERVER is invalid:', error);
+    return NextResponse.json(
+      {
+        error: 'Checkout unavailable',
+        reasonCode: 'POLAR_CHECKOUT_CONFIG_INVALID',
+      },
+      { status: 503 }
+    );
   }
 
   try {
     const checkout = Checkout({
-      accessToken: keys().POLAR_ACCESS_TOKEN,
+      accessToken,
       successUrl: `${resolveOrigin(req)}/billing/success`,
       server,
       theme: 'light',
     });
 
-    return await checkout(req);
+    const response = await checkout(req);
+    // @polar-sh/nextjs catches Polar SDK failures and returns Response.error(),
+    // so those failures do not reach this route's catch block.
+    if (response.type === 'error' || response.status === 0) {
+      console.error('[polar/checkout] POLAR_CHECKOUT_UPSTREAM_FAILED');
+      return NextResponse.json(
+        {
+          error: 'Checkout failed',
+          reasonCode: 'POLAR_CHECKOUT_UPSTREAM_FAILED',
+        },
+        { status: 502 }
+      );
+    }
+
+    return response;
   } catch (error) {
     console.error('[polar/checkout] Checkout failed:', error);
-    return NextResponse.json({ error: 'Checkout failed' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'Checkout failed',
+        reasonCode: 'POLAR_CHECKOUT_UPSTREAM_FAILED',
+      },
+      { status: 502 }
+    );
   }
 };
