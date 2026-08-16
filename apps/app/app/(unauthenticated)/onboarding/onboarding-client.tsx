@@ -1,21 +1,44 @@
 'use client';
 
+import { env } from '@/env';
+import { IOS_DOWNLOAD_URL } from '@/lib/mobile-downloads';
 import {
   CreateOrganization,
+  useAuth,
   useOrganizationList,
   useUser,
 } from '@clerk/nextjs';
-import { Button } from '@repo/design-system/components/ui/button';
-import { Card, CardContent } from '@repo/design-system/components/ui/card';
-import { ArrowRight, CheckCircle2, Loader2 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
+import {
+  type AndroidRequestStatus,
+  CREATE_ORGANIZATION_APPEARANCE,
+  CreateWorkspaceScreen,
+  type InstallPlatform,
+  LoadingScreen,
+  WorkspaceReadyScreen,
+} from './onboarding-screens';
 
 type OnboardingStep = 'checking' | 'create_org' | 'success';
 
+type AndroidAccessResponse = {
+  request?: {
+    inviteSentAt?: string | null;
+    playEmail?: string;
+  } | null;
+};
+
+const ANDROID_ACCESS_API_URL = new URL(
+  '/api/android-access',
+  env.NEXT_PUBLIC_WEB_URL
+).toString();
+const ANDROID_USER_AGENT_PATTERN = /Android/i;
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const IOS_USER_AGENT_PATTERN = /iPhone|iPad|iPod/i;
+
 export default function OnboardingClient() {
-  const { isLoaded: userLoaded, isSignedIn } = useUser();
+  const { getToken } = useAuth();
+  const { isLoaded: userLoaded, isSignedIn, user } = useUser();
   const { userMemberships, isLoaded: orgListLoaded } = useOrganizationList({
     userMemberships: {
       infinite: true,
@@ -29,6 +52,12 @@ export default function OnboardingClient() {
   const created = searchParams.get('created') === 'true';
 
   const [step, setStep] = useState<OnboardingStep>('checking');
+  const [platform, setPlatform] = useState<InstallPlatform | null>(null);
+  const [playEmail, setPlayEmail] = useState('');
+  const [emailInitialized, setEmailInitialized] = useState(false);
+  const [androidStatus, setAndroidStatus] =
+    useState<AndroidRequestStatus>('idle');
+  const [androidError, setAndroidError] = useState('');
 
   useEffect(() => {
     if (!userLoaded || !orgListLoaded) {
@@ -57,85 +86,165 @@ export default function OnboardingClient() {
     }
   }, [userLoaded, orgListLoaded, isSignedIn, hasOrgs, router, step, created]);
 
+  useEffect(() => {
+    if (!emailInitialized && userLoaded) {
+      setPlayEmail(user?.primaryEmailAddress?.emailAddress ?? '');
+      setEmailInitialized(true);
+    }
+  }, [emailInitialized, user, userLoaded]);
+
+  useEffect(() => {
+    const userAgent = window.navigator.userAgent;
+    const isIpad =
+      window.navigator.platform === 'MacIntel' &&
+      window.navigator.maxTouchPoints > 1;
+
+    if (ANDROID_USER_AGENT_PATTERN.test(userAgent)) {
+      setPlatform('android');
+      return;
+    }
+
+    if (IOS_USER_AGENT_PATTERN.test(userAgent) || isIpad) {
+      setPlatform('ios');
+    }
+  }, []);
+
+  const readSavedRequest = useCallback(async () => {
+    const token = await getToken();
+    if (!token) {
+      return null;
+    }
+
+    const response = await fetch(ANDROID_ACCESS_API_URL, {
+      headers: { Authorization: `Bearer ${token}` },
+      method: 'GET',
+    });
+    if (!response.ok) {
+      return null;
+    }
+
+    const data = (await response.json()) as AndroidAccessResponse;
+    return data.request ?? null;
+  }, [getToken]);
+
+  useEffect(() => {
+    if (step !== 'success' || !userLoaded || !isSignedIn) {
+      return;
+    }
+
+    let cancelled = false;
+    readSavedRequest()
+      .then((savedRequest) => {
+        if (cancelled || !savedRequest) {
+          return;
+        }
+
+        setPlatform('android');
+        if (savedRequest.playEmail) {
+          setPlayEmail(savedRequest.playEmail);
+        }
+        setAndroidStatus(savedRequest.inviteSentAt ? 'sent' : 'saved');
+      })
+      .catch(() => undefined);
+
+    return () => {
+      cancelled = true;
+    };
+  }, [isSignedIn, readSavedRequest, step, userLoaded]);
+
+  // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Persistence reconciliation is intentionally kept beside the submit state it protects.
+  const submitAndroidRequest = async (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    const normalizedEmail = playEmail.trim().toLowerCase();
+    if (!EMAIL_PATTERN.test(normalizedEmail) || androidStatus === 'loading') {
+      return;
+    }
+
+    setAndroidError('');
+    setAndroidStatus('loading');
+
+    try {
+      const token = await getToken();
+      if (!token) {
+        setAndroidStatus('error');
+        setAndroidError('Sign in again to request access.');
+        return;
+      }
+
+      const response = await fetch(ANDROID_ACCESS_API_URL, {
+        body: JSON.stringify({ email: normalizedEmail }),
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+        method: 'POST',
+      });
+      const data = (await response.json().catch(() => ({}))) as
+        | (AndroidAccessResponse & { error?: string; saved?: boolean })
+        | undefined;
+
+      if (response.ok && data?.saved) {
+        setPlayEmail(data.request?.playEmail ?? normalizedEmail);
+        setAndroidStatus(data.request?.inviteSentAt ? 'sent' : 'saved');
+        return;
+      }
+
+      setAndroidStatus('error');
+      setAndroidError(
+        data?.error === 'play_email_already_requested'
+          ? 'That Google Play email already has a request.'
+          : 'Could not save your request. Try again.'
+      );
+    } catch {
+      const savedRequest = await readSavedRequest().catch(() => null);
+      if (savedRequest) {
+        setPlayEmail(savedRequest.playEmail ?? normalizedEmail);
+        setAndroidStatus(savedRequest.inviteSentAt ? 'sent' : 'saved');
+        return;
+      }
+
+      setAndroidStatus('error');
+      setAndroidError('Could not confirm your request. Try again.');
+    }
+  };
+
   if (step === 'checking' || !userLoaded || !orgListLoaded) {
-    return (
-      <div className="fade-in flex min-h-[400px] animate-in flex-col items-center justify-center space-y-4 duration-500">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
-        <p className="font-medium text-muted-foreground">
-          Preparing your workspace...
-        </p>
-      </div>
-    );
+    return <LoadingScreen />;
   }
 
   if (step === 'create_org') {
     return (
-      <div className="slide-in-from-bottom-8 fade-in flex animate-in flex-col space-y-8 py-8 duration-700">
-        <div className="flex flex-col space-y-3 text-center">
-          <h1 className="font-bold text-3xl text-foreground tracking-tight">
-            Welcome to Anorha
-          </h1>
-          <p className="mx-auto max-w-sm text-base text-muted-foreground">
-            Create a space for your team.
-          </p>
-        </div>
-
-        <Card className="mx-auto w-full max-w-md border-0 bg-transparent shadow-none">
-          <CardContent className="flex justify-center p-0">
-            <CreateOrganization
-              afterCreateOrganizationUrl="/onboarding?created=true"
-              appearance={{
-                elements: {
-                  rootBox: 'w-full shadow-lg rounded-2xl overflow-hidden',
-                  card: 'shadow-none border-0 w-full',
-                  headerTitle: 'hidden',
-                  headerSubtitle: 'hidden',
-                  formButtonPrimary:
-                    'bg-primary hover:bg-primary/90 text-primary-foreground text-sm',
-                },
-              }}
-            />
-          </CardContent>
-        </Card>
-      </div>
+      <CreateWorkspaceScreen>
+        <CreateOrganization
+          afterCreateOrganizationUrl="/onboarding?created=true"
+          appearance={CREATE_ORGANIZATION_APPEARANCE}
+        />
+      </CreateWorkspaceScreen>
     );
   }
 
   if (step === 'success') {
     return (
-      <div className="zoom-in-95 slide-in-from-bottom-4 fade-in mx-auto flex max-w-md animate-in flex-col space-y-8 py-10 text-center duration-700">
-        <div className="flex flex-col items-center space-y-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-primary/10">
-            <CheckCircle2 className="h-12 w-12 text-primary" />
-          </div>
-          <div>
-            <h1 className="font-bold text-2xl text-foreground">
-              Workspace ready.
-            </h1>
-            <p className="mt-2 text-muted-foreground">
-              Choose a plan now, or explore your dashboard and upgrade whenever
-              you're ready.
-            </p>
-          </div>
-        </div>
-
-        <div className="w-full space-y-3">
-          <Link href="/billing?upgrade=true" className="block w-full">
-            <Button className="h-12 w-full rounded-xl font-semibold text-md">
-              Choose a plan
-              <ArrowRight className="ml-2 size-4" aria-hidden />
-            </Button>
-          </Link>
-          <Link href="/" className="block w-full">
-            <Button variant="outline" className="h-12 w-full rounded-xl">
-              Continue with free access
-            </Button>
-          </Link>
-          <p className="text-center text-muted-foreground text-xs">
-            Secure checkout. You can manage or cancel from Billing &amp; usage.
-          </p>
-        </div>
-      </div>
+      <WorkspaceReadyScreen
+        androidError={androidError}
+        androidStatus={androidStatus}
+        emailIsValid={EMAIL_PATTERN.test(playEmail.trim())}
+        onAndroidSubmit={submitAndroidRequest}
+        onEmailChange={(value) => {
+          setPlayEmail(value);
+          if (androidStatus === 'error') {
+            setAndroidError('');
+            setAndroidStatus('idle');
+          }
+        }}
+        onSelectAndroid={() => setPlatform('android')}
+        onSelectIos={() => {
+          setPlatform('ios');
+          window.open(IOS_DOWNLOAD_URL, '_blank', 'noopener,noreferrer');
+        }}
+        platform={platform}
+        playEmail={playEmail}
+      />
     );
   }
 
