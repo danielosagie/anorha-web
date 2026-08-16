@@ -1,78 +1,8 @@
 @import "tailwindcss";
 @import "@repo/design-system/styles/globals.css";
+@import "@repo/design-system/styles/anorha-app-theme.css";
 
 @source "./**/*.{ts,tsx}";
-
-:root {
-  --anorhaAccent: oklch(0.62 0.14 42);
-  --anorhaAccentDeep: oklch(0.47 0.11 38);
-  --brand: var(--anorhaAccent);
-  --brand-foreground: oklch(0.985 0.004 100);
-  --brand-muted: oklch(0.95 0.035 52);
-  --brand-muted-foreground: var(--anorhaAccentDeep);
-  --background: oklch(0.965 0.006 100);
-  --foreground: oklch(0.2 0.008 100);
-  --card: oklch(0.995 0.004 100);
-  --card-foreground: oklch(0.2 0.008 100);
-  --popover: oklch(0.995 0.004 100);
-  --popover-foreground: oklch(0.2 0.008 100);
-  --primary: var(--anorhaAccent);
-  --primary-foreground: oklch(0.985 0.004 100);
-  --secondary: oklch(0.94 0.006 100);
-  --secondary-foreground: oklch(0.3 0.01 100);
-  --muted: oklch(0.94 0.006 100);
-  --muted-foreground: oklch(0.5 0.012 100);
-  --accent: oklch(0.95 0.035 52);
-  --accent-foreground: var(--anorhaAccentDeep);
-  --destructive: oklch(0.58 0.2 26);
-  --destructive-foreground: oklch(0.985 0.004 100);
-  --success: oklch(0.59 0.16 145);
-  --warning: oklch(0.58 0.13 72);
-  --border: oklch(0.9 0.008 100);
-  --input: oklch(0.9 0.008 100);
-  --ring: var(--anorhaAccent);
-  --radius: 1rem;
-  --sidebar: oklch(0.992 0.003 100);
-  --sidebar-foreground: oklch(0.25 0.012 100);
-  --sidebar-primary: var(--anorhaAccentDeep);
-  --sidebar-primary-foreground: oklch(0.985 0.004 100);
-  --sidebar-accent: oklch(0.955 0.006 100);
-  --sidebar-accent-foreground: oklch(0.25 0.012 100);
-  --sidebar-border: oklch(0.9 0.008 100);
-  --sidebar-ring: var(--anorhaAccent);
-}
-
-.dark {
-  --background: oklch(0.19 0.008 100);
-  --foreground: oklch(0.94 0.006 100);
-  --card: oklch(0.23 0.009 100);
-  --card-foreground: oklch(0.94 0.006 100);
-  --popover: oklch(0.23 0.009 100);
-  --popover-foreground: oklch(0.94 0.006 100);
-  --primary: oklch(0.72 0.13 45);
-  --primary-foreground: oklch(0.985 0.004 100);
-  --secondary: oklch(0.28 0.01 100);
-  --secondary-foreground: oklch(0.91 0.006 100);
-  --muted: oklch(0.28 0.01 100);
-  --muted-foreground: oklch(0.7 0.01 100);
-  --accent: oklch(0.34 0.045 42);
-  --accent-foreground: oklch(0.86 0.08 50);
-  --border: oklch(0.34 0.012 100);
-  --input: oklch(0.34 0.012 100);
-  --ring: oklch(0.72 0.13 45);
-  --sidebar: oklch(0.22 0.008 100);
-  --sidebar-foreground: oklch(0.91 0.006 100);
-  --sidebar-primary: oklch(0.64 0.12 43);
-  --sidebar-primary-foreground: oklch(0.985 0.004 100);
-  --sidebar-accent: oklch(0.3 0.01 100);
-  --sidebar-accent-foreground: oklch(0.91 0.006 100);
-  --sidebar-border: oklch(0.34 0.012 100);
-  --sidebar-ring: oklch(0.72 0.13 45);
-}
-
-@theme inline {
-  --color-warning: var(--warning);
-}
 
 @layer base {
   body {
@@ -82,24 +12,6 @@
 
   ::selection {
     background: color-mix(in oklch, var(--primary) 34%, transparent);
-  }
-}
-
-@layer components {
-  [data-slot="button"] {
-    border-radius: 999px;
-    font-weight: 650;
-  }
-
-  [data-slot="input"] {
-    min-height: 2.75rem;
-    border-radius: 0.875rem;
-    box-shadow: none;
-  }
-
-  [data-slot="card"] {
-    border-radius: 1.125rem;
-    box-shadow: none;
   }
 }
 

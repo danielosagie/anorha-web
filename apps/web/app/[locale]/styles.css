@@ -1,4 +1,5 @@
 @import "@repo/design-system/styles/globals.css";
+@import "@repo/design-system/styles/anorha-app-theme.css";
 @import "tailwindcss";
 
 .site-main-shell:has(.connect-extension-page),
@@ -26,6 +27,20 @@
 .site-main-shell:has(.connect-extension-page) .landing-nav-pill,
 .site-main-shell:has(.connection-sign-in-page) .landing-nav-pill {
   padding-right: 20px;
+}
+
+.site-main-shell:has(.anorha-intake-page) {
+  min-height: 100svh;
+  background: var(--background);
+}
+
+.site-main-shell:has(.anorha-intake-page) .landing-nav-section,
+.site-main-shell:has(.anorha-intake-page) .landing-footer {
+  display: none;
+}
+
+.site-main-shell:has(.anorha-intake-page) > main {
+  min-height: 100svh;
 }
 
 .shiki {

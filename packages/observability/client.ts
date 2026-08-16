@@ -6,8 +6,16 @@
 
 import { init, replayIntegration } from '@sentry/nextjs';
 import { keys } from './keys';
+import { containsPrivateIntakePath, dropPrivateIntakeEvent } from './privacy';
 
 export const initializeSentry = (): ReturnType<typeof init> | undefined => {
+  if (
+    typeof window !== 'undefined' &&
+    containsPrivateIntakePath(window.location.pathname)
+  ) {
+    return undefined;
+  }
+
   const dsn = keys().NEXT_PUBLIC_SENTRY_DSN;
 
   // Skip initialization if no DSN is configured
@@ -16,6 +24,8 @@ export const initializeSentry = (): ReturnType<typeof init> | undefined => {
   }
 
   return init({
+    beforeSend: dropPrivateIntakeEvent,
+    beforeSendTransaction: dropPrivateIntakeEvent,
     dsn,
 
     // Adjust this value in production, or use tracesSampler for greater control

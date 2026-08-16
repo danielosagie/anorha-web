@@ -1,7 +1,7 @@
 import { env } from '@/env';
 import './styles.css';
-import { DesignSystemProvider } from '@repo/design-system';
 import { fonts } from '@/lib/fonts';
+import { DesignSystemProvider } from '@repo/design-system';
 import { Toolbar } from '@repo/feature-flags/components/toolbar';
 import { Analytics } from '@vercel/analytics/next';
 import type { Metadata } from 'next';
@@ -26,7 +26,11 @@ type RootLayoutProperties = {
 };
 
 const RootLayout = ({ children }: RootLayoutProperties) => (
-  <html lang="en" className={fonts} suppressHydrationWarning>
+  <html
+    lang="en"
+    className={`${fonts} anorha-app-theme`}
+    suppressHydrationWarning
+  >
     <body className="bg-background text-foreground antialiased">
       <Analytics />
       <DesignSystemProvider
