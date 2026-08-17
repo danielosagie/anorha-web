@@ -1,30 +1,22 @@
 'use client';
 
-import { ANDROID_DOWNLOAD_URL, IOS_DOWNLOAD_URL } from '@/lib/mobile-downloads';
+import { env } from '@/env';
 import { OrganizationSwitcher, UserButton } from '@repo/auth/client';
 import { ModeToggle } from '@repo/design-system/components/mode-toggle';
 import {
   Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
   SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
 } from '@repo/design-system/components/ui/sidebar';
 import { cn } from '@repo/design-system/lib/utils';
 import {
-  AppleIcon,
-  BoxesIcon,
   CreditCardIcon,
   ExternalLinkIcon,
   LayoutDashboardIcon,
   LinkIcon,
-  Settings2Icon,
+  PackageIcon,
+  PlugIcon,
+  SettingsIcon,
+  ShoppingBagIcon,
   SmartphoneIcon,
   UsersIcon,
 } from 'lucide-react';
@@ -43,64 +35,52 @@ type NavItem = {
   readonly icon: LucideIcon;
 };
 
+// Board 2SAU-0 groups Platform as Dashboard, Inventory, Orders, Connections.
+// Intake links is a shipped surface with its own board (2UHG-0) and sits with
+// them; it postdates the shell board.
 const platformItems: readonly NavItem[] = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon },
-  { title: 'Inventory', url: '/inventory', icon: BoxesIcon },
+  { title: 'Inventory', url: '/inventory', icon: PackageIcon },
+  { title: 'Orders', url: '/orders', icon: ShoppingBagIcon },
+  { title: 'Connections', url: '/connections', icon: PlugIcon },
   { title: 'Intake links', url: '/intake-links', icon: LinkIcon },
 ];
 
 const accountItems: readonly NavItem[] = [
-  { title: 'Billing & usage', url: '/billing', icon: CreditCardIcon },
+  { title: 'Billing', url: '/billing', icon: CreditCardIcon },
   { title: 'Team', url: '/team', icon: UsersIcon },
-  { title: 'Settings', url: '/settings', icon: Settings2Icon },
+  { title: 'Settings', url: '/settings', icon: SettingsIcon },
 ];
 
-const downloadItems = [
-  {
-    title: 'iPhone app',
-    detail: 'TestFlight',
-    url: IOS_DOWNLOAD_URL,
-    icon: AppleIcon,
-  },
-  {
-    title: 'Android app',
-    detail: 'Google Play',
-    url: ANDROID_DOWNLOAD_URL,
-    icon: SmartphoneIcon,
-  },
-] as const;
+const MOBILE_APP_URL = new URL('/download', env.NEXT_PUBLIC_WEB_URL).toString();
 
 function isCurrentRoute(pathname: string, url: string): boolean {
   return url === '/' ? pathname === '/' : pathname.startsWith(url);
 }
 
-function NavigationItems({
-  items,
-  pathname,
-}: {
-  items: readonly NavItem[];
-  pathname: string;
-}) {
-  return items.map((item) => (
-    <SidebarMenuItem key={item.title}>
-      <SidebarMenuButton
-        asChild
-        isActive={isCurrentRoute(pathname, item.url)}
-        tooltip={item.title}
-        className={cn(
-          'h-9 rounded-lg px-2.5 font-medium text-[0.8125rem] text-sidebar-foreground/72',
-          'hover:bg-sidebar-accent hover:text-sidebar-accent-foreground',
-          'data-[active=true]:bg-sidebar-primary data-[active=true]:font-semibold data-[active=true]:text-sidebar-primary-foreground',
-          '[&>svg]:size-4 [&>svg]:stroke-[1.8]'
-        )}
-      >
-        <Link href={item.url}>
-          <item.icon aria-hidden />
-          <span>{item.title}</span>
-        </Link>
-      </SidebarMenuButton>
-    </SidebarMenuItem>
-  ));
+// Board: 38px row, 10px radius, 10px inline padding, 10px icon-to-label gap,
+// icon 16 at strokeWidth 1.9, label 15/18 weight 500 and 600 when active.
+const navRow =
+  'flex h-[38px] w-full items-center gap-[10px] rounded-[var(--radius-row)] px-[10px] text-[15px] leading-[18px] transition-colors [&>svg]:size-4 [&>svg]:shrink-0 [&>svg]:[stroke-width:1.9]';
+
+function NavRow({ item, pathname }: { item: NavItem; pathname: string }) {
+  const active = isCurrentRoute(pathname, item.url);
+
+  return (
+    <Link
+      href={item.url}
+      aria-current={active ? 'page' : undefined}
+      className={cn(
+        navRow,
+        active
+          ? 'bg-k0-accent-wash font-semibold text-k0-accent-ink'
+          : 'font-medium text-k0-ink-2 hover:bg-k0-hairline hover:text-k0-ink'
+      )}
+    >
+      <item.icon aria-hidden />
+      <span className="min-w-0 flex-1 truncate">{item.title}</span>
+    </Link>
+  );
 }
 
 export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
@@ -108,87 +88,72 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
 
   return (
     <>
-      <Sidebar variant="inset">
-        <SidebarHeader className="px-3 pt-3 pb-2">
-          <div className="h-10 overflow-hidden rounded-lg [&>div]:w-full">
-            <OrganizationSwitcher
-              hidePersonal
-              afterSelectOrganizationUrl="/"
-              appearance={{
-                elements: {
-                  rootBox: 'w-full',
-                  organizationSwitcherTrigger:
-                    'h-10 w-full justify-between rounded-lg px-2 hover:bg-sidebar-accent focus:bg-sidebar-accent',
-                  organizationPreview: 'gap-2',
-                  organizationPreviewAvatarBox: 'size-6',
-                  organizationPreviewTextContainer:
-                    'text-sm font-semibold text-sidebar-foreground',
-                },
-              }}
+      <Sidebar variant="inset" className="p-0 py-[10px] pl-[10px]">
+        <div className="flex h-full w-full flex-col gap-[6px] px-2 py-[10px]">
+          {/* Head */}
+          <div className="flex w-full flex-col gap-2 pb-[6px]">
+            <div className="h-[42px] w-full overflow-hidden rounded-[var(--radius-control)] border border-k0-border bg-k0-surface [&>div]:w-full">
+              <OrganizationSwitcher
+                hidePersonal
+                afterSelectOrganizationUrl="/"
+                appearance={{
+                  elements: {
+                    rootBox: 'w-full',
+                    organizationSwitcherTrigger:
+                      'h-[40px] w-full justify-between rounded-[var(--radius-control)] px-[9px] pl-[10px] hover:bg-k0-hairline focus:bg-k0-hairline',
+                    organizationPreview: 'gap-[9px]',
+                    organizationPreviewAvatarBox:
+                      'size-[26px] rounded-[var(--radius-chip)]',
+                    organizationPreviewTextContainer:
+                      'text-[14px] font-semibold leading-[18px] text-k0-ink',
+                  },
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Platform */}
+          <div className="flex w-full flex-col gap-[2px]">
+            <div className="flex h-7 shrink-0 items-center pl-[10px] font-medium text-[13px] text-k0-ink-3 leading-4">
+              Platform
+            </div>
+            {platformItems.map((item) => (
+              <NavRow key={item.url} item={item} pathname={pathname} />
+            ))}
+          </div>
+
+          <div className="min-h-0 w-full flex-1" />
+
+          {/* Mobile app */}
+          <a
+            href={MOBILE_APP_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            className={cn(
+              navRow,
+              'font-medium text-k0-ink-2 hover:bg-k0-hairline hover:text-k0-ink'
+            )}
+          >
+            <SmartphoneIcon aria-hidden />
+            <span className="min-w-0 flex-1 truncate">Mobile app</span>
+            <ExternalLinkIcon
+              aria-hidden
+              className="size-[13px] shrink-0 text-k0-ink-3 [stroke-width:2]"
             />
+          </a>
+
+          {/* Account. The board gives this group no label; the divider carries
+              the grouping instead. */}
+          <div className="flex w-full flex-col gap-[2px] border-k0-hairline border-t pt-3">
+            {accountItems.map((item) => (
+              <NavRow key={item.url} item={item} pathname={pathname} />
+            ))}
           </div>
-        </SidebarHeader>
 
-        <SidebarContent className="gap-0 px-1 py-2">
-          <SidebarGroup>
-            <SidebarGroupLabel>Platform</SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu className="gap-1">
-                <NavigationItems items={platformItems} pathname={pathname} />
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <div className="mt-auto">
-            <SidebarGroup>
-              <SidebarGroupLabel>Get the mobile app</SidebarGroupLabel>
-              <SidebarGroupContent>
-                <SidebarMenu className="gap-1">
-                  {downloadItems.map((item) => (
-                    <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton
-                        asChild
-                        tooltip={`${item.title}, ${item.detail}`}
-                        className="h-11 rounded-lg px-2.5 text-sidebar-foreground/72 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground [&>svg]:size-4"
-                      >
-                        <a
-                          href={item.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <item.icon aria-hidden />
-                          <span className="min-w-0 flex-1 group-data-[collapsible=icon]:hidden">
-                            <span className="block truncate font-medium text-[0.8125rem]">
-                              {item.title}
-                            </span>
-                            <span className="block text-[0.6875rem] text-sidebar-foreground/50">
-                              {item.detail}
-                            </span>
-                          </span>
-                          <ExternalLinkIcon
-                            className="size-3.5 opacity-45 group-data-[collapsible=icon]:hidden"
-                            aria-hidden
-                          />
-                        </a>
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  ))}
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-
-            <SidebarGroup className="border-sidebar-border border-t pt-2">
-              <SidebarGroupContent>
-                <SidebarMenu className="gap-1">
-                  <NavigationItems items={accountItems} pathname={pathname} />
-                </SidebarMenu>
-              </SidebarGroupContent>
-            </SidebarGroup>
-          </div>
-        </SidebarContent>
-
-        <SidebarFooter className="border-sidebar-border border-t px-3 py-3">
-          <div className="flex min-w-0 items-center gap-2">
+          {/* Profile footer. The board puts a kebab in the trailing slot; the
+              theme toggle takes it, because dark mode has to stay reachable and
+              the board is light-only. */}
+          <div className="flex h-[46px] w-full shrink-0 items-center gap-2 border-k0-border border-t px-[9px]">
             <div className="min-w-0 flex-1 overflow-hidden">
               <UserButton
                 showName
@@ -198,9 +163,9 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
                     userButtonBox:
                       'flex w-full min-w-0 flex-row-reverse justify-end gap-2',
                     userButtonOuterIdentifier:
-                      'min-w-0 flex-1 truncate pl-0 text-left text-sm font-medium text-sidebar-foreground',
+                      'min-w-0 flex-1 truncate pl-0 text-left text-[14px] font-semibold leading-[18px] text-k0-ink',
                     userButtonTrigger:
-                      'min-w-0 rounded-lg hover:bg-sidebar-accent focus:bg-sidebar-accent',
+                      'min-w-0 rounded-[var(--radius-row)] hover:bg-k0-hairline focus:bg-k0-hairline',
                     avatarBox: 'size-7',
                   },
                 }}
@@ -208,10 +173,31 @@ export const GlobalSidebar = ({ children }: GlobalSidebarProperties) => {
             </div>
             <ModeToggle />
           </div>
-        </SidebarFooter>
+        </div>
       </Sidebar>
 
-      <SidebarInset className="min-h-svh">{children}</SidebarInset>
+      {/*
+        Board shell: the content is an inset white panel floating on the grey
+        page, 16px radius with a 1px rule, 8px from the rail and 10px from every
+        other edge. Below md the rail becomes a sheet, so the panel goes full
+        bleed.
+      */}
+      <SidebarInset
+        className={cn(
+          'min-h-svh overflow-hidden bg-k0-surface',
+          // Same modifier prefixes as the shadcn inset classes, so these replace
+          // them rather than racing them on source order.
+          'md:peer-data-[variant=inset]:my-[10px] md:peer-data-[variant=inset]:mr-[10px] md:peer-data-[variant=inset]:ml-2',
+          // Pinned to the viewport so the panel's corners stay on screen and the
+          // content scrolls inside it, the way the board frames it.
+          'md:peer-data-[variant=inset]:h-[calc(100svh-20px)] md:peer-data-[variant=inset]:min-h-0',
+          'md:peer-data-[variant=inset]:rounded-[var(--radius-content)]',
+          'md:peer-data-[variant=inset]:border md:peer-data-[variant=inset]:border-k0-border',
+          'md:peer-data-[variant=inset]:shadow-none'
+        )}
+      >
+        {children}
+      </SidebarInset>
     </>
   );
 };

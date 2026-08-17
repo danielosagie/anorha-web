@@ -1,7 +1,9 @@
 'use client';
 
+import { Button } from '@repo/design-system/components/ui/button';
+import { SidebarTrigger } from '@repo/design-system/components/ui/sidebar';
+import { ArrowLeftIcon } from 'lucide-react';
 import type { ReactNode } from 'react';
-import { Header } from '../components/header';
 
 interface PageWrapperProps {
   children: ReactNode;
@@ -12,6 +14,15 @@ interface PageWrapperProps {
   backButtonText?: string;
 }
 
+/**
+ * The K-0 content panel. The panel itself is the SidebarInset, so this only
+ * lays out inside it: padding 32/36/40, every direct child row full width with
+ * a 14px gap, and the page header carrying a 12px bottom pad of its own.
+ *
+ * It used to nest two more bordered panels inside the inset and put a
+ * breadcrumb strip above them. The board has exactly one panel and no
+ * breadcrumb: the page title is the header.
+ */
 export function PageWrapper({
   children,
   title,
@@ -21,38 +32,36 @@ export function PageWrapper({
   backButtonText = 'Back',
 }: PageWrapperProps) {
   return (
-    <div className="flex min-h-svh w-full flex-col bg-background p-2">
-      <div className="flex min-h-[calc(100svh-1rem)] flex-1 flex-col overflow-hidden rounded-[1.125rem] border border-border bg-background p-2">
-        <Header
-          page={title || ''}
-          onBack={onBack}
-          backButtonText={backButtonText}
-        />
-        <main className="flex min-h-0 flex-1 flex-col overflow-auto rounded-[0.875rem] border border-border bg-card px-4 py-5 md:px-6 md:py-6 lg:px-8 lg:py-7">
-          <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col">
-            {title && (
-              <div className="mb-5 flex shrink-0 flex-col gap-4 border-b pb-5 md:mb-6 md:flex-row md:items-center md:justify-between md:pb-6">
-                <div className="min-w-0">
-                  <h1 className="font-bold text-2xl tracking-[-0.025em] md:text-[1.75rem]">
-                    {title}
-                  </h1>
-                  {description && (
-                    <p className="mt-1 max-w-[70ch] font-medium text-muted-foreground text-sm md:text-[0.9375rem]">
-                      {description}
-                    </p>
-                  )}
-                </div>
-                {actions ? (
-                  <div className="flex shrink-0 flex-wrap items-center gap-2">
-                    {actions}
-                  </div>
-                ) : null}
-              </div>
-            )}
-            <div className="min-h-0 flex-1">{children}</div>
+    <main className="flex min-h-0 flex-1 flex-col gap-[14px] overflow-auto px-5 pt-6 pb-8 md:px-9 md:pt-8 md:pb-10">
+      {(title || onBack) && (
+        <header className="flex w-full shrink-0 items-start justify-between gap-4 pb-3">
+          <div className="flex min-w-0 items-center gap-2">
+            <SidebarTrigger className="-ml-1 size-8 shrink-0 rounded-[var(--radius-row)] md:hidden" />
+            <div className="flex min-w-0 flex-col gap-1">
+              {title && (
+                <h1 className="truncate font-semibold text-[22px] text-k0-ink leading-7 tracking-[-0.02em]">
+                  {title}
+                </h1>
+              )}
+              {description && (
+                <p className="max-w-[70ch] text-[14px] text-k0-ink-2 leading-5">
+                  {description}
+                </p>
+              )}
+            </div>
           </div>
-        </main>
-      </div>
-    </div>
+          <div className="flex shrink-0 flex-wrap items-center gap-2">
+            {onBack && (
+              <Button variant="outline" onClick={onBack}>
+                <ArrowLeftIcon data-icon="inline-start" />
+                {backButtonText}
+              </Button>
+            )}
+            {actions}
+          </div>
+        </header>
+      )}
+      {children}
+    </main>
   );
 }
