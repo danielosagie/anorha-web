@@ -202,15 +202,15 @@ export default function PartnerAcceptPage() {
 
     if (error) {
         return (
-            <Card className="w-full border-red-200 animate-in zoom-in-95 duration-500">
+            <Card className="w-full border-k0-bad/35 animate-in zoom-in-95 duration-500">
                 <CardHeader>
                     <div className="mx-auto mb-2 text-center">
-                        <XCircle className="h-10 w-10 text-red-500" />
+                        <XCircle className="h-10 w-10 text-k0-bad" />
                     </div>
-                    <CardTitle className="text-center text-red-700">Invite Issue</CardTitle>
+                    <CardTitle className="text-center text-k0-bad">Invite Issue</CardTitle>
                 </CardHeader>
                 <CardContent className="text-center space-y-4">
-                    <p className="text-gray-600">{error}</p>
+                    <p className="text-k0-ink-2">{error}</p>
                     <Button onClick={() => router.push('/')} variant="outline" className="w-full">Go Home</Button>
                 </CardContent>
             </Card>
@@ -235,23 +235,23 @@ export default function PartnerAcceptPage() {
                 <div className="bg-muted/50 rounded-lg p-4 space-y-3 text-sm border border-border/50">
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Products Shared</span>
-                        <span className="font-medium bg-white px-2 py-0.5 rounded shadow-sm text-xs border">
+                        <span className="font-medium bg-k0-surface px-2 py-0.5 rounded shadow-sm text-xs border">
                             {invite?.productCount || invite?.variantCount || 0}
                             {(invite?.variantCount || 0) > (invite?.productCount || 0) && (
-                                <span className="text-gray-400 ml-1">({invite?.variantCount} variants)</span>
+                                <span className="text-k0-ink-3 ml-1">({invite?.variantCount} variants)</span>
                             )}
                         </span>
                     </div>
                     <div className="flex justify-between items-center">
                         <span className="text-muted-foreground">Mode</span>
-                        <span className="font-medium capitalize flex items-center gap-1.5 bg-white px-2 py-0.5 rounded shadow-sm text-xs border">
+                        <span className="font-medium capitalize flex items-center gap-1.5 bg-k0-surface px-2 py-0.5 rounded shadow-sm text-xs border">
                             {isConsignment ? <><Package className="h-3 w-3" /> Consignment</> : <><Handshake className="h-3 w-3" /> Partnership</>}
                         </span>
                     </div>
                 </div>
 
-                <div className="text-xs text-muted-foreground space-y-2 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                    <p className="font-medium text-gray-900">What does this mean?</p>
+                <div className="text-xs text-muted-foreground space-y-2 bg-k0-hairline p-3 rounded-lg border border-k0-border">
+                    <p className="font-medium text-k0-ink">What does this mean?</p>
                     <ul className="list-disc leading-relaxed pl-4 space-y-1">
                         <li>{isConsignment ? `You will receive inventory updates from ${senderName}` : `You and ${senderName} will sync inventory levels`}</li>
                         <li>Product details and prices remain managed by you.</li>
@@ -300,8 +300,8 @@ export default function PartnerAcceptPage() {
                                 elements: {
                                     rootBox: "w-full mx-auto",
                                     card: "shadow-none border-0 w-full bg-transparent p-0",
-                                    headerTitle: "text-xl font-semibold text-gray-900",
-                                    headerSubtitle: "text-sm text-gray-500",
+                                    headerTitle: "text-xl font-semibold text-k0-ink",
+                                    headerSubtitle: "text-sm text-k0-ink-2",
                                 }
                             }}
                         />
@@ -354,12 +354,12 @@ export default function PartnerAcceptPage() {
         if (hasOrgs && (!organization || isWorkspace)) {
             return (
                 <div className="flex flex-col space-y-4 animate-in fade-in slide-in-from-bottom-4 pt-4">
-                    <div className="bg-amber-50 rounded-lg p-4 border border-amber-200 space-y-3">
-                        <div className="flex items-center gap-2 text-amber-800 font-semibold">
+                    <div className="bg-k0-warn/10 rounded-lg p-4 border border-k0-warn/35 space-y-3">
+                        <div className="flex items-center gap-2 text-k0-warn font-semibold">
                             <Building2 className="h-5 w-5" />
                             <span>Wrong Organization Context</span>
                         </div>
-                        <p className="text-sm text-amber-700 leading-relaxed">
+                        <p className="text-sm text-k0-warn leading-relaxed">
                             You are currently in <strong>{organization?.name || 'Personal Account'}</strong>.
                             Partnerships must be established with your main business organization.
                         </p>
@@ -373,9 +373,9 @@ export default function PartnerAcceptPage() {
                                 appearance={{
                                     elements: {
                                         rootBox: "w-full",
-                                        organizationSwitcherTrigger: "w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-gray-50 bg-white shadow-sm transition-all",
+                                        organizationSwitcherTrigger: "w-full flex items-center justify-between px-4 py-3 border rounded-lg hover:bg-k0-hairline bg-k0-surface shadow-sm transition-all",
                                         organizationPreviewTextContainer: "flex flex-col items-start gap-0.5",
-                                        organizationPreviewMainIdentifier: "font-semibold text-gray-900",
+                                        organizationPreviewMainIdentifier: "font-semibold text-k0-ink",
                                         organizationPreviewSecondaryIdentifier: "text-xs text-muted-foreground",
                                     }
                                 }}
@@ -403,23 +403,23 @@ export default function PartnerAcceptPage() {
             return (
                 <div className="flex flex-col space-y-6 animate-in fade-in slide-in-from-bottom-4">
                     <div className="text-center space-y-2">
-                        <div className="mx-auto h-12 w-12 rounded-xl bg-amber-100 flex items-center justify-center mb-2">
-                            <AlertTriangle className="h-6 w-6 text-amber-600" />
+                        <div className="mx-auto h-12 w-12 rounded-xl bg-k0-warn/10 flex items-center justify-center mb-2">
+                            <AlertTriangle className="h-6 w-6 text-k0-warn" />
                         </div>
-                        <h2 className="text-xl font-semibold text-amber-800">Wrong Account</h2>
+                        <h2 className="text-xl font-semibold text-k0-warn">Wrong Account</h2>
                         <p className="text-sm text-muted-foreground">
                             This invite was sent to a different email address.
                         </p>
                     </div>
 
-                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-4 space-y-3 text-sm">
+                    <div className="bg-k0-warn/10 border border-k0-warn/35 rounded-lg p-4 space-y-3 text-sm">
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">Invite sent to:</span>
-                            <span className="font-medium text-amber-800">{emailMismatchError.inviteeEmail}</span>
+                            <span className="font-medium text-k0-warn">{emailMismatchError.inviteeEmail}</span>
                         </div>
                         <div className="flex justify-between items-center">
                             <span className="text-muted-foreground">You&apos;re signed in as:</span>
-                            <span className="font-medium text-red-600">{emailMismatchError.currentEmail}</span>
+                            <span className="font-medium text-k0-bad">{emailMismatchError.currentEmail}</span>
                         </div>
                     </div>
 
@@ -463,21 +463,21 @@ export default function PartnerAcceptPage() {
                 </div>
 
                 <div className="space-y-2">
-                    <p className="text-sm font-medium text-gray-700">Which location(s) should sync with this partner?</p>
+                    <p className="text-sm font-medium text-k0-ink">Which location(s) should sync with this partner?</p>
                     {availableLocationsLoading ? (
                         <div className="flex items-center gap-2 text-sm text-muted-foreground py-2">
                             <Loader2 className="h-4 w-4 animate-spin" />
                             Loading locations...
                         </div>
                     ) : !hasAnyLocations ? (
-                        <p className="text-sm text-muted-foreground bg-amber-50 border border-amber-100 rounded-lg p-3">
+                        <p className="text-sm text-muted-foreground bg-k0-warn/10 border border-k0-warn/35 rounded-lg p-3">
                             Connect a platform to add locations; you can add them later in Locations.
                         </p>
                     ) : (
-                        <div className="border border-gray-200 rounded-lg p-3 space-y-3 max-h-48 overflow-y-auto bg-gray-50/50">
+                        <div className="border border-k0-border rounded-lg p-3 space-y-3 max-h-48 overflow-y-auto bg-k0-hairline/50">
                             {locationEntries.map(([connId, group]) => (
                                 <div key={connId} className="space-y-1.5">
-                                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                                    <p className="text-xs font-semibold text-k0-ink-3 uppercase tracking-wider">
                                         {group.connectionName || group.platformType}
                                     </p>
                                     {(group.locations || []).map((loc) => (
@@ -500,7 +500,7 @@ export default function PartnerAcceptPage() {
                     )}
                 </div>
 
-                <div className="flex items-start gap-2 pt-2 bg-gray-50 p-4 rounded-lg">
+                <div className="flex items-start gap-2 pt-2 bg-k0-hairline p-4 rounded-lg">
                     <div className="flex items-center h-5">
                         <input
                             id="terms" type="checkbox"
@@ -516,7 +516,7 @@ export default function PartnerAcceptPage() {
                 </div>
 
                 {isOwnOrg && (
-                    <div className="p-3 bg-red-50 text-red-600 text-xs rounded-md text-center border border-red-100 font-medium">
+                    <div className="p-3 bg-k0-bad/10 text-k0-bad text-xs rounded-md text-center border border-k0-bad/35 font-medium">
                         You cannot accept an invite from your own organization. Please switch accounts or organizations.
                     </div>
                 )}

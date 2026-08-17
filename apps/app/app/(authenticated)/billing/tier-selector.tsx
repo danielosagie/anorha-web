@@ -124,10 +124,10 @@ export function TierSelector({
               )}
 
               <Card
-                className={`relative flex h-full w-full cursor-pointer flex-col content-between border-2 bg-background/95 pb-0 backdrop-blur-sm transition-all ${
+                className={`relative flex h-full w-full cursor-pointer flex-col content-between pb-0 transition-colors ${
                   selectedTierId === tier.id
-                    ? 'border-primary shadow-lg ring-2 ring-primary'
-                    : 'border-gray-200 hover:shadow-md'
+                    ? 'border-k0-accent-ink/40 bg-k0-accent-wash'
+                    : 'border-k0-border bg-k0-card hover:border-k0-border-strong'
                 }`}
                 onClick={() => handleSelectTier(tier)}
               >
@@ -211,7 +211,7 @@ export function TierSelector({
             className={`px-8 transition-colors ${
               selectedTierId
                 ? 'bg-primary text-primary-foreground hover:bg-primary/90'
-                : 'cursor-not-allowed bg-[#F4F4F5] text-gray-500 hover:bg-[#F4F4F5] '
+                : 'cursor-not-allowed bg-k0-hairline text-k0-ink-3 hover:bg-k0-hairline '
             }`}
           >
             {isLoading ? 'Redirecting to checkout...' : 'Continue to checkout'}

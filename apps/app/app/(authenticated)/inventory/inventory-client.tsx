@@ -1085,7 +1085,7 @@ export function InventoryClient({
         const rendered = field.formatter
           ? field.formatter(value)
           : formatPlatformValue(value);
-        return <span className="text-gray-700 text-sm">{rendered}</span>;
+        return <span className="text-k0-ink text-sm">{rendered}</span>;
       },
     }));
   }, [platform]);
@@ -1205,7 +1205,7 @@ export function InventoryClient({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-72 p-0">
-              <div className="border-gray-100 border-b p-3">
+              <div className="border-k0-border border-b p-3">
                 <Input
                   value={connectionSearch}
                   onChange={(e) => setConnectionSearch(e.target.value)}
@@ -1214,7 +1214,7 @@ export function InventoryClient({
               </div>
               <div className="max-h-64 overflow-y-auto">
                 {visibleConnections.length === 0 ? (
-                  <p className="px-3 py-2 text-gray-500 text-sm">
+                  <p className="px-3 py-2 text-k0-ink-2 text-sm">
                     No accounts found
                   </p>
                 ) : (
@@ -1276,7 +1276,7 @@ export function InventoryClient({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent className="w-80 p-0">
-              <div className="border-gray-100 border-b p-3">
+              <div className="border-k0-border border-b p-3">
                 <Input
                   value={locationSearch}
                   onChange={(e) => setLocationSearch(e.target.value)}
@@ -1285,13 +1285,13 @@ export function InventoryClient({
               </div>
               <div className="max-h-72 overflow-y-auto">
                 {locationGroups.length === 0 ? (
-                  <p className="px-3 py-2 text-gray-500 text-sm">
+                  <p className="px-3 py-2 text-k0-ink-2 text-sm">
                     No locations
                   </p>
                 ) : (
                   locationGroups.map(([key, group]) => (
                     <div key={key} className="px-3 py-2">
-                      <p className="mb-1 text-gray-400 text-xs uppercase">
+                      <p className="mb-1 text-k0-ink-3 text-xs uppercase">
                         {group.connectionName}
                       </p>
                       {group.locations.map((loc) => (

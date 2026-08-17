@@ -59,7 +59,7 @@ export function CreateOrgForm({ onComplete }: CreateOrgFormProps) {
             <div className="space-y-2">
                 <Label>Logo</Label>
                 <div className="flex items-center gap-4">
-                    <div className="h-16 w-16 rounded-lg border-2 border-dashed border-gray-200 flex items-center justify-center bg-gray-50 text-gray-400">
+                    <div className="h-16 w-16 rounded-lg border-2 border-dashed border-k0-border flex items-center justify-center bg-k0-hairline text-k0-ink-3">
                         <Upload className="h-6 w-6" />
                     </div>
                     <div className="flex flex-col gap-1">
@@ -82,7 +82,7 @@ export function CreateOrgForm({ onComplete }: CreateOrgFormProps) {
                         value={name}
                         onChange={(e) => setName(e.target.value)}
                         disabled={isSubmitting}
-                        className="bg-white"
+                        className="bg-k0-surface"
                     />
                 </div>
 
@@ -94,7 +94,7 @@ export function CreateOrgForm({ onComplete }: CreateOrgFormProps) {
                         value={slug}
                         onChange={(e) => setSlug(e.target.value)}
                         disabled={isSubmitting}
-                        className="bg-white font-mono text-sm"
+                        className="bg-k0-surface font-mono text-sm"
                     />
                 </div>
             </div>

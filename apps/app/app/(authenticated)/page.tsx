@@ -105,7 +105,7 @@ export default async function DashboardPage() {
         </>
       }
     >
-      <div className="flex flex-col gap-5 lg:gap-6">
+      <div className="flex flex-col gap-[14px]">
         {data.loadError ? (
           <div className="rounded-xl border border-warning/25 bg-warning/8 px-4 py-3 text-sm">
             <p className="font-semibold">
@@ -117,7 +117,7 @@ export default async function DashboardPage() {
 
         <section
           aria-label="Sales overview"
-          className="grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(19rem,0.8fr)]"
+          className="grid gap-[14px] xl:grid-cols-[minmax(0,1.7fr)_minmax(19rem,0.8fr)]"
         >
           <Card className="gap-0 overflow-hidden py-0">
             <CardHeader className="border-b px-5 py-5 md:px-6">
@@ -234,7 +234,7 @@ export default async function DashboardPage() {
           </Card>
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(19rem,0.8fr)]">
+        <section className="grid gap-[14px] xl:grid-cols-[minmax(0,1.7fr)_minmax(19rem,0.8fr)]">
           <Card className="gap-0 overflow-hidden py-0">
             <CardHeader className="border-b px-5 py-5 md:px-6">
               <CardTitle>Recent orders</CardTitle>

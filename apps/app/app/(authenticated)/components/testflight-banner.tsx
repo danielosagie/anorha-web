@@ -17,8 +17,8 @@ import { useEffect, useRef, useState } from 'react';
 // Configuration - defaults provided if env vars are missing
 const INVITE_CODE = env.NEXT_PUBLIC_TESTFLIGHT_INVITE_CODE || '';
 
-const BRAND_ACCENT = '#C66E4E';
-const BRAND_ACCENT_LIGHT = 'rgba(198, 110, 78, 0.12)';
+const BRAND_ACCENT = 'var(--k0-accent-fill)';
+const BRAND_ACCENT_LIGHT = 'var(--k0-accent-wash)';
 const MOBILE_USER_AGENT_PATTERN =
   /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i;
 const IOS_USER_AGENT_PATTERN = /iPhone|iPad|iPod/i;
@@ -40,7 +40,7 @@ function QRCode({ url, size = 200 }: { url: string; size?: number }) {
     img.onload = () => {
       const ctx = canvas.getContext('2d');
       if (ctx) {
-        ctx.fillStyle = '#ffffff';
+        ctx.fillStyle = 'var(--k0-surface)';
         ctx.fillRect(0, 0, size, size);
         ctx.drawImage(img, 0, 0, size, size);
       }
@@ -53,13 +53,13 @@ function QRCode({ url, size = 200 }: { url: string; size?: number }) {
   if (error) {
     return (
       <div
-        className="flex items-center justify-center rounded-lg bg-gray-100"
+        className="flex items-center justify-center rounded-lg bg-k0-hairline"
         style={{ width: size, height: size }}
       >
-        <span className="px-4 text-center text-gray-500 text-sm">
+        <span className="px-4 text-center text-k0-ink-2 text-sm">
           QR Code unavailable.
           <br />
-          <a href={url} className="text-[#9a4d34] underline">
+          <a href={url} className="text-k0-accent-ink underline">
             Click here
           </a>
         </span>
@@ -93,7 +93,7 @@ export function TestFlightBanner({
 
   if (mode === 'card') {
     return (
-      <div className="fade-in zoom-in-95 flex animate-in flex-col items-center space-y-6 rounded-2xl border border-gray-100 bg-white p-8 text-center duration-500">
+      <div className="fade-in zoom-in-95 flex animate-in flex-col items-center space-y-6 rounded-2xl border border-k0-border bg-k0-surface p-8 text-center duration-500">
         <div
           className="mb-2 flex h-16 w-16 items-center justify-center rounded-2xl shadow-sm"
           style={{ backgroundColor: BRAND_ACCENT_LIGHT }}
@@ -102,10 +102,10 @@ export function TestFlightBanner({
         </div>
 
         <div className="space-y-2">
-          <h3 className="font-bold text-gray-900 text-xl">
+          <h3 className="font-bold text-k0-ink text-xl">
             Get the Mobile App
           </h3>
-          <p className="mx-auto max-w-xs text-gray-500">
+          <p className="mx-auto max-w-xs text-k0-ink-2">
             {isMobile
               ? isIOS
                 ? 'Tap below to install via TestFlight.'
@@ -121,37 +121,37 @@ export function TestFlightBanner({
               <a href={IOS_DOWNLOAD_URL}>Open in TestFlight</a>
             </Button>
           ) : (
-            <div className="w-full max-w-xs rounded-xl border border-gray-100 bg-gray-50 p-6 text-center">
-              <p className="flex items-center justify-center gap-2 text-gray-600 text-sm">
+            <div className="w-full max-w-xs rounded-xl border border-k0-border bg-k0-card p-6 text-center">
+              <p className="flex items-center justify-center gap-2 text-k0-ink-2 text-sm">
                 <Mail className="h-4 w-4" /> Want to be notified when Android is
                 available?
               </p>
-              <p className="mt-2 text-gray-400 text-xs">
+              <p className="mt-2 text-k0-ink-3 text-xs">
                 Contact us at admin@anorha.app
               </p>
             </div>
           )
         ) : (
-          <div className="inline-block rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+          <div className="inline-block rounded-xl border border-k0-border bg-k0-surface p-4 shadow-sm">
             <QRCode url={IOS_DOWNLOAD_URL} size={200} />
           </div>
         )}
 
         <div className="w-full max-w-xs space-y-4">
           {INVITE_CODE && (
-            <div className="flex w-full items-center justify-between gap-2 rounded-lg border border-gray-100 bg-gray-50 p-3">
-              <span className="font-semibold text-gray-500 text-xs uppercase tracking-wider">
+            <div className="flex w-full items-center justify-between gap-2 rounded-lg border border-k0-border bg-k0-hairline p-3">
+              <span className="font-semibold text-k0-ink-3 text-xs uppercase tracking-wider">
                 Invite Code
               </span>
               <div className="flex items-center gap-2">
-                <code className="rounded border bg-white px-2 py-1 font-mono text-gray-900 text-sm">
+                <code className="rounded border bg-k0-surface px-2 py-1 font-mono text-k0-ink text-sm">
                   {INVITE_CODE}
                 </code>
                 <Button
                   variant="ghost"
                   size="icon"
                   onClick={handleCopy}
-                  className="h-6 w-6 text-gray-400 hover:text-accent-foreground"
+                  className="h-6 w-6 text-k0-ink-3 hover:text-accent-foreground"
                 >
                   {copied ? (
                     <Check className="h-4 w-4" />
@@ -213,15 +213,15 @@ export function TestFlightBanner({
           </DialogHeader>
 
           <div className="flex flex-col items-center justify-center space-y-6 p-4">
-            <div className="rounded-xl border border-gray-100 bg-white p-4 shadow-sm">
+            <div className="rounded-xl border border-k0-border bg-k0-surface p-4 shadow-sm">
               <QRCode url={IOS_DOWNLOAD_URL} size={250} />
             </div>
 
             {INVITE_CODE && (
-              <div className="flex w-full items-center justify-between gap-2 rounded-lg bg-gray-50 p-3">
+              <div className="flex w-full items-center justify-between gap-2 rounded-lg bg-k0-hairline p-3">
                 <div className="flex items-center gap-2">
-                  <span className="text-gray-500 text-sm">Invite code:</span>
-                  <code className="rounded border bg-white px-2 py-1 font-mono text-gray-900 text-sm">
+                  <span className="text-k0-ink-2 text-sm">Invite code:</span>
+                  <code className="rounded border bg-k0-surface px-2 py-1 font-mono text-k0-ink text-sm">
                     {INVITE_CODE}
                   </code>
                 </div>
@@ -229,7 +229,7 @@ export function TestFlightBanner({
                   variant="ghost"
                   size="sm"
                   onClick={handleCopy}
-                  className="h-8 text-gray-500"
+                  className="h-8 text-k0-ink-2"
                   style={{ color: copied ? BRAND_ACCENT : undefined }}
                 >
                   {copied ? 'Copied!' : 'Copy'}
