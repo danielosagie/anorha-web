@@ -1767,47 +1767,6 @@ export default function PoolsAndPartnersClient() {
         </div>
       )}
 
-      {/* Create Location Modal */}
-      {showCreateLocation && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 transform transition-all">
-            <h3 className="text-xl font-bold mb-4">Create New Location</h3>
-            <p className="text-gray-600 mb-6 text-sm">
-              Create a location in the selected platform to sync your inventory.
-            </p>
-
-            <div className="space-y-4">
-              <div>
-                <label className="block text-sm font-medium mb-1.5 text-gray-700">Location Name</label>
-                <Input
-                  value={newLocationName}
-                  onChange={(e) => setNewLocationName(e.target.value)}
-                  placeholder="e.g. Warehouse 1"
-                  className="w-full"
-                />
-              </div>
-
-              <div className="flex gap-3 mt-6">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => setShowCreateLocation(false)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 bg-primary hover:bg-primary/90 text-white"
-                  onClick={createLocation}
-                  disabled={!newLocationName || isCreatingLocation}
-                >
-                  {isCreatingLocation ? <Loader2Icon className="w-4 h-4 animate-spin" /> : 'Create'}
-                </Button>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Confirm Dialog Modal */}
       {confirmDialog?.isOpen && (
         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
