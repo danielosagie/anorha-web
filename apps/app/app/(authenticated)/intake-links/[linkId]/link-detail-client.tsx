@@ -2,6 +2,7 @@
 
 import { intakeRequest } from '@/lib/intake-api';
 import type {
+  RevealedIntakeLink,
   SellerLinkDetailResponse,
   SellerSubmissionListItem,
 } from '@/lib/intake-contract';
@@ -41,7 +42,13 @@ import {
 import { Input } from '@repo/design-system/components/ui/input';
 import { Label } from '@repo/design-system/components/ui/label';
 import { Spinner } from '@repo/design-system/components/ui/spinner';
-import { PencilIcon, RefreshCwIcon } from 'lucide-react';
+import {
+  CheckIcon,
+  CopyIcon,
+  EyeIcon,
+  PencilIcon,
+  RefreshCwIcon,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { type FormEvent, useEffect, useState } from 'react';
 import { PageWrapper } from '../../components/page-wrapper';
@@ -59,6 +66,98 @@ function dateLabel(value: string | null): string {
     timeStyle: 'short',
     timeZone: 'UTC',
   }).format(new Date(value));
+}
+
+function PublicLinkCard({ linkId }: { linkId: string }) {
+  const { getToken } = useAuth();
+  const [publicUrl, setPublicUrl] = useState<string | null>(null);
+  const [pending, setPending] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
+
+  const reveal = async () => {
+    setPending(true);
+    setError(null);
+    setPublicUrl(null);
+    setCopied(false);
+    try {
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Sign in required.');
+      }
+      const result = await intakeRequest<RevealedIntakeLink>({
+        path: `/links/${encodeURIComponent(linkId)}/reveal`,
+        token,
+        method: 'POST',
+      });
+      setPublicUrl(result.publicUrl);
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : 'Link could not be revealed.'
+      );
+    } finally {
+      setPending(false);
+    }
+  };
+
+  const copy = async () => {
+    if (!publicUrl) {
+      return;
+    }
+    setError(null);
+    try {
+      await navigator.clipboard.writeText(publicUrl);
+      setCopied(true);
+    } catch {
+      setCopied(false);
+      setError('Link could not be copied.');
+    }
+  };
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Public link</CardTitle>
+      </CardHeader>
+      <CardContent className="flex flex-col gap-3">
+        {publicUrl ? (
+          <div className="flex gap-2">
+            <Input aria-label="Public link" readOnly value={publicUrl} />
+            <Button onClick={copy} type="button" variant="outline">
+              {copied ? (
+                <CheckIcon aria-hidden data-icon="inline-start" />
+              ) : (
+                <CopyIcon aria-hidden data-icon="inline-start" />
+              )}
+              {copied ? 'Copied' : 'Copy'}
+            </Button>
+          </div>
+        ) : (
+          <Button
+            className="self-start"
+            disabled={pending}
+            onClick={reveal}
+            type="button"
+            variant="outline"
+          >
+            {pending ? (
+              <Spinner className="size-4" />
+            ) : (
+              <EyeIcon aria-hidden data-icon="inline-start" />
+            )}
+            Reveal link
+          </Button>
+        )}
+        {error ? (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        ) : null}
+      </CardContent>
+    </Card>
+  );
 }
 
 export function LinkDetailClient({
@@ -284,16 +383,7 @@ export function LinkDetailClient({
         ) : null}
 
         <div className="grid gap-4 lg:grid-cols-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Public link</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground text-sm">
-                Shown once when the link is created.
-              </p>
-            </CardContent>
-          </Card>
+          <PublicLinkCard key={link.Id} linkId={link.Id} />
 
           <Card>
             <CardHeader>
@@ -316,11 +406,32 @@ export function LinkDetailClient({
           <h2 className="font-semibold text-lg">Usage</h2>
           <Card>
             <CardContent>
-              <dl className="grid gap-5 sm:grid-cols-3">
+              <dl className="grid gap-5 sm:grid-cols-2 lg:grid-cols-5">
                 <div className="flex flex-col gap-1">
                   <dt className="text-muted-foreground text-xs">Submissions</dt>
                   <dd className="font-semibold tabular-nums">
                     {link.metrics.items.toLocaleString()}
+                    {typeof link.limits?.maxSubmissionsPerLink === 'number'
+                      ? ` of ${link.limits.maxSubmissionsPerLink.toLocaleString()}`
+                      : ', limit unavailable'}
+                  </dd>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <dt className="text-muted-foreground text-xs">
+                    Media per submission
+                  </dt>
+                  <dd className="font-semibold tabular-nums">
+                    {typeof link.limits?.maxMediaPerSubmission === 'number'
+                      ? link.limits.maxMediaPerSubmission.toLocaleString()
+                      : 'Unavailable'}
+                  </dd>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <dt className="text-muted-foreground text-xs">Image size</dt>
+                  <dd className="font-semibold tabular-nums">
+                    {typeof link.limits?.imageMaxBytes === 'number'
+                      ? bytesLabel(link.limits.imageMaxBytes)
+                      : 'Unavailable'}
                   </dd>
                 </div>
                 <div className="flex flex-col gap-1">
@@ -338,11 +449,6 @@ export function LinkDetailClient({
               </dl>
             </CardContent>
           </Card>
-          <Alert>
-            <AlertDescription>
-              Configured limits are unavailable for this link.
-            </AlertDescription>
-          </Alert>
         </section>
 
         <section className="flex flex-col gap-4">

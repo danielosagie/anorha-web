@@ -18,6 +18,12 @@ export type LinkBytes = {
   actual: number;
 };
 
+export type LinkLimits = {
+  maxSubmissionsPerLink: number;
+  maxMediaPerSubmission: number;
+  imageMaxBytes: number;
+};
+
 export type SellerIntakeLink = {
   Id: string;
   Name: string;
@@ -68,6 +74,7 @@ export type SellerSubmissionListResponse = {
 };
 
 export type SellerLinkDetailResponse = SellerIntakeLink & {
+  limits?: LinkLimits;
   recentSubmissions: SellerSubmissionListItem[];
 };
 
@@ -111,6 +118,10 @@ export type CreatedIntakeLink = {
   publicToken: string;
   publicUrl: string;
   createdAt: string;
+};
+
+export type RevealedIntakeLink = {
+  publicUrl: string;
 };
 
 export type DecisionResponse = {
