@@ -1,3 +1,4 @@
+import { resolveCommerceScope } from '@/lib/data/context';
 import { getServerSupabaseClient } from '@/lib/supabase/server';
 import { currentUser } from '@repo/auth/server';
 import type { Metadata } from 'next';
@@ -25,10 +26,18 @@ export default async function NewProductPage() {
   }
 
   const supabase = await getServerSupabaseClient();
+  const { dbUserId } = await resolveCommerceScope(supabase, {
+    clerkUserId: user.id,
+    clerkOrgId: null,
+  });
+  if (!dbUserId) {
+    notFound();
+  }
+
   const { data } = await supabase
     .from('PlatformConnections')
     .select('Id, PlatformType, DisplayName, IsEnabled, Status')
-    .eq('UserId', user.id);
+    .eq('UserId', dbUserId);
 
   const connections: PlatformConnection[] = (
     (data ?? []) as ConnectionRow[]
@@ -46,7 +55,7 @@ export default async function NewProductPage() {
       title="New product"
       description="Add photos, review, and save."
     >
-      <NewProductClient connections={connections} userId={user.id} />
+      <NewProductClient connections={connections} />
     </PageWrapper>
   );
 }

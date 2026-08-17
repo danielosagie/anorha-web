@@ -52,6 +52,7 @@ import {
   platformLabel,
   readError,
 } from '../contract';
+import { createProductImageUploadPaths } from './actions';
 
 const MAX_PHOTOS = 10;
 const MAX_BYTES = 10 * 1024 * 1024;
@@ -115,10 +116,8 @@ function wait(duration: number) {
 
 export function NewProductClient({
   connections,
-  userId,
 }: {
   connections: PlatformConnection[];
-  userId: string;
 }) {
   const { getToken } = useAuth();
   const supabase = useSupabase();
@@ -210,9 +209,15 @@ export function NewProductClient({
   };
 
   const uploadPhotos = React.useCallback(async () => {
+    const paths = await createProductImageUploadPaths(
+      photos.map((photo) => extension(photo.file))
+    );
     const urls = await Promise.all(
       photos.map(async (photo, index) => {
-        const path = `${userId}/web-${Date.now()}-${index}-${photo.id}.${extension(photo.file)}`;
+        const path = paths[index];
+        if (!path) {
+          throw new Error('Upload path is unavailable');
+        }
         const { error: uploadError } = await supabase.storage
           .from('product-images')
           .upload(path, photo.file, {
@@ -228,7 +233,7 @@ export function NewProductClient({
       })
     );
     return urls;
-  }, [photos, supabase.storage, userId]);
+  }, [photos, supabase.storage]);
 
   const generate = async () => {
     if (photos.length === 0) {
