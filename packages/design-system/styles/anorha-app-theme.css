@@ -6,6 +6,13 @@
  * semantic tokens onto it, so every existing screen re-skins without edits.
  * Nothing outside these two layers may hardcode a colour.
  *
+ * Colour is tokenised; the board's three extra type sizes (nav 15/18, card
+ * title 16/22, page title 22/28) are not, and are written literally where they
+ * are used. Custom --text-* theme entries were tried and removed: tailwind-merge
+ * cannot tell a font-size utility named `text-nav` from a text-colour one, so
+ * cn() silently dropped it wherever a text colour followed. A class that
+ * disappears depending on what sits next to it is worse than a plain number.
+ *
  * Shell mapping, from shadcn sidebar variant="inset":
  *   --sidebar     the grey page ground behind everything   K-0 #F5F5F7
  *   --background  the floating white content panel         K-0 #FFFFFF
@@ -45,18 +52,7 @@
   --radius-control: 11px;
   --radius-row: 10px;
   --radius-chip: 8px;
-  --radius-kbd: 6px;
   --radius-pill: 999px;
-
-  /* Type scale entries the board needs and the shadcn scale lacks */
-  --text-nav: 15px;
-  --text-card-title: 16px;
-  --text-page-title: 22px;
-
-  /* Board geometry, so the shell reads from one place */
-  --shell-gutter: 10px;
-  --shell-gap: 8px;
-  --sidebar-rail-width: 232px;
 
   /* Semantic mapping */
   --anorhaAccent: var(--k0-accent-fill);
@@ -171,9 +167,6 @@
   --color-k0-good: var(--k0-good);
   --color-k0-warn: var(--k0-warn);
   --color-k0-bad: var(--k0-bad);
-  --text-nav: var(--text-nav);
-  --text-card-title: var(--text-card-title);
-  --text-page-title: var(--text-page-title);
 }
 
 /*
@@ -258,7 +251,7 @@
 
 .anorha-app-theme [data-slot="card-title"],
 .anorha-intake-theme [data-slot="card-title"] {
-  font-size: var(--text-card-title);
+  font-size: 16px;
   font-weight: 600;
   line-height: 22px;
 }
