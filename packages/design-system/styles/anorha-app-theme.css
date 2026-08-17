@@ -248,6 +248,64 @@
   border-radius: var(--radius-pill);
 }
 
+/*
+ * Board 5.3: card header padding 20/24/16, title 16/22 at 600.
+ */
+.anorha-app-theme [data-slot="card-header"],
+.anorha-intake-theme [data-slot="card-header"] {
+  padding: 20px 24px 16px;
+}
+
+.anorha-app-theme [data-slot="card-title"],
+.anorha-intake-theme [data-slot="card-title"] {
+  font-size: var(--text-card-title);
+  font-weight: 600;
+  line-height: 22px;
+}
+
+/*
+ * Board 5.4: column labels are Geist Mono 11px uppercase on 0.1em tracking in
+ * --k0-ink-3, the head rule and each row rule are 1px --k0-border, rows are
+ * 46px, and the last row drops its border rather than hiding it behind
+ * overflow.
+ */
+.anorha-app-theme [data-slot="table-head"],
+.anorha-intake-theme [data-slot="table-head"] {
+  height: auto;
+  padding-bottom: 8px;
+  color: var(--k0-ink-3);
+  font-family: var(--font-mono, "Geist Mono", ui-monospace, monospace);
+  font-size: 11px;
+  font-weight: 500;
+  line-height: 14px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.anorha-app-theme [data-slot="table-header"],
+.anorha-intake-theme [data-slot="table-header"] {
+  border-bottom: 1px solid var(--k0-border);
+}
+
+.anorha-app-theme [data-slot="table-body"] [data-slot="table-row"],
+.anorha-intake-theme [data-slot="table-body"] [data-slot="table-row"] {
+  height: 46px;
+  border-bottom: 1px solid var(--k0-border);
+}
+
+.anorha-app-theme [data-slot="table-body"] [data-slot="table-row"]:last-child,
+.anorha-intake-theme
+  [data-slot="table-body"]
+  [data-slot="table-row"]:last-child {
+  border-bottom: 0;
+}
+
+.anorha-app-theme [data-slot="table-cell"],
+.anorha-intake-theme [data-slot="table-cell"] {
+  font-size: 14px;
+  line-height: 20px;
+}
+
 .anorha-app-theme [data-slot="popover-content"],
 .anorha-app-theme [data-slot="dropdown-menu-content"],
 .anorha-app-theme [data-slot="select-content"],
