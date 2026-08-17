@@ -1,6 +1,6 @@
 'use client';
 
-import { useOrganization, useUser } from '@clerk/nextjs';
+import { useAuth, useOrganization, useUser } from '@clerk/nextjs';
 import { Badge } from '@repo/design-system/components/ui/badge';
 import { Button } from '@repo/design-system/components/ui/button';
 import {
@@ -11,27 +11,11 @@ import {
   CardTitle,
 } from '@repo/design-system/components/ui/card';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@repo/design-system/components/ui/dialog';
-import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@repo/design-system/components/ui/dropdown-menu';
-import { Input } from '@repo/design-system/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@repo/design-system/components/ui/select';
 import { cn } from '@repo/design-system/lib/utils';
 import {
   Loader2,
@@ -43,9 +27,14 @@ import {
 } from 'lucide-react';
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
-import { useState } from 'react';
+import { useCallback, useState } from 'react';
 import { toast } from 'sonner';
 import { PageWrapper } from '../components/page-wrapper';
+import {
+  InviteMemberDialog,
+  type InvitePool,
+  type InviteRole,
+} from './components/invite-member-dialog';
 
 // Lazy load heavy components
 const PoolsAndPartnersClient = dynamic(
@@ -69,6 +58,59 @@ const ROLES = {
   'org:member': 'Member',
 };
 
+// Same base and path shape PoolsAndPartnersClient uses on this screen.
+const API_BASE = (
+  process.env.NEXT_PUBLIC_API_URL || 'http://localhost:3333'
+).replace(/\/$/, '');
+
+/**
+ * The backend owns invitations, not Clerk's client SDK: it creates the same
+ * Clerk invitation AND parks the pool assignment in OrgMemberInvites, which the
+ * organizationMembership.created webhook drains onto the new membership.
+ * Inviting through Clerk directly skips that row, so the member joins with no
+ * pools and sees nothing.
+ */
+async function postInvite(
+  token: string,
+  orgId: string,
+  input: { email: string; role: InviteRole; assignedPoolIds: string[] }
+): Promise<void> {
+  const isMember = input.role === 'org:member';
+  const response = await fetch(
+    `${API_BASE}/api/organizations/${orgId}/invitations`,
+    {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        email: input.email,
+        role: isMember ? 'member' : 'admin',
+        // Admins see every pool, so the backend ignores any list for them.
+        assignedPoolIds: isMember ? input.assignedPoolIds : undefined,
+      }),
+    }
+  );
+
+  if (response.ok) {
+    return;
+  }
+
+  // The endpoint names its own failures (already a member, pool not in this
+  // org, no pool selected). Passing that text through beats a generic message.
+  const payload = await response.json().catch(() => null);
+  const message =
+    payload && typeof payload === 'object' && 'message' in payload
+      ? (payload as { message?: string | string[] }).message
+      : null;
+
+  throw new Error(
+    (Array.isArray(message) ? message[0] : message) ||
+      `Failed to send invitation (${response.status})`
+  );
+}
+
 export default function TeamPage() {
   const { organization, isLoaded, memberships, invitations } = useOrganization({
     memberships: {
@@ -81,41 +123,61 @@ export default function TeamPage() {
     },
   });
   const { user } = useUser();
+  const { getToken } = useAuth();
   const [activeTab, setActiveTab] = useState<Tab>('members');
-
-  // Invitation State
   const [isInviteOpen, setIsInviteOpen] = useState(false);
-  const [inviteEmail, setInviteEmail] = useState('');
-  const [inviteRole, setInviteRole] = useState<'org:member' | 'org:admin'>(
-    'org:member'
-  );
-  const [isSendingInvite, setIsSendingInvite] = useState(false);
+
+  const orgId = organization?.id;
 
   // Check if current user is admin
   const isAdmin =
     memberships?.data?.find((m) => m.publicUserData.userId === user?.id)
       ?.role === 'org:admin';
 
-  const handleInvite = async () => {
-    if (!inviteEmail) return;
-    setIsSendingInvite(true);
-    try {
-      await organization?.inviteMember({
-        emailAddress: inviteEmail,
-        role: inviteRole,
-      });
-      toast.success(`Invitation sent to ${inviteEmail}`);
-      setInviteEmail('');
-      setIsInviteOpen(false);
-      // Refresh invites list handled automatically by SWR-like behavior of Clerk hook usually,
-      // but we can force revalidate if needed.
-    } catch (err: any) {
-      console.error('Invite failed:', err);
-      toast.error(err.errors?.[0]?.message || 'Failed to send invitation');
-    } finally {
-      setIsSendingInvite(false);
+  // Same data path PoolsAndPartnersClient uses. That component is lazy-mounted
+  // under the Pools tab, so its pools never reach the invite dialog.
+  const loadPools = useCallback(async (): Promise<InvitePool[]> => {
+    if (!orgId) {
+      return [];
     }
-  };
+    const token = await getToken();
+    const response = await fetch(`${API_BASE}/api/pools/org/${orgId}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    if (!response.ok) {
+      throw new Error(`Failed to load pools (${response.status})`);
+    }
+    const data = await response.json();
+    return Array.isArray(data) ? data : [];
+  }, [getToken, orgId]);
+
+  const sendInvite = useCallback(
+    async (input: {
+      email: string;
+      role: InviteRole;
+      assignedPoolIds: string[];
+    }) => {
+      if (!orgId) {
+        throw new Error('No organization selected');
+      }
+      const token = await getToken();
+      if (!token) {
+        throw new Error('Your session expired. Sign in again.');
+      }
+      await postInvite(token, orgId, input);
+    },
+    [getToken, orgId]
+  );
+
+  const handleInvited = useCallback(
+    (email: string) => {
+      toast.success(`Invitation sent to ${email}`);
+      // Clerk's hook revalidated itself when it owned the call. The backend
+      // creates the invitation now, so ask for the refresh explicitly.
+      invitations?.revalidate?.();
+    },
+    [invitations]
+  );
 
   const handleRemoveMember = async (userId: string) => {
     if (!confirm('Are you sure you want to remove this member?')) return;
@@ -367,82 +429,14 @@ export default function TeamPage() {
         )}
       </div>
 
-      {/* Invite Member Dialog */}
-      <Dialog open={isInviteOpen} onOpenChange={setIsInviteOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Invite Team Member</DialogTitle>
-            <DialogDescription>
-              Send an email invitation to join{' '}
-              <strong>{organization.name}</strong>.
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="space-y-4 py-4">
-            <div className="space-y-2">
-              <label className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Email Address
-              </label>
-              <Input
-                placeholder="colleague@company.com"
-                type="email"
-                value={inviteEmail}
-                onChange={(e) => setInviteEmail(e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <label className="font-medium text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                Role
-              </label>
-              <Select
-                value={inviteRole}
-                onValueChange={(val: any) => setInviteRole(val)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Select a role" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="org:member">
-                    <div className="flex flex-col items-start py-1">
-                      <span className="font-medium">Member</span>
-                      <span className="text-gray-500 text-xs">
-                        Can view and edit but cannot manage organization
-                        settings.
-                      </span>
-                    </div>
-                  </SelectItem>
-                  <SelectItem value="org:admin">
-                    <div className="flex flex-col items-start py-1">
-                      <span className="font-medium">Admin</span>
-                      <span className="text-gray-500 text-xs">
-                        Full access to everything including member management.
-                      </span>
-                    </div>
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsInviteOpen(false)}>
-              Cancel
-            </Button>
-            <Button
-              onClick={handleInvite}
-              disabled={!inviteEmail || isSendingInvite}
-            >
-              {isSendingInvite ? (
-                <Loader2 className="animate-spin" data-icon="inline-start" />
-              ) : (
-                <Mail data-icon="inline-start" />
-              )}
-              Send Invitation
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <InviteMemberDialog
+        loadPools={loadPools}
+        onInvited={handleInvited}
+        onOpenChange={setIsInviteOpen}
+        open={isInviteOpen}
+        organizationName={organization.name}
+        sendInvite={sendInvite}
+      />
     </PageWrapper>
   );
 }
