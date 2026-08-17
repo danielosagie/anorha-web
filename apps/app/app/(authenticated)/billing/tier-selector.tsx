@@ -126,7 +126,7 @@ export function TierSelector({
               <Card
                 className={`relative flex h-full w-full cursor-pointer flex-col content-between pb-0 transition-colors ${
                   selectedTierId === tier.id
-                    ? 'border-k0-accent-ink/40 bg-k0-accent-wash'
+                    ? 'border-k0-border bg-k0-accent-wash'
                     : 'border-k0-border bg-k0-card hover:border-k0-border-strong'
                 }`}
                 onClick={() => handleSelectTier(tier)}

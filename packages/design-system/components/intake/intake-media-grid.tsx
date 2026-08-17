@@ -38,7 +38,7 @@ export function IntakeMediaGrid({
           aria-label={`Open ${item.kind}`}
           className={cn(
             'overflow-hidden rounded-xl border bg-muted text-left outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring',
-            selectedId === item.id ? 'border-primary' : 'border-border'
+            selectedId === item.id ? 'border-k0-ink' : 'border-border'
           )}
           key={item.id}
           onClick={() => onSelect?.(item.id)}

@@ -432,7 +432,7 @@ export function NewProductClient({
           </CardHeader>
           <CardContent className="flex flex-col gap-5">
             <fieldset
-              className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-muted/35 p-6 text-center transition-colors data-[dragging=true]:border-primary data-[dragging=true]:bg-primary/10"
+              className="flex min-h-56 flex-col items-center justify-center gap-3 rounded-xl border border-dashed bg-muted/35 p-6 text-center transition-colors data-[dragging=true]:border-k0-ink data-[dragging=true]:bg-k0-accent-wash"
               data-dragging={dragging}
               onDragEnter={(event) => {
                 event.preventDefault();

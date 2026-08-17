@@ -184,7 +184,7 @@ export function TestFlightBanner({
 
   // Default 'banner' mode
   return (
-    <div className="flex flex-col items-start justify-between gap-4 rounded-[1.125rem] border border-primary/20 bg-card p-5 sm:flex-row sm:items-center md:p-6">
+    <div className="flex flex-col items-start justify-between gap-4 rounded-[1.125rem] border border-k0-border bg-card p-5 sm:flex-row sm:items-center md:p-6">
       <div className="flex items-center gap-4">
         <div
           className="flex size-11 shrink-0 items-center justify-center rounded-2xl"

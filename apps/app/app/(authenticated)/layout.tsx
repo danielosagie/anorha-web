@@ -83,7 +83,7 @@ const AppLayout = async ({ children }: AppLayoutProperties) => {
         >
           <GlobalSidebar>
             {betaFeature && (
-              <div className="mx-4 mt-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-center font-semibold text-accent-foreground text-sm md:mx-8 lg:mx-10">
+              <div className="mx-4 mt-4 rounded-2xl border border-k0-border bg-k0-accent-wash px-4 py-3 text-center font-semibold text-accent-foreground text-sm md:mx-8 lg:mx-10">
                 A new beta feature is ready to try.
               </div>
             )}

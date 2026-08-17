@@ -933,7 +933,7 @@ export function BillingClient({
                       <Badge
                         className={
                           inv.status === 'paid'
-                            ? 'border-primary/20 bg-primary/10 text-primary'
+                            ? 'border-k0-border bg-k0-accent-wash text-k0-accent-ink'
                             : undefined
                         }
                       >

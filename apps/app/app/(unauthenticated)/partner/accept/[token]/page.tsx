@@ -489,7 +489,7 @@ export default function PartnerAcceptPage() {
                                                 type="checkbox"
                                                 checked={selectedLocationIds.includes(loc.platformLocationId)}
                                                 onChange={() => toggleLocation(loc.platformLocationId)}
-                                                className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                                                className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
                                             />
                                             <span>{loc.locationName}</span>
                                         </label>
@@ -506,7 +506,7 @@ export default function PartnerAcceptPage() {
                             id="terms" type="checkbox"
                             checked={termsAccepted}
                             onChange={(e) => setTermsAccepted(e.target.checked)}
-                            className="h-4 w-4 rounded border-input text-primary focus:ring-primary"
+                            className="h-4 w-4 rounded border-input text-primary focus:ring-ring"
                         />
                     </div>
                     <label htmlFor="terms" className="text-xs text-muted-foreground leading-tight cursor-pointer select-none">

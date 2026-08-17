@@ -85,7 +85,7 @@ export default function DeleteAccountPage() {
 
           <div className="pt-4">
             <Link href="/">
-              <Button variant="outline" className="text-primary border-primary hover:bg-primary/10">
+              <Button variant="outline" className="text-primary hover:bg-k0-accent-wash">
                 Back to Anorha
               </Button>
             </Link>

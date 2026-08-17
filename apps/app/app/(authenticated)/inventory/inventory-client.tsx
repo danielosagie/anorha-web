@@ -1417,7 +1417,7 @@ export function InventoryClient({
       </div>
 
       {selectedIds.size > 0 ? (
-        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-primary/25 bg-primary/10 px-3 py-2">
+        <div className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-k0-border bg-k0-accent-wash px-3 py-2">
           <span className="font-semibold text-sm">
             {selectedIds.size} product{selectedIds.size === 1 ? '' : 's'}{' '}
             selected

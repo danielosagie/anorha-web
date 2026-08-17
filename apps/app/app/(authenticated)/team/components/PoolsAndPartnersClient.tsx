@@ -853,7 +853,7 @@ export default function PoolsAndPartnersClient() {
         <Button
           variant={activeTab === 'partners' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('partners')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'partners' ? "border-primary bg-k0-surface text-primary hover:bg-k0-hairline hover:text-primary" : "border-transparent text-k0-ink-2")}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'partners' ? "border-k0-ink bg-k0-surface text-k0-ink hover:bg-k0-hairline hover:text-k0-ink" : "border-transparent text-k0-ink-2")}
         >
           <Link2Icon className="w-4 h-4" />
           Partners
@@ -861,7 +861,7 @@ export default function PoolsAndPartnersClient() {
         <Button
           variant={activeTab === 'pools' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('pools')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'pools' ? "border-primary bg-k0-surface text-primary hover:bg-k0-hairline hover:text-primary" : "border-transparent text-k0-ink-2")}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'pools' ? "border-k0-ink bg-k0-surface text-k0-ink hover:bg-k0-hairline hover:text-k0-ink" : "border-transparent text-k0-ink-2")}
         >
           <MapPinIcon className="w-4 h-4" />
           Pools
@@ -869,7 +869,7 @@ export default function PoolsAndPartnersClient() {
         <Button
           variant={activeTab === 'team' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('team')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'team' ? "border-primary bg-k0-surface text-primary hover:bg-k0-hairline hover:text-primary" : "border-transparent text-k0-ink-2")}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'team' ? "border-k0-ink bg-k0-surface text-k0-ink hover:bg-k0-hairline hover:text-k0-ink" : "border-transparent text-k0-ink-2")}
         >
           <UsersIcon className="w-4 h-4" />
           Team Access
@@ -905,7 +905,7 @@ export default function PoolsAndPartnersClient() {
 
               {/* Pool Editor */}
               {editingPool && (
-                <Card className="border-2 border-primary">
+                <Card className="border-k0-border">
                   <CardHeader>
                     <CardTitle>{editingPool.id === 'new' ? 'Create Pool' : 'Edit Pool'}</CardTitle>
                     <CardDescription>Configure your pool settings and select locations.</CardDescription>
@@ -917,7 +917,7 @@ export default function PoolsAndPartnersClient() {
                         placeholder="e.g. West Coast Stores"
                         value={editingPool.name || ''}
                         onChange={(e) => setEditingPool({ ...editingPool, name: e.target.value })}
-                        className="focus:ring-primary"
+                        className="focus:ring-ring"
                       />
                     </div>
 
@@ -1211,7 +1211,7 @@ export default function PoolsAndPartnersClient() {
                                     className={cn(
                                       "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all border",
                                       hasAccess
-                                        ? "bg-primary/10 border-primary text-primary hover:bg-primary/20"
+                                        ? "bg-k0-accent-wash border-k0-border text-k0-accent-ink hover:bg-k0-accent-wash/70"
                                         : "bg-k0-hairline border-k0-border text-k0-ink-3 hover:border-k0-border hover:text-k0-ink-2"
                                     )}
                                   >
@@ -1280,7 +1280,7 @@ export default function PoolsAndPartnersClient() {
                         <label className="block text-sm font-medium mb-1.5 text-k0-ink">Share Pool</label>
                         <div className="relative">
                           <select
-                            className="w-full px-4 py-2 bg-k0-hairline border border-k0-border rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:bg-k0-surface transition-all text-sm"
+                            className="w-full px-4 py-2 bg-k0-hairline border border-k0-border rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-ring focus:bg-k0-surface transition-all text-sm"
                             value={invitePoolId}
                             onChange={(e) => setInvitePoolId(e.target.value)}
                           >
@@ -1343,7 +1343,7 @@ export default function PoolsAndPartnersClient() {
                         {receivedInvites.map((invite) => (
                           <div
                             key={invite.id}
-                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-k0-accent-wash border border-k0-border rounded-xl shadow-sm hover:border-k0-accent-fill/30 hover:shadow-md transition-all duration-200"
+                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-k0-accent-wash border border-k0-border rounded-xl shadow-sm hover:border-k0-border-strong hover:shadow-md transition-all duration-200"
                           >
                             <div className="flex items-start gap-4 mb-3 sm:mb-0">
                               <div className="w-10 h-10 rounded-full bg-k0-accent-wash flex items-center justify-center flex-shrink-0">
@@ -1425,7 +1425,7 @@ export default function PoolsAndPartnersClient() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => copyToClipboard(invite.inviteLink)}
-                                className="text-k0-ink-2 hover:text-primary hover:border-primary"
+                                className="text-k0-ink-2 hover:text-k0-ink hover:border-k0-border-strong"
                               >
                                 {linkCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
                                 <span className="ml-2 sm:hidden">Copy Link</span>
@@ -1466,7 +1466,7 @@ export default function PoolsAndPartnersClient() {
                         {partnerships.map((partner) => (
                           <div
                             key={partner.id}
-                            className="bg-k0-surface border border-k0-border rounded-xl shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200 overflow-hidden"
+                            className="bg-k0-surface border border-k0-border rounded-xl shadow-sm hover:border-k0-border-strong hover:shadow-md transition-all duration-200 overflow-hidden"
                           >
                             {/* Card Header / Main Row */}
                             <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1502,7 +1502,7 @@ export default function PoolsAndPartnersClient() {
                                       "text-xs font-normal border-0",
                                       partner.direction === 'sent'
                                         ? "bg-k0-warn/10 text-k0-warn ring-1 ring-inset ring-k0-warn/10"
-                                        : "bg-k0-accent-wash text-k0-accent-ink ring-1 ring-inset ring-k0-accent-ink/10"
+                                        : "bg-k0-accent-wash text-k0-accent-ink"
                                     )}>
                                       {partner.direction === 'sent' ? '↑ Sent' : '↓ Received'}
                                     </Badge>
@@ -1519,7 +1519,7 @@ export default function PoolsAndPartnersClient() {
                                     "transition-colors",
                                     expandedPartnership === partner.id
                                       ? "bg-k0-hairline text-k0-ink border-k0-border-strong"
-                                      : "text-k0-ink-2 hover:text-primary hover:border-primary"
+                                      : "text-k0-ink-2 hover:text-k0-ink hover:border-k0-border-strong"
                                   )}
                                 >
                                   {loadingLinkedProducts === partner.id ? (
@@ -1579,7 +1579,7 @@ export default function PoolsAndPartnersClient() {
                                     <input 
                                       type="text" 
                                       placeholder="Filter products..." 
-                                      className="pl-8 pr-3 py-1.5 text-sm border border-k0-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                                      className="pl-8 pr-3 py-1.5 text-sm border border-k0-border rounded-md focus:outline-none focus:ring-1 focus:ring-ring"
                                     />
                                   </div> */}
                                 </div>
@@ -1751,7 +1751,7 @@ export default function PoolsAndPartnersClient() {
                 size="sm"
                 variant="outline"
                 onClick={() => copyToClipboard(createdInviteLink)}
-                className="shrink-0 hover:border-primary hover:text-primary"
+                className="shrink-0 hover:border-k0-border-strong hover:text-k0-ink"
               >
                 {linkCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
               </Button>
