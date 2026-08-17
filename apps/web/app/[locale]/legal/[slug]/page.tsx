@@ -279,7 +279,7 @@ const legalContent: Record<
           </p>
           <ol className="list-decimal space-y-2 pl-6">
             <li>Open the Anorha mobile app.</li>
-            <li>Go to Profile, then Privacy & Security or Delete Account.</li>
+            <li>Go to Profile, then Privacy &amp; Security, then Delete account.</li>
             <li>Follow the confirmation steps shown in the app.</li>
             <li>Sign out after the app confirms the request.</li>
           </ol>

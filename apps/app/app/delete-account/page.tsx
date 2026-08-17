@@ -32,7 +32,7 @@ export default function DeleteAccountPage() {
             <ul className="list-disc pl-5 space-y-1.5 text-sm text-muted-foreground mb-4">
               <li>
                 Open <span className="font-semibold text-foreground">Anorha</span> → Profile →
-                Privacy & Security or Delete Account
+                Privacy &amp; Security → Delete account
               </li>
               <li>Follow the confirmation steps shown in the app</li>
               <li>Sign out after the app confirms the request</li>
