@@ -820,22 +820,22 @@ export default function PoolsAndPartnersClient() {
           {rejectedInvites.map((rejected) => (
             <div
               key={rejected.id}
-              className="bg-amber-50 border border-amber-200 rounded-lg p-4 flex items-start justify-between gap-4"
+              className="bg-k0-warn/10 border border-k0-warn/30 rounded-lg p-4 flex items-start justify-between gap-4"
             >
               <div className="flex items-start gap-3">
-                <AlertTriangleIcon className="w-5 h-5 text-amber-600 flex-shrink-0 mt-0.5" />
+                <AlertTriangleIcon className="w-5 h-5 text-k0-warn flex-shrink-0 mt-0.5" />
                 <div>
-                  <p className="text-sm font-medium text-amber-800">
+                  <p className="text-sm font-medium text-k0-warn">
                     Invite Declined
                   </p>
-                  <p className="text-sm text-amber-700">
+                  <p className="text-sm text-k0-warn">
                     <span className="font-medium">{rejected.email}</span> declined your invite to <span className="font-medium">{rejected.poolName}</span>.
                   </p>
                 </div>
               </div>
               <button
                 onClick={() => setRejectedInvites(prev => prev.filter(r => r.id !== rejected.id))}
-                className="text-amber-500 hover:text-amber-700 p-1"
+                className="text-k0-warn hover:text-k0-warn/80 p-1"
                 aria-label="Dismiss"
               >
                 <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -849,11 +849,11 @@ export default function PoolsAndPartnersClient() {
       )}
 
       {/* Navigation Tabs */}
-      <div className="flex items-center gap-2 border-b border-gray-200 pb-1">
+      <div className="flex items-center gap-2 border-b border-k0-border pb-1">
         <Button
           variant={activeTab === 'partners' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('partners')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'partners' ? "border-primary bg-white text-primary hover:bg-gray-50 hover:text-primary" : "border-transparent text-gray-500")}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'partners' ? "border-primary bg-k0-surface text-primary hover:bg-k0-hairline hover:text-primary" : "border-transparent text-k0-ink-2")}
         >
           <Link2Icon className="w-4 h-4" />
           Partners
@@ -861,7 +861,7 @@ export default function PoolsAndPartnersClient() {
         <Button
           variant={activeTab === 'pools' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('pools')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'pools' ? "border-primary bg-white text-primary hover:bg-gray-50 hover:text-primary" : "border-transparent text-gray-500")}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'pools' ? "border-primary bg-k0-surface text-primary hover:bg-k0-hairline hover:text-primary" : "border-transparent text-k0-ink-2")}
         >
           <MapPinIcon className="w-4 h-4" />
           Pools
@@ -869,7 +869,7 @@ export default function PoolsAndPartnersClient() {
         <Button
           variant={activeTab === 'team' ? 'default' : 'ghost'}
           onClick={() => setActiveTab('team')}
-          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'team' ? "border-primary bg-white text-primary hover:bg-gray-50 hover:text-primary" : "border-transparent text-gray-500")}
+          className={cn("gap-2 rounded-t-lg rounded-b-none border-b-2", activeTab === 'team' ? "border-primary bg-k0-surface text-primary hover:bg-k0-hairline hover:text-primary" : "border-transparent text-k0-ink-2")}
         >
           <UsersIcon className="w-4 h-4" />
           Team Access
@@ -879,7 +879,7 @@ export default function PoolsAndPartnersClient() {
 
       {isLoading ? (
         <div className="p-12 flex justify-center">
-          <Loader2Icon className="w-8 h-8 animate-spin text-gray-300" />
+          <Loader2Icon className="w-8 h-8 animate-spin text-k0-ink-3" />
         </div>
       ) : (
         <>
@@ -889,7 +889,7 @@ export default function PoolsAndPartnersClient() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="text-2xl font-bold">Pools</h2>
-                  <p className="text-gray-600">Group locations that share inventory and pricing.</p>
+                  <p className="text-k0-ink-2">Group locations that share inventory and pricing.</p>
                 </div>
                 <Button
                   onClick={() => {
@@ -947,9 +947,9 @@ export default function PoolsAndPartnersClient() {
                       <label className="block text-sm font-medium mb-2">
                         Locations ({selectedLocations.length} selected)
                       </label>
-                      <div className="border border-gray-200 rounded-lg max-h-48 overflow-y-auto">
+                      <div className="border border-k0-border rounded-lg max-h-48 overflow-y-auto">
                         {locations.length === 0 ? (
-                          <p className="p-4 text-sm text-gray-500 text-center">No locations available</p>
+                          <p className="p-4 text-sm text-k0-ink-2 text-center">No locations available</p>
                         ) : (
                           locations.map((loc) => {
                             const isSelected = selectedLocations.includes(loc.platformLocationId);
@@ -968,13 +968,13 @@ export default function PoolsAndPartnersClient() {
                                 }
                                 className={cn(
                                   'flex items-center justify-between p-3 cursor-pointer border-b last:border-b-0 transition-colors',
-                                  isSelected ? 'bg-primary/10' : 'hover:bg-gray-50'
+                                  isSelected ? 'bg-primary/10' : 'hover:bg-k0-hairline'
                                 )}
                               >
                                 <div className="flex items-center gap-3">
                                   <div>
                                     <div className="font-medium text-sm">{loc.locationName}</div>
-                                    <div className="text-xs text-gray-500">{loc.connectionName}</div>
+                                    <div className="text-xs text-k0-ink-2">{loc.connectionName}</div>
                                   </div>
                                 </div>
                                 {isSelected && <CheckIcon className="w-5 h-5 text-primary" />}
@@ -990,7 +990,7 @@ export default function PoolsAndPartnersClient() {
                           variant="outline"
                           size="sm"
                           onClick={() => setShowCreateLocation(true)}
-                          className="mt-2 w-full border-dashed border-gray-300 text-gray-600 hover:text-gray-900"
+                          className="mt-2 w-full border-dashed border-k0-border-strong text-k0-ink-2 hover:text-k0-ink"
                         >
                           <PlusIcon className="w-4 h-4 mr-2" />
                           Create New Location
@@ -1000,10 +1000,10 @@ export default function PoolsAndPartnersClient() {
 
                     {/* Create Location Modal */}
                     {showCreateLocation && (
-                      <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-                        <div className="bg-white rounded-xl shadow-xl max-w-md w-full mx-4 p-6">
+                      <div className="fixed inset-0 bg-k0-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+                        <div className="bg-k0-surface rounded-2xl shadow-2xl max-w-md w-full p-6">
                           <h3 className="text-lg font-bold mb-4">Create New Location</h3>
-                          <p className="text-sm text-gray-600 mb-4">
+                          <p className="text-sm text-k0-ink-2 mb-4">
                             Create a new location on your connected platform. It will be automatically added to your available locations.
                           </p>
 
@@ -1013,7 +1013,7 @@ export default function PoolsAndPartnersClient() {
                               <select
                                 value={newLocationConnectionId}
                                 onChange={(e) => setNewLocationConnectionId(e.target.value)}
-                                className="w-full border border-gray-200 rounded-lg p-2 text-sm"
+                                className="w-full border border-k0-border rounded-lg p-2 text-sm"
                               >
                                 <option value="">Select a platform...</option>
                                 {connectionsWithCapabilities.map((c) => (
@@ -1085,7 +1085,7 @@ export default function PoolsAndPartnersClient() {
               )}
 
               {/* Pool List */}
-              <Card className="border border-gray-200">
+              <Card className="border border-k0-border">
                 <CardHeader>
                   <CardTitle>Your Pools</CardTitle>
                   <CardDescription>Manage inventory sync groups</CardDescription>
@@ -1093,15 +1093,15 @@ export default function PoolsAndPartnersClient() {
                 <CardContent>
                   {pools.length === 0 ? (
                     <div className="text-center py-8">
-                      <MapPinIcon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">No pools yet. Create one to get started.</p>
+                      <MapPinIcon className="w-12 h-12 text-k0-ink-3 mx-auto mb-3" />
+                      <p className="text-k0-ink-2">No pools yet. Create one to get started.</p>
                     </div>
                   ) : (
                     <div className="space-y-3">
                       {pools.map((pool) => (
                         <div
                           key={pool.id}
-                          className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:border-gray-300 transition-colors"
+                          className="flex items-center justify-between p-4 border border-k0-border rounded-lg hover:border-k0-border transition-colors"
                         >
                           <div className="flex items-center gap-4">
                             <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
@@ -1109,13 +1109,13 @@ export default function PoolsAndPartnersClient() {
                             </div>
                             <div>
                               <div className="font-medium">{pool.name}</div>
-                              <div className="flex items-center gap-3 text-sm text-gray-500">
+                              <div className="flex items-center gap-3 text-sm text-k0-ink-2">
                                 <span>{pool.locationIds.length} locations</span>
                                 {pool.syncInventory && (
                                   <Badge className="bg-primary text-white text-xs">Inventory</Badge>
                                 )}
                                 {pool.syncPricing && (
-                                  <Badge className="bg-blue-100 text-blue-800 text-xs">Pricing</Badge>
+                                  <Badge className="bg-k0-accent-wash text-k0-accent-ink text-xs">Pricing</Badge>
                                 )}
                               </div>
                             </div>
@@ -1136,7 +1136,7 @@ export default function PoolsAndPartnersClient() {
                               variant="ghost"
                               size="sm"
                               onClick={() => deletePool(pool.id)}
-                              className="text-red-500 hover:text-red-600 hover:bg-red-50"
+                              className="text-k0-bad hover:text-k0-bad/80 hover:bg-k0-bad/10"
                             >
                               <Trash2Icon className="w-4 h-4" />
                             </Button>
@@ -1155,7 +1155,7 @@ export default function PoolsAndPartnersClient() {
             <div className="space-y-4">
               <div>
                 <h2 className="text-2xl font-bold">Team Access</h2>
-                <p className="text-gray-600">Control which pools each team member can access.</p>
+                <p className="text-k0-ink-2">Control which pools each team member can access.</p>
               </div>
 
               <div className="grid grid-cols-1 gap-4">
@@ -1169,7 +1169,7 @@ export default function PoolsAndPartnersClient() {
                             <Image src={member.imageUrl} alt="" fill className="rounded-full object-cover" />
                           </div>
                         ) : (
-                          <div className="w-10 h-10 rounded-full bg-gray-200 flex items-center justify-center font-bold text-gray-500">
+                          <div className="w-10 h-10 rounded-full bg-k0-hairline flex items-center justify-center font-bold text-k0-ink-2">
                             {member.firstName?.[0] || member.email[0]}
                           </div>
                         )}
@@ -1177,7 +1177,7 @@ export default function PoolsAndPartnersClient() {
                           <div className="font-medium">
                             {member.firstName} {member.lastName}
                           </div>
-                          <div className="text-sm text-gray-500">{member.email}</div>
+                          <div className="text-sm text-k0-ink-2">{member.email}</div>
                           <div className="flex mt-1">
                             <Badge variant="secondary" className="text-xs">
                               {member.role.replace('org:', '')}
@@ -1187,20 +1187,20 @@ export default function PoolsAndPartnersClient() {
                       </div>
 
                       {/* Permissions Matrix */}
-                      <div className="flex-1 border-t md:border-t-0 md:border-l border-gray-100 pt-4 md:pt-0 md:pl-4">
-                        <h4 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+                      <div className="flex-1 border-t md:border-t-0 md:border-l border-k0-border pt-4 md:pt-0 md:pl-4">
+                        <h4 className="text-xs font-semibold text-k0-ink-2 uppercase tracking-wider mb-3">
                           Allowed Pools
                         </h4>
 
                         {member.role === 'org:admin' ? (
-                          <div className="flex items-center gap-2 text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
+                          <div className="flex items-center gap-2 text-sm text-k0-ink-2 bg-k0-hairline p-3 rounded-md">
                             <ShieldIcon className="w-4 h-4 text-primary" />
                             <span>Admins have full access to all pools.</span>
                           </div>
                         ) : (
                           <div className="flex flex-wrap gap-2">
                             {pools.length === 0 ? (
-                              <p className="text-sm text-gray-400 italic">No pools created yet.</p>
+                              <p className="text-sm text-k0-ink-3 italic">No pools created yet.</p>
                             ) : (
                               pools.map(pool => {
                                 const hasAccess = member.assignedPoolIds.includes(pool.id);
@@ -1212,7 +1212,7 @@ export default function PoolsAndPartnersClient() {
                                       "flex items-center gap-2 px-3 py-1.5 rounded-full text-sm transition-all border",
                                       hasAccess
                                         ? "bg-primary/10 border-primary text-primary hover:bg-primary/20"
-                                        : "bg-gray-50 border-gray-200 text-gray-400 hover:border-gray-300 hover:text-gray-600"
+                                        : "bg-k0-hairline border-k0-border text-k0-ink-3 hover:border-k0-border hover:text-k0-ink-2"
                                     )}
                                   >
                                     {hasAccess ? <CheckIcon className="w-3 h-3" /> : <PlusIcon className="w-3 h-3" />}
@@ -1237,7 +1237,7 @@ export default function PoolsAndPartnersClient() {
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div>
                   <h2 className="text-2xl font-bold tracking-tight">Partnerships</h2>
-                  <p className="text-gray-500 mt-1">
+                  <p className="text-k0-ink-2 mt-1">
                     Manage your shared inventory network and invitations.
                   </p>
                 </div>
@@ -1246,7 +1246,7 @@ export default function PoolsAndPartnersClient() {
               <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 {/* Left Column: Invite Action */}
                 <div className="lg:col-span-1 space-y-6">
-                  <Card className="border border-gray-200 shadow-sm overflow-hidden sticky top-4 border-t-primary border-2">
+                  <Card className="border border-k0-border shadow-sm overflow-hidden sticky top-4 border-t-primary border-2">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <SendIcon className="w-5 h-5 text-primary" />
@@ -1258,7 +1258,7 @@ export default function PoolsAndPartnersClient() {
                     </CardHeader>
                     <CardContent className="space-y-4">
                       <div>
-                        <label className="block text-sm font-medium mb-1.5 text-gray-700">Partner Email</label>
+                        <label className="block text-sm font-medium mb-1.5 text-k0-ink">Partner Email</label>
                         <Input
                           type="email"
                           name="email"
@@ -1268,19 +1268,19 @@ export default function PoolsAndPartnersClient() {
                           onChange={(e) => setInviteEmail(e.target.value)}
                           onBlur={() => setEmailTouched(true)}
                           className={cn(
-                            "bg-gray-50 focus:bg-white transition-colors",
-                            emailTouched && inviteEmail && !isValidEmail(inviteEmail) && "border-red-300 focus:border-red-500 focus:ring-red-500"
+                            "bg-k0-hairline focus:bg-k0-surface transition-colors",
+                            emailTouched && inviteEmail && !isValidEmail(inviteEmail) && "border-k0-bad/40 focus:border-k0-bad focus:ring-k0-bad"
                           )}
                         />
                         {emailTouched && inviteEmail && !isValidEmail(inviteEmail) && (
-                          <p className="text-xs text-red-500 mt-1">Please enter a valid email address</p>
+                          <p className="text-xs text-k0-bad mt-1">Please enter a valid email address</p>
                         )}
                       </div>
                       <div>
-                        <label className="block text-sm font-medium mb-1.5 text-gray-700">Share Pool</label>
+                        <label className="block text-sm font-medium mb-1.5 text-k0-ink">Share Pool</label>
                         <div className="relative">
                           <select
-                            className="w-full px-4 py-2 bg-gray-50 border border-gray-200 rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:bg-white transition-all text-sm"
+                            className="w-full px-4 py-2 bg-k0-hairline border border-k0-border rounded-lg appearance-none focus:outline-none focus:ring-2 focus:ring-primary focus:bg-k0-surface transition-all text-sm"
                             value={invitePoolId}
                             onChange={(e) => setInvitePoolId(e.target.value)}
                           >
@@ -1291,21 +1291,21 @@ export default function PoolsAndPartnersClient() {
                               </option>
                             ))}
                           </select>
-                          <ChevronRightIcon className="w-4 h-4 text-gray-400 absolute right-3 top-2.5 rotate-90 pointer-events-none" />
+                          <ChevronRightIcon className="w-4 h-4 text-k0-ink-3 absolute right-3 top-2.5 rotate-90 pointer-events-none" />
                         </div>
                       </div>
 
                       {/* Consignment Mode Toggle */}
-                      <div className="p-3 bg-gray-50 rounded-lg border border-gray-100">
+                      <div className="p-3 bg-k0-hairline rounded-lg border border-k0-border">
                         <div className="flex items-center justify-between mb-2">
-                          <span className="font-medium text-sm text-gray-900">Revocable Access</span>
+                          <span className="font-medium text-sm text-k0-ink">Revocable Access</span>
                           <Switch
                             checked={inviteCanRevoke}
                             onCheckedChange={setInviteCanRevoke}
                             className="data-[state=checked]:bg-primary"
                           />
                         </div>
-                        <p className="text-xs text-gray-500 leading-relaxed">
+                        <p className="text-xs text-k0-ink-2 leading-relaxed">
                           {inviteCanRevoke
                             ? 'You stay in control. Revoke access anytime to remove products from their system.'
                             : 'Permanent transfer. Once shared, they keep the product data forever.'}
@@ -1334,8 +1334,8 @@ export default function PoolsAndPartnersClient() {
                   {/* Received Invites Swimlane - For partners to accept */}
                   {receivedInvites.length > 0 && (
                     <section>
-                      <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                      <h3 className="text-sm font-semibold text-k0-ink uppercase tracking-wider mb-3 flex items-center gap-2">
+                        <div className="w-2 h-2 rounded-full bg-k0-accent-fill animate-pulse" />
                         Invitations to Accept
                       </h3>
 
@@ -1343,22 +1343,22 @@ export default function PoolsAndPartnersClient() {
                         {receivedInvites.map((invite) => (
                           <div
                             key={invite.id}
-                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-emerald-50/50 border border-emerald-200 rounded-xl shadow-sm hover:border-emerald-300 hover:shadow-md transition-all duration-200"
+                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-k0-accent-wash border border-k0-border rounded-xl shadow-sm hover:border-k0-accent-fill/30 hover:shadow-md transition-all duration-200"
                           >
                             <div className="flex items-start gap-4 mb-3 sm:mb-0">
-                              <div className="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
-                                <Link2Icon className="w-5 h-5 text-emerald-600" />
+                              <div className="w-10 h-10 rounded-full bg-k0-accent-wash flex items-center justify-center flex-shrink-0">
+                                <Link2Icon className="w-5 h-5 text-k0-accent-ink" />
                               </div>
                               <div>
-                                <div className="font-medium text-gray-900">{invite.sourceOrgName}</div>
-                                <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5 flex-wrap">
-                                  <Badge variant="outline" className="text-xs font-normal bg-white">
+                                <div className="font-medium text-k0-ink">{invite.sourceOrgName}</div>
+                                <div className="flex items-center gap-2 text-sm text-k0-ink-2 mt-0.5 flex-wrap">
+                                  <Badge variant="outline" className="text-xs font-normal bg-k0-surface">
                                     {invite.sourcePoolName}
                                   </Badge>
                                   <span>•</span>
                                   <span>{invite.productCount} products{invite.variantCount > invite.productCount ? ` (${invite.variantCount} variants)` : ''}</span>
                                   <span>•</span>
-                                  <Badge variant="outline" className="text-xs font-normal bg-amber-50 text-amber-700 border-amber-200">
+                                  <Badge variant="outline" className="text-xs font-normal bg-k0-warn/10 text-k0-warn border-k0-warn/30">
                                     {invite.shareType === 'consignment' ? '📦 Consignment' : '🤝 Partnership'}
                                   </Badge>
                                 </div>
@@ -1370,7 +1370,7 @@ export default function PoolsAndPartnersClient() {
                                 size="sm"
                                 onClick={() => acceptReceivedInvite(invite)}
                                 disabled={isAcceptingInvite === invite.id}
-                                className="bg-emerald-600 hover:bg-emerald-700 text-white"
+                                className="bg-k0-accent-fill hover:bg-k0-accent-fill/90 text-white"
                               >
                                 {isAcceptingInvite === invite.id ? (
                                   <Loader2Icon className="w-4 h-4 animate-spin" />
@@ -1388,30 +1388,30 @@ export default function PoolsAndPartnersClient() {
 
                   {/* Pending Invites Swimlane */}
                   <section>
-                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
-                      <div className="w-2 h-2 rounded-full bg-amber-400" />
+                    <h3 className="text-sm font-semibold text-k0-ink uppercase tracking-wider mb-3 flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-k0-warn" />
                       Pending Invites
                     </h3>
 
                     {pendingInvites.length === 0 ? (
-                      <div className="text-center py-6 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
-                        <p className="text-sm text-gray-500">No pending invites.</p>
+                      <div className="text-center py-6 border border-dashed border-k0-border rounded-xl bg-k0-hairline/50">
+                        <p className="text-sm text-k0-ink-2">No pending invites.</p>
                       </div>
                     ) : (
                       <div className="space-y-3">
                         {pendingInvites.map((invite) => (
                           <div
                             key={invite.id}
-                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-white border border-gray-200 rounded-xl shadow-sm hover:border-gray-300 hover:shadow-md transition-all duration-200"
+                            className="group flex flex-col sm:flex-row sm:items-center justify-between p-4 bg-k0-surface border border-k0-border rounded-xl shadow-sm hover:border-k0-border hover:shadow-md transition-all duration-200"
                           >
                             <div className="flex items-start gap-4 mb-3 sm:mb-0">
-                              <div className="w-10 h-10 rounded-full bg-amber-50 flex items-center justify-center flex-shrink-0">
-                                <SendIcon className="w-5 h-5 text-amber-500" />
+                              <div className="w-10 h-10 rounded-full bg-k0-warn/10 flex items-center justify-center flex-shrink-0">
+                                <SendIcon className="w-5 h-5 text-k0-warn" />
                               </div>
                               <div>
-                                <div className="font-medium text-gray-900">{invite.email}</div>
-                                <div className="flex items-center gap-2 text-sm text-gray-500 mt-0.5">
-                                  <Badge variant="outline" className="text-xs font-normal bg-gray-50">
+                                <div className="font-medium text-k0-ink">{invite.email}</div>
+                                <div className="flex items-center gap-2 text-sm text-k0-ink-2 mt-0.5">
+                                  <Badge variant="outline" className="text-xs font-normal bg-k0-hairline">
                                     {invite.poolName}
                                   </Badge>
                                   <span>•</span>
@@ -1425,7 +1425,7 @@ export default function PoolsAndPartnersClient() {
                                 variant="outline"
                                 size="sm"
                                 onClick={() => copyToClipboard(invite.inviteLink)}
-                                className="text-gray-600 hover:text-primary hover:border-primary"
+                                className="text-k0-ink-2 hover:text-primary hover:border-primary"
                               >
                                 {linkCopied ? <CheckIcon className="w-4 h-4" /> : <CopyIcon className="w-4 h-4" />}
                                 <span className="ml-2 sm:hidden">Copy Link</span>
@@ -1434,7 +1434,7 @@ export default function PoolsAndPartnersClient() {
                                 variant="ghost"
                                 size="sm"
                                 onClick={() => revokeInvite(invite.id)}
-                                className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                className="text-k0-ink-3 hover:text-k0-bad hover:bg-k0-bad/10"
                               >
                                 <Trash2Icon className="w-4 h-4" />
                                 <span className="ml-2 sm:hidden">Revoke</span>
@@ -1448,16 +1448,16 @@ export default function PoolsAndPartnersClient() {
 
                   {/* Active Partnerships Swimlane */}
                   <section>
-                    <h3 className="text-sm font-semibold text-gray-900 uppercase tracking-wider mb-3 flex items-center gap-2">
+                    <h3 className="text-sm font-semibold text-k0-ink uppercase tracking-wider mb-3 flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-primary" />
                       Active Partnerships
                     </h3>
 
                     {partnerships.length === 0 ? (
-                      <div className="text-center py-12 border border-dashed border-gray-200 rounded-xl bg-gray-50/50">
-                        <Link2Icon className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                        <h4 className="text-gray-900 font-medium">No partners yet</h4>
-                        <p className="text-sm text-gray-500 max-w-sm mx-auto mt-1">
+                      <div className="text-center py-12 border border-dashed border-k0-border rounded-xl bg-k0-hairline/50">
+                        <Link2Icon className="w-12 h-12 text-k0-ink-3 mx-auto mb-3" />
+                        <h4 className="text-k0-ink font-medium">No partners yet</h4>
+                        <p className="text-sm text-k0-ink-2 max-w-sm mx-auto mt-1">
                           When partners accept your invite, they'll appear here. You'll be able to see their sync status and manage access.
                         </p>
                       </div>
@@ -1466,7 +1466,7 @@ export default function PoolsAndPartnersClient() {
                         {partnerships.map((partner) => (
                           <div
                             key={partner.id}
-                            className="bg-white border border-gray-200 rounded-xl shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200 overflow-hidden"
+                            className="bg-k0-surface border border-k0-border rounded-xl shadow-sm hover:border-primary/30 hover:shadow-md transition-all duration-200 overflow-hidden"
                           >
                             {/* Card Header / Main Row */}
                             <div className="p-4 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
@@ -1475,34 +1475,34 @@ export default function PoolsAndPartnersClient() {
                                   <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-primary to-primary/80 flex items-center justify-center text-white text-lg font-bold shadow-sm">
                                     {partner.partnerOrgName?.[0] || partner.partnerEmail[0].toUpperCase()}
                                   </div>
-                                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-white rounded-full flex items-center justify-center border border-gray-100 shadow-sm">
+                                  <div className="absolute -bottom-1 -right-1 w-5 h-5 bg-k0-surface rounded-full flex items-center justify-center border border-k0-border shadow-sm">
                                     <div className={cn(
                                       "w-2.5 h-2.5 rounded-full",
-                                      partner.isPaused ? "bg-amber-400" : "bg-[#A7CE38] animate-pulse"
+                                      partner.isPaused ? "bg-k0-warn" : "bg-k0-good animate-pulse"
                                     )} />
                                   </div>
                                 </div>
 
                                 <div className="flex flex-col min-w-0 flex-1">
-                                  <div className="font-semibold text-gray-900 text-lg truncate pr-2" title={partner.partnerOrgName || partner.partnerEmail}>
+                                  <div className="font-semibold text-k0-ink text-lg truncate pr-2" title={partner.partnerOrgName || partner.partnerEmail}>
                                     {partner.partnerOrgName || partner.partnerEmail}
                                   </div>
-                                  <div className="flex flex-col items-start gap-y-1 text-sm text-gray-500 mt-0.5">
+                                  <div className="flex flex-col items-start gap-y-1 text-sm text-k0-ink-2 mt-0.5">
                                     <div className="flex items-center gap-1.5">
                                       <MapPinIcon className="w-3.5 h-3.5" />
                                       {partner.poolName}
                                     </div>
-                                    {/*<div className="w-1 h-1 rounded-full bg-gray-300" />*/}
+                                    {/*<div className="w-1 h-1 rounded-full bg-k0-hairline" />*/}
                                     <div className="flex items-center gap-1.5">
                                       <Link2Icon className="w-3.5 h-3.5" />
                                       {partner.productCount} products synced
                                     </div>
-                                    {/*<div className="w-1 h-1 rounded-full bg-gray-300" />*/}
+                                    {/*<div className="w-1 h-1 rounded-full bg-k0-hairline" />*/}
                                     <Badge variant="outline" className={cn(
                                       "text-xs font-normal border-0",
                                       partner.direction === 'sent'
-                                        ? "bg-[#FFFDEF] text-[#EABB4A] ring-1 ring-inset ring-[#EABB4A]/10"
-                                        : "bg-[#F1FFEF] text-[#91B91F] ring-1 ring-inset ring-[#91B91F]/10"
+                                        ? "bg-k0-warn/10 text-k0-warn ring-1 ring-inset ring-k0-warn/10"
+                                        : "bg-k0-accent-wash text-k0-accent-ink ring-1 ring-inset ring-k0-accent-ink/10"
                                     )}>
                                       {partner.direction === 'sent' ? '↑ Sent' : '↓ Received'}
                                     </Badge>
@@ -1518,8 +1518,8 @@ export default function PoolsAndPartnersClient() {
                                   className={cn(
                                     "transition-colors",
                                     expandedPartnership === partner.id
-                                      ? "bg-gray-100 text-gray-900 border-gray-300"
-                                      : "text-gray-600 hover:text-primary hover:border-primary"
+                                      ? "bg-k0-hairline text-k0-ink border-k0-border-strong"
+                                      : "text-k0-ink-2 hover:text-primary hover:border-primary"
                                   )}
                                 >
                                   {loadingLinkedProducts === partner.id ? (
@@ -1535,7 +1535,7 @@ export default function PoolsAndPartnersClient() {
                                   )}
                                 </Button>
 
-                                <div className="h-4 w-px bg-gray-200 mx-1" />
+                                <div className="h-4 w-px bg-k0-border mx-1" />
 
                                 <div className="flex items-center gap-2" title={partner.isPaused ? "Resume Partnership" : "Pause Partnership"}>
                                   <Switch
@@ -1548,7 +1548,7 @@ export default function PoolsAndPartnersClient() {
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                  className="text-k0-ink-3 hover:text-k0-bad hover:bg-k0-bad/10"
                                   onClick={() => terminatePartnership(
                                     partner.id,
                                     partner.shareType === 'consignment' || partner.direction === 'sent'
@@ -1562,37 +1562,37 @@ export default function PoolsAndPartnersClient() {
 
                             {/* Expandable Linked Products Section */}
                             {expandedPartnership === partner.id && linkedProducts[partner.id] && (
-                              <div className="border-t border-gray-100 bg-gray-50/50 p-4 animate-in slide-in-from-top-2 duration-200">
+                              <div className="border-t border-k0-border bg-k0-hairline/50 p-4 animate-in slide-in-from-top-2 duration-200">
                                 <div className="flex items-center justify-between mb-4">
                                   <div className="flex items-center gap-2">
-                                    <h4 className="text-sm font-semibold text-gray-900">
+                                    <h4 className="text-sm font-semibold text-k0-ink">
                                       Linked Products
                                     </h4>
-                                    <Badge variant="secondary" className="text-xs bg-gray-200/50 text-gray-600 font-normal">
+                                    <Badge variant="secondary" className="text-xs bg-k0-hairline/50 text-k0-ink-2 font-normal">
                                       {linkedProducts[partner.id].length}
                                     </Badge>
                                   </div>
 
                                   {/* Future: Add Search Bar Here */}
                                   {/* <div className="relative">
-                                    <SearchIcon className="w-3.5 h-3.5 absolute left-2.5 top-2 text-gray-400" />
+                                    <SearchIcon className="w-3.5 h-3.5 absolute left-2.5 top-2 text-k0-ink-3" />
                                     <input 
                                       type="text" 
                                       placeholder="Filter products..." 
-                                      className="pl-8 pr-3 py-1.5 text-sm border border-gray-200 rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
+                                      className="pl-8 pr-3 py-1.5 text-sm border border-k0-border rounded-md focus:outline-none focus:ring-1 focus:ring-primary"
                                     />
                                   </div> */}
                                 </div>
 
                                 {linkedProducts[partner.id].length === 0 ? (
-                                  <div className="text-center py-8 text-gray-500 bg-white border border-gray-200 border-dashed rounded-lg">
+                                  <div className="text-center py-8 text-k0-ink-2 bg-k0-surface border border-k0-border border-dashed rounded-lg">
                                     <p className="text-sm">No products explicitly linked yet.</p>
                                     <p className="text-xs mt-1">Add items to your pool to auto-share them.</p>
                                   </div>
                                 ) : (
-                                  <div className="bg-white border border-gray-200 rounded-lg overflow-hidden shadow-sm">
+                                  <div className="bg-k0-surface border border-k0-border rounded-lg overflow-hidden shadow-sm">
                                     <table className="w-full text-sm text-left">
-                                      <thead className="bg-gray-50 text-gray-500 font-medium border-b border-gray-200">
+                                      <thead className="bg-k0-hairline text-k0-ink-2 font-medium border-b border-k0-border">
                                         <tr>
                                           <th className="px-4 py-3 w-1/2">Product</th>
                                           <th className="px-4 py-3 text-center">Stock</th>
@@ -1603,19 +1603,19 @@ export default function PoolsAndPartnersClient() {
                                           )}
                                         </tr>
                                       </thead>
-                                      <tbody className="divide-y divide-gray-100">
+                                      <tbody className="divide-y divide-k0-border">
                                         {linkedProducts[partner.id].map((product) => (
-                                          <tr key={product.id} className="hover:bg-gray-50/50 transition-colors">
+                                          <tr key={product.id} className="hover:bg-k0-hairline/50 transition-colors">
                                             <td className="px-4 py-3">
-                                              <div className="font-medium text-gray-900">
+                                              <div className="font-medium text-k0-ink">
                                                 {product.title || product.sourceVariantTitle}
                                                 {(product.variantCount || 0) > 1 && (
-                                                  <span className="ml-2 text-xs font-normal text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">
+                                                  <span className="ml-2 text-xs font-normal text-k0-ink-2 bg-k0-hairline px-1.5 py-0.5 rounded">
                                                     {product.variantCount} variants
                                                   </span>
                                                 )}
                                               </div>
-                                              <div className="text-xs text-gray-500 font-mono mt-0.5">
+                                              <div className="text-xs text-k0-ink-2 font-mono mt-0.5">
                                                 {product.baseSku || product.sourceVariantSku || 'NO SKU'}
                                               </div>
                                             </td>
@@ -1623,8 +1623,8 @@ export default function PoolsAndPartnersClient() {
                                               <span className={cn(
                                                 "inline-flex items-center px-2 py-0.5 rounded text-xs font-medium",
                                                 (product.totalStock || product.sharedQuantity || 0) > 0
-                                                  ? "bg-green-50 text-green-700"
-                                                  : "bg-gray-100 text-gray-500"
+                                                  ? "bg-k0-good/10 text-k0-good"
+                                                  : "bg-k0-hairline text-k0-ink-2"
                                               )}>
                                                 {product.totalStock ?? product.sharedQuantity ?? 0}
                                               </span>
@@ -1640,11 +1640,11 @@ export default function PoolsAndPartnersClient() {
                                                 >
                                                   <div className={cn(
                                                     "w-1.5 h-1.5 rounded-full",
-                                                    product.status === 'active' ? "bg-green-500" : "bg-amber-400"
+                                                    product.status === 'active' ? "bg-k0-good" : "bg-k0-warn"
                                                   )} />
                                                   <span className={cn(
-                                                    "text-xs group-hover:underline decoration-dashed decoration-gray-300",
-                                                    product.status === 'active' ? "text-gray-600" : "text-amber-600 font-medium"
+                                                    "text-xs group-hover:underline decoration-dashed decoration-k0-border",
+                                                    product.status === 'active' ? "text-k0-good" : "text-k0-warn font-medium"
                                                   )}>
                                                     {product.status === 'active' ? 'Active' : 'Paused'}
                                                   </span>
@@ -1658,7 +1658,7 @@ export default function PoolsAndPartnersClient() {
                                                 className={cn(
                                                   "h-7 px-2",
                                                   product.visibilityStatus === 'hidden'
-                                                    ? "text-gray-400 hover:text-gray-600 bg-gray-50"
+                                                    ? "text-k0-ink-3 hover:text-k0-ink-2 bg-k0-hairline"
                                                     : "text-primary hover:text-primary/90 hover:bg-primary/5"
                                                 )}
                                                 onClick={() => {
@@ -1689,7 +1689,7 @@ export default function PoolsAndPartnersClient() {
                                                 <Button
                                                   variant="ghost"
                                                   size="sm"
-                                                  className="h-7 px-2 text-gray-400 hover:text-red-600 hover:bg-red-50"
+                                                  className="h-7 px-2 text-k0-ink-3 hover:text-k0-bad hover:bg-k0-bad/10"
                                                   onClick={() => {
                                                     const linkId = product.links?.[0]?.linkId || product.id;
                                                     revokeProductFromPartnership(
@@ -1731,20 +1731,20 @@ export default function PoolsAndPartnersClient() {
 
       {/* Invite Success Modal */}
       {showInviteSuccess && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-100">
+        <div className="fixed inset-0 bg-k0-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-300">
+          <div className="bg-k0-surface rounded-2xl shadow-2xl max-w-md w-full p-6 transform transition-all scale-100">
             <div className="text-center mb-6">
-              <div className="w-16 h-16 bg-[#F1FFEF] rounded-full flex items-center justify-center mx-auto mb-4">
-                <SendIcon className="w-8 h-8 text-[#91B91F] ml-1" />
+              <div className="w-16 h-16 bg-k0-good/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                <SendIcon className="w-8 h-8 text-k0-good ml-1" />
               </div>
-              <h2 className="text-2xl font-bold text-gray-900">Invite Sent!</h2>
-              <p className="text-gray-600 mt-2">
+              <h2 className="text-2xl font-bold text-k0-ink">Invite Sent!</h2>
+              <p className="text-k0-ink-2 mt-2">
                 We've emailed your partner. You can also copy the link below and send it manually.
               </p>
             </div>
 
-            <div className="bg-gray-50 p-4 rounded-xl border border-gray-200 mb-6 flex items-center justify-between gap-3">
-              <code className="text-sm text-gray-600 break-all w-full h-full flex-1 min-w-0 font-mono bg-white px-2 py-1 rounded border border-gray-100">
+            <div className="bg-k0-hairline p-4 rounded-xl border border-k0-border mb-6 flex items-center justify-between gap-3">
+              <code className="text-sm text-k0-ink-2 break-all w-full h-full flex-1 min-w-0 font-mono bg-k0-surface px-2 py-1 rounded border border-k0-border">
                 {createdInviteLink}
               </code>
               <Button
@@ -1769,21 +1769,21 @@ export default function PoolsAndPartnersClient() {
 
       {/* Confirm Dialog Modal */}
       {confirmDialog?.isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6">
+        <div className="fixed inset-0 bg-k0-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-k0-surface rounded-2xl shadow-2xl max-w-md w-full p-6">
             <div className="flex items-start gap-4 mb-4">
               <div className={cn(
                 "w-12 h-12 rounded-full flex items-center justify-center flex-shrink-0",
-                confirmDialog.destructive ? "bg-red-50" : "bg-amber-50"
+                confirmDialog.destructive ? "bg-k0-bad/10" : "bg-k0-warn/10"
               )}>
                 <AlertTriangleIcon className={cn(
                   "w-6 h-6",
-                  confirmDialog.destructive ? "text-red-500" : "text-amber-500"
+                  confirmDialog.destructive ? "text-k0-bad" : "text-k0-warn"
                 )} />
               </div>
               <div>
-                <h3 className="text-lg font-semibold text-gray-900">{confirmDialog.title}</h3>
-                <p className="text-gray-600 mt-1 text-sm">{confirmDialog.message}</p>
+                <h3 className="text-lg font-semibold text-k0-ink">{confirmDialog.title}</h3>
+                <p className="text-k0-ink-2 mt-1 text-sm">{confirmDialog.message}</p>
               </div>
             </div>
             <div className="flex gap-3 mt-6">
@@ -1798,7 +1798,7 @@ export default function PoolsAndPartnersClient() {
                 className={cn(
                   "flex-1",
                   confirmDialog.destructive
-                    ? "bg-red-600 hover:bg-red-700 text-white"
+                    ? "bg-k0-bad hover:bg-k0-bad/90 text-white"
                     : "bg-primary hover:bg-primary/90 text-white"
                 )}
                 onClick={confirmDialog.onConfirm}
@@ -1812,13 +1812,13 @@ export default function PoolsAndPartnersClient() {
 
       {/* Alert Modal */}
       {alertModal?.isOpen && (
-        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
-          <div className="bg-white rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
-            <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+        <div className="fixed inset-0 bg-k0-ink/60 backdrop-blur-sm flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+          <div className="bg-k0-surface rounded-2xl shadow-2xl max-w-md w-full p-6 text-center">
+            <div className="w-16 h-16 bg-k0-hairline rounded-full flex items-center justify-center mx-auto mb-4">
               <CheckIcon className="w-8 h-8 text-primary" />
             </div>
-            <h3 className="text-xl font-semibold text-gray-900">{alertModal.title}</h3>
-            <p className="text-gray-600 mt-2">{alertModal.message}</p>
+            <h3 className="text-xl font-semibold text-k0-ink">{alertModal.title}</h3>
+            <p className="text-k0-ink-2 mt-2">{alertModal.message}</p>
             <Button
               className="w-full mt-6 bg-primary hover:bg-primary/90 text-white"
               onClick={() => setAlertModal(null)}

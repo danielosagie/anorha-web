@@ -172,7 +172,7 @@ export function SyncInbox({ connectionId }: { connectionId: string }) {
     );
   }
   if (error && !result) {
-    return <p className="py-3 text-sm text-red-600">{error}</p>;
+    return <p className="py-3 text-sm text-k0-bad">{error}</p>;
   }
   if (!result) return null;
 
@@ -181,7 +181,7 @@ export function SyncInbox({ connectionId }: { connectionId: string }) {
   return (
     <div className="space-y-3">
       {actionError && (
-        <p className="text-sm text-red-600" role="alert">
+        <p className="text-sm text-k0-bad" role="alert">
           {actionError} — try again.
         </p>
       )}
@@ -204,7 +204,7 @@ export function SyncInbox({ connectionId }: { connectionId: string }) {
             // race the local state.
             const busy = resolving !== null;
             return (
-              <Card key={item.platformId} className="border-amber-200 bg-amber-50/40">
+              <Card key={item.platformId} className="border-k0-warn/30 bg-k0-warn/10">
                 <CardContent className="py-3">
                   <div className="flex items-center gap-3">
                     {item.imageUrl ? (
@@ -215,7 +215,7 @@ export function SyncInbox({ connectionId }: { connectionId: string }) {
                     )}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-medium truncate">{item.title || item.sku || item.platformId}</p>
-                      <Badge variant="secondary" className="mt-1 bg-amber-100 text-amber-800">
+                      <Badge variant="secondary" className="mt-1 bg-k0-warn/10 text-k0-warn">
                         {REASON_LABEL[item.attention || ''] || item.attention || 'Needs a look'}
                       </Badge>
                     </div>
@@ -252,7 +252,7 @@ export function SyncInbox({ connectionId }: { connectionId: string }) {
                   {/* Multiple candidates: the user picks WHICH one to link —
                       each gets its own Link action (never auto-pick the first). */}
                   {candidates.length > 1 && (
-                    <div className="mt-2 space-y-1 border-t border-amber-100 pt-2">
+                    <div className="mt-2 space-y-1 border-t border-k0-warn/30 pt-2">
                       {candidates.map((c) => (
                         <div key={c.id} className="flex items-center gap-2">
                           <p className="flex-1 min-w-0 text-xs truncate">{c.title || c.sku || c.id}</p>

@@ -42,8 +42,8 @@ const PoolsAndPartnersClient = dynamic(
   {
     loading: () => (
       <div className="flex items-center justify-center py-12">
-        <Loader2 className="h-6 w-6 animate-spin text-gray-400" />
-        <span className="ml-2 text-gray-500">Loading pools...</span>
+        <Loader2 className="h-6 w-6 animate-spin text-k0-ink-3" />
+        <span className="ml-2 text-k0-ink-2">Loading pools...</span>
       </div>
     ),
     ssr: false,
@@ -284,7 +284,7 @@ export default function TeamPage() {
                 )}
               </CardHeader>
               <CardContent className="p-0">
-                <div className="divide-y divide-gray-100">
+                <div className="divide-y divide-k0-border">
                   {memberships?.data?.map((mem) => (
                     <div
                       key={mem.id}
@@ -327,8 +327,8 @@ export default function TeamPage() {
                             className={cn(
                               'font-semibold text-[10px] uppercase tracking-wider',
                               mem.role === 'org:admin'
-                                ? 'border-amber-200 bg-amber-50 text-amber-700'
-                                : 'border-blue-200 bg-blue-50 text-blue-700'
+                                ? 'border-k0-warn/30 bg-k0-warn/10 text-k0-warn'
+                                : 'border-k0-border bg-k0-hairline text-k0-ink-2'
                             )}
                           >
                             {ROLES[mem.role as keyof typeof ROLES] || mem.role}
@@ -353,7 +353,7 @@ export default function TeamPage() {
                             </DropdownMenuTrigger>
                             <DropdownMenuContent align="end">
                               <DropdownMenuItem
-                                className="cursor-pointer text-red-600 focus:text-red-600"
+                                className="cursor-pointer text-k0-bad focus:text-k0-bad"
                                 onClick={() =>
                                   handleRemoveMember(mem.publicUserData.userId!)
                                 }
@@ -380,7 +380,7 @@ export default function TeamPage() {
                   </CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                  <div className="divide-y divide-gray-100">
+                  <div className="divide-y divide-k0-border">
                     {invitations.data.map((inv) => (
                       <div
                         key={inv.id}
@@ -408,7 +408,7 @@ export default function TeamPage() {
                             variant="ghost"
                             size="sm"
                             onClick={() => handleRevokeInvite(inv.id)}
-                            className="text-gray-400 hover:text-red-600"
+                            className="text-k0-ink-3 hover:text-k0-bad"
                           >
                             Revoke
                           </Button>
