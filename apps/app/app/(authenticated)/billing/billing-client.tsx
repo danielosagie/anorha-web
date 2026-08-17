@@ -407,20 +407,20 @@ export function BillingClient({
       </div>
 
       {actionError && (
-        <div className="mb-4 flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-amber-800 text-sm">
+        <div className="mb-4 flex items-start gap-2 rounded-md border border-k0-warn/35 bg-k0-warn/10 px-3 py-2 text-k0-warn text-sm">
           <AlertCircleIcon className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <span>{actionError}</span>
         </div>
       )}
       {!hasSummaryData && (
-        <div className="mb-4 rounded-md border border-yellow-200 bg-yellow-50 px-3 py-2 text-sm text-yellow-800">
+        <div className="mb-4 rounded-md border border-k0-warn/35 bg-k0-warn/10 px-3 py-2 text-sm text-k0-warn">
           Billing data is temporarily unavailable. Use Refresh to retry.
         </div>
       )}
 
       <div className="flex flex-1 flex-col gap-6">
         {/* Main Plan Summary Card */}
-        <Card className="border-2 shadow-none">
+        <Card>
           <CardHeader className="pb-2">
             <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
@@ -567,7 +567,7 @@ export function BillingClient({
         </Card>
 
         {/* Current Usage - Match image's two usage bars style */}
-        <Card className="mt-4 border-2 shadow-none">
+        <Card className="mt-4">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
               {/*<TrendingUpIcon className="size-5" />*/}
@@ -619,7 +619,7 @@ export function BillingClient({
                         ? (onDemandUsed / onDemandLimit) * 100
                         : 0
                     }
-                    className="h-3 bg-gray-200"
+                    className="h-3 bg-k0-hairline"
                     indicatorClassName="bg-primary"
                   />
                 </div>
@@ -629,7 +629,7 @@ export function BillingClient({
                 <Button
                   variant="outline"
                   size="sm"
-                  className="w-fit rounded-md border-2 border-primary bg-primary px-4 py-2 font-normal text-sm text-white transition-all hover:border-primary hover:bg-primary hover:text-white"
+                  className="w-fit"
                   onClick={() => setShowCreditsModal(true)}
                 >
                   <PlusCircleIcon className="mr-2 size-4" />
@@ -638,10 +638,10 @@ export function BillingClient({
 
                 {/* Credits Modal */}
                 {showCreditsModal && (
-                  <Card className="border-2 border-gray-200 bg-white p-4 shadow-lg">
+                  <Card className="bg-k0-surface p-4">
                     <div className="space-y-3">
                       <div>
-                        <h3 className="font-semibold text-gray-900">
+                        <h3 className="font-semibold text-k0-ink">
                           Add Credits
                         </h3>
                         <p className="text-muted-foreground text-xs">
@@ -661,8 +661,8 @@ export function BillingClient({
                             size="sm"
                             className={`px-4 py-2 transition-all ${
                               selectedCreditAmount === amount
-                                ? 'border-2 border-primary bg-primary text-white hover:bg-primary/90'
-                                : 'border-2 border-gray-300 text-black hover:border-primary hover:bg-primary hover:text-white'
+                                ? 'bg-primary text-white hover:bg-primary/90'
+                                : 'border border-k0-border-strong text-k0-ink hover:bg-k0-accent-wash hover:text-k0-accent-ink'
                             }`}
                             onClick={() => setSelectedCreditAmount(amount)}
                           >
@@ -673,7 +673,7 @@ export function BillingClient({
                         ![10, 25, 50, 100].includes(selectedCreditAmount) ? (
                           <div className="relative">
                             <Input
-                              className="w-24 border-2 border-primary focus-visible:ring-primary"
+                              className="w-24"
                               type="number"
                               placeholder="Amount"
                               autoFocus
@@ -687,7 +687,7 @@ export function BillingClient({
                           <Button
                             variant="outline"
                             size="sm"
-                            className="border-2 border-gray-300 px-4 py-2 text-black transition-all hover:border-primary hover:bg-primary hover:text-white"
+                            className="text-k0-ink"
                             onClick={() => setSelectedCreditAmount(75)}
                           >
                             Custom
@@ -699,7 +699,7 @@ export function BillingClient({
                         <Button
                           size="sm"
                           disabled={!selectedCreditAmount || isTopUpLoading}
-                          className="border-2 border-[#a1a1a1] bg-[#a1a1a1] font-semibold text-white transition-all hover:bg-primary/90"
+                          className="font-semibold"
                           onClick={async () => {
                             if (!selectedCreditAmount) return;
                             setIsTopUpLoading(true);
@@ -748,7 +748,7 @@ export function BillingClient({
                         <Button
                           variant="ghost"
                           size="sm"
-                          className="text-gray-500 hover:text-gray-700"
+                          className="text-k0-ink-2 hover:text-k0-ink"
                           onClick={() => setShowCreditsModal(false)}
                         >
                           Cancel
@@ -764,10 +764,10 @@ export function BillingClient({
 
         {/* Partner Upgrade / Payment Method Card - Only shown for partners */}
         {isPartner && (
-          <Card className="border-2 border-yellow-200 bg-yellow-50 shadow-none">
+          <Card className="border-k0-warn/35 bg-k0-warn/10">
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
-                <CreditCardIcon className="size-5 text-yellow-600" />
+                <CreditCardIcon className="size-5 text-k0-warn" />
                 Unlock Full Features
               </CardTitle>
               <CardDescription>
@@ -778,7 +778,7 @@ export function BillingClient({
             <CardContent>
               <div className="space-y-4">
                 {/* Upgrade Option */}
-                <div className="flex items-start gap-3 rounded-lg border-2 border-[#000] bg-white p-3">
+                <div className="flex items-start gap-3 rounded-[var(--radius-row)] border border-k0-border bg-k0-surface p-3">
                   <TrendingUpIcon className="mt-0.5 size-5 flex-shrink-0 text-primary" />
                   <div className="flex-1">
                     <p className="font-medium text-primary">
@@ -793,7 +793,7 @@ export function BillingClient({
                     variant="outline"
                     size="sm"
                     onClick={() => setShowTierSelector(true)}
-                    className="border-2 border-[#000] text-black transition-all hover:border-primary hover:bg-primary hover:text-white"
+                    className="text-k0-ink"
                   >
                     Upgrade
                   </Button>
@@ -801,10 +801,10 @@ export function BillingClient({
 
                 {/* Payment Method Option */}
                 {partnerPaymentMethod?.hasPaymentMethod ? (
-                  <div className="flex items-center justify-between rounded-lg border bg-white p-3">
+                  <div className="flex items-center justify-between rounded-lg border bg-k0-surface p-3">
                     <div className="flex items-center gap-3">
-                      <div className="rounded-lg border bg-gray-50 p-2">
-                        <CreditCardIcon className="size-5 text-gray-600" />
+                      <div className="rounded-lg border bg-k0-hairline p-2">
+                        <CreditCardIcon className="size-5 text-k0-ink-2" />
                       </div>
                       <div>
                         <p className="font-medium">
@@ -828,10 +828,10 @@ export function BillingClient({
                     </Button>
                   </div>
                 ) : (
-                  <div className="flex items-start gap-3 rounded-lg border border-yellow-200 bg-white p-3">
-                    <AlertCircleIcon className="mt-0.5 size-5 flex-shrink-0 text-yellow-600" />
+                  <div className="flex items-start gap-3 rounded-lg border border-k0-warn/35 bg-k0-surface p-3">
+                    <AlertCircleIcon className="mt-0.5 size-5 flex-shrink-0 text-k0-warn" />
                     <div className="flex-1">
-                      <p className="font-medium text-yellow-800">
+                      <p className="font-medium text-k0-warn">
                         Per-usage AI option
                       </p>
                       <p className="text-muted-foreground text-sm">
@@ -844,7 +844,7 @@ export function BillingClient({
                       size="sm"
                       onClick={handleAddPartnerPaymentMethod}
                       disabled={isAddingPaymentMethod}
-                      className="border-2 border-[#000] text-black transition-all hover:border-primary hover:bg-primary hover:text-white"
+                      className="text-k0-ink"
                     >
                       {isAddingPaymentMethod ? 'Loading...' : 'Add Card'}
                     </Button>
@@ -933,7 +933,7 @@ export function BillingClient({
                       <Badge
                         className={
                           inv.status === 'paid'
-                            ? 'border-primary/20 bg-primary/10 text-primary'
+                            ? 'border-k0-border bg-k0-accent-wash text-k0-accent-ink'
                             : undefined
                         }
                       >

@@ -294,9 +294,9 @@ export function SettingsClient({
                   <input
                     type="text"
                     placeholder="Your name"
-                    className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full rounded-md border border-k0-border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                   />
-                  <p className="mt-1 text-gray-500 text-xs">
+                  <p className="mt-1 text-k0-ink-2 text-xs">
                     This is the name that will be displayed on your profile and
                     in emails.
                   </p>
@@ -312,7 +312,7 @@ export function SettingsClient({
                       <input
                         type="date"
                         placeholder="Pick a date"
-                        className="rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="rounded-md border border-k0-border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                       />
                     </PopoverTrigger>
                     <PopoverContent className="w-auto p-0">
@@ -324,7 +324,7 @@ export function SettingsClient({
                       />
                     </PopoverContent>
                   </Popover>
-                  <p className="mt-1 text-gray-500 text-xs">
+                  <p className="mt-1 text-k0-ink-2 text-xs">
                     Your date of birth is used to calculate your age.
                   </p>
                 </div>
@@ -333,13 +333,13 @@ export function SettingsClient({
                   <label className="mb-2 block font-medium text-sm">
                     Language
                   </label>
-                  <select className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary">
+                  <select className="w-full rounded-md border border-k0-border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring">
                     <option>Select Language</option>
                     <option>English</option>
                     <option>Spanish</option>
                     <option>French</option>
                   </select>
-                  <p className="mt-1 text-gray-500 text-xs">
+                  <p className="mt-1 text-k0-ink-2 text-xs">
                     This is the language that will be used in the dashboard.
                   </p>
                 </div>
@@ -372,7 +372,7 @@ export function SettingsClient({
               </CardHeader>
               <CardContent className="space-y-4">
                 {isLoadingAddress ? (
-                  <p className="text-gray-500 text-sm">Loading address...</p>
+                  <p className="text-k0-ink-2 text-sm">Loading address...</p>
                 ) : (
                   <>
                     <div>
@@ -382,7 +382,7 @@ export function SettingsClient({
                       <input
                         type="text"
                         placeholder="123 Main Street"
-                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border border-k0-border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                         value={businessAddress.street1}
                         onChange={(e) =>
                           setBusinessAddress((prev) => ({
@@ -400,7 +400,7 @@ export function SettingsClient({
                       <input
                         type="text"
                         placeholder="Suite 100"
-                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border border-k0-border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                         value={businessAddress.street2}
                         onChange={(e) =>
                           setBusinessAddress((prev) => ({
@@ -418,7 +418,7 @@ export function SettingsClient({
                       <input
                         type="tel"
                         placeholder="+1 (555) 555-5555"
-                        className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                        className="w-full rounded-md border border-k0-border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                         value={businessAddress.phone}
                         onChange={(e) =>
                           setBusinessAddress((prev) => ({
@@ -427,7 +427,7 @@ export function SettingsClient({
                           }))
                         }
                       />
-                      <p className="mt-1 text-gray-500 text-xs">
+                      <p className="mt-1 text-k0-ink-2 text-xs">
                         Required for eBay location creation.
                       </p>
                     </div>
@@ -440,7 +440,7 @@ export function SettingsClient({
                         <input
                           type="text"
                           placeholder="Los Angeles"
-                          className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full rounded-md border border-k0-border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                           value={businessAddress.city}
                           onChange={(e) =>
                             setBusinessAddress((prev) => ({
@@ -455,7 +455,7 @@ export function SettingsClient({
                           State
                         </label>
                         <select
-                          className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full rounded-md border border-k0-border bg-k0-surface px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                           value={businessAddress.state}
                           onChange={(e) =>
                             setBusinessAddress((prev) => ({
@@ -529,7 +529,7 @@ export function SettingsClient({
                         <input
                           type="text"
                           placeholder="90001"
-                          className="w-full rounded-md border border-gray-300 px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full rounded-md border border-k0-border px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                           value={businessAddress.postalCode}
                           onChange={(e) =>
                             setBusinessAddress((prev) => ({
@@ -544,7 +544,7 @@ export function SettingsClient({
                           Country
                         </label>
                         <select
-                          className="w-full rounded-md border border-gray-300 bg-white px-4 py-2 focus:outline-none focus:ring-2 focus:ring-primary"
+                          className="w-full rounded-md border border-k0-border bg-k0-surface px-4 py-2 focus:outline-none focus:ring-2 focus:ring-ring"
                           value={businessAddress.country}
                           onChange={(e) =>
                             setBusinessAddress((prev) => ({
@@ -704,7 +704,7 @@ export function SettingsClient({
               </CardHeader>
               <CardContent className="flex flex-col gap-3">
                 {isLoadingPreferences ? (
-                  <p className="text-gray-500 text-sm">
+                  <p className="text-k0-ink-2 text-sm">
                     Loading preferences...
                   </p>
                 ) : (

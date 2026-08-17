@@ -83,29 +83,25 @@ export default async function DashboardPage() {
     1
   );
   const change = data.revenueChangePercent;
+  // Connections and Orders are hidden from the app until inventory sync ships.
+  // The Connections card survives only as a read-only report, so with nothing
+  // connected it has nothing to say and is dropped rather than left as a stub.
+  const hasConnections = data.connections.length > 0;
 
   return (
     <PageWrapper
       title="Dashboard"
       description="Sales, orders, inventory, and connected channels."
       actions={
-        <>
-          <Button asChild variant="outline">
-            <Link href="/connections">
-              <PlugZapIcon data-icon="inline-start" />
-              Connections
-            </Link>
-          </Button>
-          <Button asChild>
-            <Link href="/products/new">
-              <PackagePlusIcon data-icon="inline-start" />
-              Add product
-            </Link>
-          </Button>
-        </>
+        <Button asChild>
+          <Link href="/products/new">
+            <PackagePlusIcon data-icon="inline-start" />
+            Add product
+          </Link>
+        </Button>
       }
     >
-      <div className="flex flex-col gap-5 lg:gap-6">
+      <div className="flex flex-col gap-[14px]">
         {data.loadError ? (
           <div className="rounded-xl border border-warning/25 bg-warning/8 px-4 py-3 text-sm">
             <p className="font-semibold">
@@ -117,7 +113,7 @@ export default async function DashboardPage() {
 
         <section
           aria-label="Sales overview"
-          className="grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(19rem,0.8fr)]"
+          className="grid gap-[14px] xl:grid-cols-[minmax(0,1.7fr)_minmax(19rem,0.8fr)]"
         >
           <Card className="gap-0 overflow-hidden py-0">
             <CardHeader className="border-b px-5 py-5 md:px-6">
@@ -234,19 +230,17 @@ export default async function DashboardPage() {
           </Card>
         </section>
 
-        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.7fr)_minmax(19rem,0.8fr)]">
+        <section
+          className={
+            hasConnections
+              ? 'grid gap-[14px] xl:grid-cols-[minmax(0,1.7fr)_minmax(19rem,0.8fr)]'
+              : 'grid gap-[14px]'
+          }
+        >
           <Card className="gap-0 overflow-hidden py-0">
             <CardHeader className="border-b px-5 py-5 md:px-6">
               <CardTitle>Recent orders</CardTitle>
               <CardDescription>Latest sales from every channel</CardDescription>
-              <CardAction>
-                <Button asChild variant="ghost" size="sm">
-                  <Link href="/orders">
-                    View all
-                    <ArrowRightIcon data-icon="inline-end" />
-                  </Link>
-                </Button>
-              </CardAction>
             </CardHeader>
             <CardContent className="px-0">
               {data.recentOrders.length === 0 ? (
@@ -293,33 +287,16 @@ export default async function DashboardPage() {
             </CardContent>
           </Card>
 
-          <Card className="gap-0 overflow-hidden py-0">
-            <CardHeader className="border-b px-5 py-5">
-              <CardTitle>Connections</CardTitle>
-              <CardDescription>
-                {data.connections.length.toLocaleString()} active account
-                {data.connections.length === 1 ? '' : 's'}
-              </CardDescription>
-              <CardAction>
-                <Button asChild variant="outline" size="sm">
-                  <Link href="/connections">Manage</Link>
-                </Button>
-              </CardAction>
-            </CardHeader>
-            <CardContent className="px-0">
-              {data.connections.length === 0 ? (
-                <div className="flex min-h-48 flex-col items-center justify-center px-5 text-center">
-                  <p className="font-semibold text-sm">
-                    Connect your first shop
-                  </p>
-                  <p className="mt-1 max-w-56 text-muted-foreground text-xs">
-                    Keep orders and inventory in one calm workspace.
-                  </p>
-                  <Button asChild className="mt-4" size="sm">
-                    <Link href="/connections">Add connection</Link>
-                  </Button>
-                </div>
-              ) : (
+          {hasConnections ? (
+            <Card className="gap-0 overflow-hidden py-0">
+              <CardHeader className="border-b px-5 py-5">
+                <CardTitle>Connections</CardTitle>
+                <CardDescription>
+                  {data.connections.length.toLocaleString()} active account
+                  {data.connections.length === 1 ? '' : 's'}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="px-0">
                 <div className="divide-y">
                   {data.connections.slice(0, 6).map((connection) => (
                     <div
@@ -346,9 +323,9 @@ export default async function DashboardPage() {
                     </div>
                   ))}
                 </div>
-              )}
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          ) : null}
         </section>
 
         <section aria-labelledby="inventory-health-heading">

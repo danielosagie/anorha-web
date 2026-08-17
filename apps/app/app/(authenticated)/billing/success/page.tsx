@@ -46,12 +46,12 @@ export default function BillingSuccessPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen p-4" style={{ backgroundColor: '#FEF4DD' }}>
-      <Card className="max-w-md w-full border-2 shadow-lg">
+    <div className="flex min-h-screen items-center justify-center bg-k0-accent-wash p-4">
+      <Card className="w-full max-w-md">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
-            <div className="bg-green-100 p-3 rounded-full">
-              <CheckCircleIcon className="w-8 h-8 text-green-600" />
+            <div className="bg-k0-good/10 p-3 rounded-full">
+              <CheckCircleIcon className="w-8 h-8 text-k0-good" />
             </div>
           </div>
           <CardTitle className="text-2xl">Payment Successful!</CardTitle>
@@ -95,4 +95,3 @@ export default function BillingSuccessPage() {
     </div>
   );
 }
-

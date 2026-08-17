@@ -585,7 +585,7 @@ export function ProductDetailClient({
                 {activeImages.map((image, index) => (
                   <button
                     aria-label={`View photo ${index + 1}`}
-                    className="relative aspect-square overflow-hidden rounded-md border bg-muted outline-none transition-colors hover:border-foreground/35 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 data-[active=true]:border-primary"
+                    className="relative aspect-square overflow-hidden rounded-md border bg-muted outline-none transition-colors hover:border-foreground/35 focus-visible:border-ring focus-visible:ring-2 focus-visible:ring-ring/40 data-[active=true]:border-k0-ink"
                     data-active={selectedImage === index}
                     key={image.id}
                     onClick={() => setSelectedImage(index)}

@@ -170,7 +170,7 @@ function UserProfile() {
       <div className="flex max-w-4xl flex-col gap-7">
         <Card className="py-0">
           <CardContent className="flex flex-col gap-5 px-5 py-5 sm:flex-row sm:items-center md:px-6 md:py-6">
-            <Avatar className="size-16 border-2 border-card ring-2 ring-primary/25">
+            <Avatar className="size-16 border-2 border-card ring-2 ring-k0-border">
               <AvatarFallback className="bg-primary/15 font-extrabold text-accent-foreground text-lg">
                 {initials.toUpperCase()}
               </AvatarFallback>
@@ -268,7 +268,7 @@ function UserProfile() {
           </Card>
         </section>
 
-        <Card className="border-primary/20 bg-primary/10 py-0">
+        <Card className="border-k0-border bg-k0-accent-wash py-0">
           <CardHeader className="grid-cols-[auto_1fr] items-center gap-x-4 px-5 py-5">
             <span className="row-span-2 flex size-10 items-center justify-center rounded-xl bg-card text-accent-foreground">
               <Globe2Icon className="size-5" />

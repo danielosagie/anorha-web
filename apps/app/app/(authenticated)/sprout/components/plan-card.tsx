@@ -21,7 +21,7 @@ export function PlanCard({
   plan,
 }: PlanCardProps) {
   return (
-    <Card className="gap-4 border-primary/25 bg-card py-5 shadow-none">
+    <Card className="gap-4 bg-card py-5 shadow-none">
       <CardHeader className="gap-2 px-5">
         <p className="font-bold text-[0.6875rem] text-accent-foreground uppercase tracking-[0.1em]">
           Plan

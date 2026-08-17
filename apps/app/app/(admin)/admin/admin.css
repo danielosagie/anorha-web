@@ -1,34 +1,40 @@
+/*
+ * /admin used to carry its own private copy of the K-0 palette, because it was
+ * the only K-0 surface in an otherwise terracotta app. The whole app is K-0 now,
+ * so these are aliases onto the one token set in
+ * packages/design-system/styles/anorha-app-theme.css. The --admin-* names stay
+ * so the 1000 lines of layout below do not have to churn, but no colour is
+ * defined twice any more, and /admin follows dark mode like everything else.
+ *
+ * --admin-accent-fill maps to --k0-accent-fill rather than the board's brighter
+ * green, because .admin-button-primary puts white text on it. Same reason the
+ * rest of the app does.
+ */
 .admin-plane {
-  --admin-page: #f5f5f7;
-  --admin-panel: #ffffff;
-  --admin-card: #fafafa;
-  --admin-border: #e8e8ec;
-  --admin-button-border: #d8d8de;
-  --admin-hairline: #f1f1f3;
-  --admin-text: #131315;
-  --admin-text-secondary: #6e6e73;
-  --admin-text-muted: #a0a0a5;
-  --admin-accent-fill: #93c822;
-  --admin-accent-ink: #4a7c00;
-  --admin-accent-wash: #f2f8e4;
-  --admin-good: #16a34a;
-  --admin-warn: #d39329;
-  --admin-bad: #d8434f;
+  --admin-page: var(--k0-page);
+  --admin-panel: var(--k0-surface);
+  --admin-card: var(--k0-card);
+  --admin-border: var(--k0-border);
+  --admin-button-border: var(--k0-border-strong);
+  --admin-hairline: var(--k0-hairline);
+  --admin-text: var(--k0-ink);
+  --admin-text-secondary: var(--k0-ink-2);
+  --admin-text-muted: var(--k0-ink-3);
+  --admin-accent-fill: var(--k0-accent-fill);
+  --admin-accent-ink: var(--k0-accent-ink);
+  --admin-accent-wash: var(--k0-accent-wash);
+  --admin-good: var(--k0-good);
+  --admin-warn: var(--k0-warn);
+  --admin-bad: var(--k0-bad);
   min-height: 100vh;
   color: var(--admin-text);
   background: var(--admin-page);
-  font-family: var(--admin-font-sans), "Inter Tight", system-ui, sans-serif;
+  font-family: var(--font-geist-sans), "Inter Tight", system-ui, sans-serif;
   font-size: 14px;
   font-synthesis: none;
   line-height: 20px;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-}
-
-@supports (color: color(display-p3 0.617 0.778 0.273)) {
-  .admin-plane {
-    --admin-accent-fill: color(display-p3 0.617 0.778 0.273);
-  }
 }
 
 .admin-plane,
@@ -49,7 +55,7 @@
 }
 
 .admin-plane :focus-visible {
-  outline: 2px solid var(--admin-accent-ink);
+  outline: 2px solid var(--admin-text);
   outline-offset: 2px;
 }
 
@@ -921,12 +927,6 @@
 }
 
 .admin-send-dialog {
-  --admin-panel: #ffffff;
-  --admin-border: #e8e8ec;
-  --admin-button-border: #d8d8de;
-  --admin-text: #131315;
-  --admin-text-secondary: #6e6e73;
-  --admin-accent-fill: #93c822;
   width: min(440px, calc(100vw - 40px));
   gap: 0;
   padding: 0;
@@ -936,7 +936,7 @@
   border-radius: 14px;
   background: var(--admin-panel);
   box-shadow: 0 24px 80px rgb(19 19 21 / 18%);
-  font-family: var(--admin-font-sans), "Inter Tight", system-ui, sans-serif;
+  font-family: var(--font-geist-sans), "Inter Tight", system-ui, sans-serif;
 }
 
 .admin-send-dialog-header {

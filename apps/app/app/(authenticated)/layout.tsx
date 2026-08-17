@@ -5,7 +5,7 @@ import { showBetaFeature } from '@repo/feature-flags';
 import { NotificationsProvider } from '@repo/notifications/components/provider';
 import { secure } from '@repo/security';
 import { redirect } from 'next/navigation';
-import type { ReactNode } from 'react';
+import type { CSSProperties, ReactNode } from 'react';
 import { OrgGuard } from './components/org-guard';
 import { PostHogIdentifier } from './components/posthog-identifier';
 import { GlobalSidebar } from './components/sidebar';
@@ -75,10 +75,15 @@ const AppLayout = async ({ children }: AppLayoutProperties) => {
   return (
     <NotificationsProvider userId={user.id}>
       <OrgGuard>
-        <SidebarProvider>
+        {/* Board shell: 10px page gutter plus the 232px rail. The gap element
+            and the rail both read --sidebar-width, so it has to be set here on
+            the provider, not on the rail. */}
+        <SidebarProvider
+          style={{ '--sidebar-width': '242px' } as CSSProperties}
+        >
           <GlobalSidebar>
             {betaFeature && (
-              <div className="mx-4 mt-4 rounded-2xl border border-primary/20 bg-primary/10 px-4 py-3 text-center font-semibold text-accent-foreground text-sm md:mx-8 lg:mx-10">
+              <div className="mx-4 mt-4 rounded-2xl border border-k0-border bg-k0-accent-wash px-4 py-3 text-center font-semibold text-accent-foreground text-sm md:mx-8 lg:mx-10">
                 A new beta feature is ready to try.
               </div>
             )}

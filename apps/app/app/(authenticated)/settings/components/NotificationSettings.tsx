@@ -173,7 +173,7 @@ export function NotificationSettings({ orgId, isAdmin, userId }: NotificationSet
       {/* Sync Errors */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <AlertCircleIcon className="size-5 text-orange-500" />
+          <AlertCircleIcon className="size-5 text-k0-warn" />
           <div>
             <Label className="text-base font-semibold">Sync Errors</Label>
             <p className="text-sm text-muted-foreground">Receive notifications when platform syncs fail</p>
@@ -219,7 +219,7 @@ export function NotificationSettings({ orgId, isAdmin, userId }: NotificationSet
       {/* Low Stock Alerts */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <PackageIcon className="size-5 text-blue-500" />
+          <PackageIcon className="size-5 text-k0-ink-2" />
           <div>
             <Label className="text-base font-semibold">Low Stock Alerts</Label>
             <p className="text-sm text-muted-foreground">Get notified when inventory falls below threshold</p>
@@ -296,7 +296,7 @@ export function NotificationSettings({ orgId, isAdmin, userId }: NotificationSet
       {/* Inventory Reports */}
       <div className="space-y-4">
         <div className="flex items-center gap-2">
-          <BarChartIcon className="size-5 text-green-500" />
+          <BarChartIcon className="size-5 text-k0-accent-ink" />
           <div>
             <Label className="text-base font-semibold">Inventory Reports</Label>
             <p className="text-sm text-muted-foreground">Receive periodic summaries of your inventory</p>
@@ -391,4 +391,3 @@ export function NotificationSettings({ orgId, isAdmin, userId }: NotificationSet
     </div>
   );
 }
-

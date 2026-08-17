@@ -48,7 +48,7 @@ export function BillingActions({
   return (
     <div className="flex flex-col gap-2">
       {error && (
-        <div className="text-sm text-red-600 bg-red-50 px-3 py-2 rounded">
+        <div className="text-sm text-k0-bad bg-k0-bad/10 px-3 py-2 rounded">
           {error}
         </div>
       )}

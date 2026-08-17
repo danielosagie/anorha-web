@@ -118,8 +118,8 @@ export default function LinkComputer() {
       }}
     >
       <div style={{ maxWidth: 340 }}>
-        <p style={{ fontSize: 18, fontWeight: 700, color: '#18181B', margin: '0 0 8px' }}>{title}</p>
-        <p style={{ color: '#52525b', fontSize: 15, lineHeight: '22px', margin: 0 }}>{body}</p>
+        <p style={{ fontSize: 18, fontWeight: 700, color: 'var(--k0-ink)', margin: '0 0 8px' }}>{title}</p>
+        <p style={{ color: 'var(--k0-ink-2)', fontSize: 15, lineHeight: '22px', margin: 0 }}>{body}</p>
         {phase === 'confirm' && (
           <>
             <p
@@ -127,7 +127,7 @@ export default function LinkComputer() {
                 fontSize: 28,
                 fontWeight: 700,
                 letterSpacing: '0.12em',
-                color: '#18181B',
+                color: 'var(--k0-ink)',
                 fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace',
                 margin: '20px 0',
               }}
@@ -142,8 +142,8 @@ export default function LinkComputer() {
                 padding: '12px 16px',
                 fontSize: 15,
                 fontWeight: 600,
-                color: '#FFFFFF',
-                background: '#18181B',
+                color: 'var(--k0-surface)',
+                background: 'var(--k0-ink)',
                 border: 'none',
                 borderRadius: 10,
                 cursor: 'pointer',

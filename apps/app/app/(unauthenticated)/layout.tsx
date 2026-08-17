@@ -23,9 +23,18 @@ const AuthLayout = ({ children }: AuthLayoutProps) => (
             height: '100%',
           }}
         >
+          {/*
+            The split itself is deliberately untouched: image left, form right.
+            Only the three gradient stops move, from the terracotta ramp
+            (#8b4a3a / #db8769 / #dfd5a5) to the K-0 green ramp. They are the
+            first thing a new seller sees, and they were the last terracotta
+            left in the app. The ramp runs deep to hero green to pale, rather
+            than through the board's bright #93C822, which the shader pushes to
+            neon across a panel this large. The design is called soft.
+          */}
           <ShaderGradient
             control="query"
-            urlString="https://shadergradient.co/customize?animate=on&axesHelper=off&brightness=1.4&cAzimuthAngle=180&cDistance=3.6&cPolarAngle=90&cameraZoom=1&color1=%238b4a3a&color2=%23db8769&color3=%23dfd5a5&destination=onCanvas&embedMode=off&envPreset=city&format=gif&fov=45&frameRate=10&gizmoHelper=hide&grain=on&lightType=3d&pixelDensity=1&positionX=-1.4&positionY=0&positionZ=0&range=disabled&rangeEnd=40&rangeStart=0&reflection=0.1&rotationX=0&rotationY=10&rotationZ=50&shader=defaults&type=plane&uAmplitude=1&uDensity=1.3&uFrequency=5.5&uSpeed=0.3&uStrength=4&uTime=0&wireframe=false"
+            urlString="https://shadergradient.co/customize?animate=on&axesHelper=off&brightness=1.4&cAzimuthAngle=180&cDistance=3.6&cPolarAngle=90&cameraZoom=1&color1=%232f4312&color2=%236f9c26&color3=%23cde6a0&destination=onCanvas&embedMode=off&envPreset=city&format=gif&fov=45&frameRate=10&gizmoHelper=hide&grain=on&lightType=3d&pixelDensity=1&positionX=-1.4&positionY=0&positionZ=0&range=disabled&rangeEnd=40&rangeStart=0&reflection=0.1&rotationX=0&rotationY=10&rotationZ=50&shader=defaults&type=plane&uAmplitude=1&uDensity=1.3&uFrequency=5.5&uSpeed=0.3&uStrength=4&uTime=0&wireframe=false"
           />
         </ShaderGradientCanvas>
       </div>

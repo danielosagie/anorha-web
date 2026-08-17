@@ -83,7 +83,7 @@ export default function DesktopCallback() {
       }}
     >
       <div style={{ maxWidth: 340 }}>
-        <p style={{ color: '#52525b', fontSize: 15, lineHeight: '22px', margin: 0 }}>{msg}</p>
+        <p style={{ color: 'var(--k0-ink-2)', fontSize: 15, lineHeight: '22px', margin: 0 }}>{msg}</p>
         {ready && (
           <button
             type="button"
@@ -94,8 +94,8 @@ export default function DesktopCallback() {
               padding: '12px 16px',
               fontSize: 15,
               fontWeight: 600,
-              color: '#FFFFFF',
-              background: '#18181B',
+              color: 'var(--k0-surface)',
+              background: 'var(--k0-ink)',
               border: 'none',
               borderRadius: 10,
               cursor: 'pointer',
