@@ -1,5 +1,6 @@
 import { init } from '@sentry/nextjs';
 import { keys } from './keys';
+import { dropPrivateIntakeEvent } from './privacy';
 
 export const initializeSentry = () => {
   const dsn = keys().NEXT_PUBLIC_SENTRY_DSN;
@@ -9,7 +10,11 @@ export const initializeSentry = () => {
     return;
   }
 
-  const opts = { dsn };
+  const opts = {
+    beforeSend: dropPrivateIntakeEvent,
+    beforeSendTransaction: dropPrivateIntakeEvent,
+    dsn,
+  };
 
   if (process.env.NEXT_RUNTIME === 'nodejs') {
     init(opts);

@@ -23,6 +23,7 @@ import {
   CreditCardIcon,
   ExternalLinkIcon,
   LayoutDashboardIcon,
+  LinkIcon,
   Settings2Icon,
   SmartphoneIcon,
   UsersIcon,
@@ -45,6 +46,7 @@ type NavItem = {
 const platformItems: readonly NavItem[] = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon },
   { title: 'Inventory', url: '/inventory', icon: BoxesIcon },
+  { title: 'Intake links', url: '/intake-links', icon: LinkIcon },
 ];
 
 const accountItems: readonly NavItem[] = [
