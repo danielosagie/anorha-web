@@ -33,9 +33,14 @@ export function PageWrapper({
 }: PageWrapperProps) {
   return (
     <main className="flex min-h-0 flex-1 flex-col gap-[14px] overflow-auto px-5 pt-6 pb-8 md:px-9 md:pt-8 md:pb-10">
+      {/*
+        The board puts the actions on the title's baseline. There is no room for
+        that on a phone: side by side, the buttons win the width and the title
+        collapses to an ellipsis. Below md the header stacks instead.
+      */}
       {(title || onBack) && (
-        <header className="flex w-full shrink-0 items-start justify-between gap-4 pb-3">
-          <div className="flex min-w-0 items-center gap-2">
+        <header className="flex w-full shrink-0 flex-col gap-3 pb-3 md:flex-row md:items-start md:justify-between md:gap-4">
+          <div className="flex min-w-0 items-start gap-2">
             <SidebarTrigger className="-ml-1 size-8 shrink-0 rounded-[var(--radius-row)] md:hidden" />
             <div className="flex min-w-0 flex-col gap-1">
               {title && (
@@ -50,7 +55,7 @@ export function PageWrapper({
               )}
             </div>
           </div>
-          <div className="flex shrink-0 flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 md:shrink-0">
             {onBack && (
               <Button variant="outline" onClick={onBack}>
                 <ArrowLeftIcon data-icon="inline-start" />
