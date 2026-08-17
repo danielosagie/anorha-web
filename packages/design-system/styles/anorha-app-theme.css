@@ -1,141 +1,279 @@
+/*
+ * Anorha soft-green theme, Paper file 01KV30HYMB2AD5V4CV8VYVYB8V page K-0
+ * "Web app: soft (green)". Extracted spec: docs/web-rebuild/design/_design-system.md.
+ *
+ * Layer 1 (--k0-*) is the board's literal palette. Layer 2 maps the shadcn
+ * semantic tokens onto it, so every existing screen re-skins without edits.
+ * Nothing outside these two layers may hardcode a colour.
+ *
+ * Shell mapping, from shadcn sidebar variant="inset":
+ *   --sidebar     the grey page ground behind everything   K-0 #F5F5F7
+ *   --background  the floating white content panel         K-0 #FFFFFF
+ *   --card        cards sitting inside that panel          K-0 #FAFAFA
+ *
+ * Green, receipted: the boards fill primary buttons with #93C822, which carries
+ * white label text at 2.0:1. The founder's sproutTheme hero green #6F9C26 is the
+ * app's hero green and clears 3.3:1, so it takes the text-carrying fill role.
+ * #93C822 is kept as --k0-accent-bright for the decorative fills the boards use
+ * it for and that carry no text: chart bars, meter fills.
+ */
+
 .anorha-app-theme,
 .anorha-intake-theme,
 :root:has(.anorha-intake-theme) {
-  --anorhaAccent: oklch(0.62 0.14 42);
-  --anorhaAccentDeep: oklch(0.47 0.11 38);
-  --brand: var(--anorhaAccent);
-  --brand-foreground: oklch(0.985 0.004 100);
-  --brand-muted: oklch(0.95 0.035 52);
-  --brand-muted-foreground: var(--anorhaAccentDeep);
-  --background: oklch(0.965 0.006 100);
-  --foreground: oklch(0.2 0.008 100);
-  --card: oklch(0.995 0.004 100);
-  --card-foreground: oklch(0.2 0.008 100);
-  --popover: oklch(0.995 0.004 100);
-  --popover-foreground: oklch(0.2 0.008 100);
-  --primary: var(--anorhaAccent);
-  --primary-foreground: oklch(0.985 0.004 100);
-  --secondary: oklch(0.94 0.006 100);
-  --secondary-foreground: oklch(0.3 0.01 100);
-  --muted: oklch(0.94 0.006 100);
-  --muted-foreground: oklch(0.5 0.012 100);
-  --accent: oklch(0.95 0.035 52);
-  --accent-foreground: var(--anorhaAccentDeep);
-  --destructive: oklch(0.58 0.2 26);
-  --destructive-foreground: oklch(0.985 0.004 100);
-  --success: oklch(0.59 0.16 145);
-  --warning: oklch(0.58 0.13 72);
-  --border: oklch(0.9 0.008 100);
-  --input: oklch(0.9 0.008 100);
-  --ring: var(--anorhaAccent);
-  --radius: 1rem;
-  --sidebar: oklch(0.992 0.003 100);
-  --sidebar-foreground: oklch(0.25 0.012 100);
-  --sidebar-primary: var(--anorhaAccentDeep);
-  --sidebar-primary-foreground: oklch(0.985 0.004 100);
-  --sidebar-accent: oklch(0.955 0.006 100);
-  --sidebar-accent-foreground: oklch(0.25 0.012 100);
-  --sidebar-border: oklch(0.9 0.008 100);
-  --sidebar-ring: var(--anorhaAccent);
+  /* Board literals */
+  --k0-page: #f5f5f7;
+  --k0-surface: #ffffff;
+  --k0-card: #fafafa;
+  --k0-border: #e8e8ec;
+  --k0-border-strong: #d8d8de;
+  --k0-hairline: #f1f1f3;
+  --k0-ink: #131315;
+  --k0-ink-2: #6e6e73;
+  --k0-ink-3: #a0a0a5;
+  --k0-accent-fill: #6f9c26;
+  --k0-accent-bright: #93c822;
+  --k0-accent-ink: #4a7c00;
+  --k0-accent-wash: #f2f8e4;
+  --k0-good: #16a34a;
+  --k0-warn: #d39329;
+  --k0-bad: #d8434f;
+
+  /* Radii, board section 4 */
+  --radius-content: 16px;
+  --radius-card: 14px;
+  --radius-control: 11px;
+  --radius-row: 10px;
+  --radius-chip: 8px;
+  --radius-kbd: 6px;
+  --radius-pill: 999px;
+
+  /* Type scale entries the board needs and the shadcn scale lacks */
+  --text-nav: 15px;
+  --text-card-title: 16px;
+  --text-page-title: 22px;
+
+  /* Board geometry, so the shell reads from one place */
+  --shell-gutter: 10px;
+  --shell-gap: 8px;
+  --sidebar-rail-width: 232px;
+
+  /* Semantic mapping */
+  --anorhaAccent: var(--k0-accent-fill);
+  --anorhaAccentDeep: var(--k0-accent-ink);
+  --brand: var(--k0-accent-fill);
+  --brand-foreground: var(--k0-surface);
+  --brand-muted: var(--k0-accent-wash);
+  --brand-muted-foreground: var(--k0-accent-ink);
+  --background: var(--k0-surface);
+  --foreground: var(--k0-ink);
+  --card: var(--k0-card);
+  --card-foreground: var(--k0-ink);
+  --popover: var(--k0-surface);
+  --popover-foreground: var(--k0-ink);
+  --primary: var(--k0-accent-fill);
+  --primary-foreground: var(--k0-surface);
+  --secondary: var(--k0-surface);
+  --secondary-foreground: var(--k0-ink);
+  --muted: var(--k0-hairline);
+  --muted-foreground: var(--k0-ink-2);
+  --accent: var(--k0-accent-wash);
+  --accent-foreground: var(--k0-accent-ink);
+  --destructive: var(--k0-bad);
+  --destructive-foreground: var(--k0-surface);
+  --success: var(--k0-good);
+  --warning: var(--k0-warn);
+  --border: var(--k0-border);
+  --input: var(--k0-border);
+  --ring: var(--k0-accent-ink);
+  --radius: var(--radius-row);
+  --sidebar: var(--k0-page);
+  --sidebar-foreground: var(--k0-ink-2);
+  --sidebar-primary: var(--k0-accent-wash);
+  --sidebar-primary-foreground: var(--k0-accent-ink);
+  --sidebar-accent: var(--k0-hairline);
+  --sidebar-accent-foreground: var(--k0-ink);
+  --sidebar-border: var(--k0-border);
+  --sidebar-ring: var(--k0-accent-ink);
+
+  /* Charts read as one green ramp, brightest bar last, per the dashboard board */
+  --chart-1: var(--k0-accent-bright);
+  --chart-2: #b3d961;
+  --chart-3: #cde6a0;
+  --chart-4: #dcecc0;
+  --chart-5: #e9f3da;
+
+  color: var(--foreground);
+  font-synthesis: none;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
+@supports (color: color(display-p3 1 1 1)) {
+  .anorha-app-theme,
+  .anorha-intake-theme,
+  :root:has(.anorha-intake-theme) {
+    --k0-accent-bright: color(display-p3 0.617 0.778 0.273);
+  }
+}
+
+/*
+ * Dark. Every token defined in light is redefined here. The board is light-only,
+ * so the ramp is derived: the light plane order is page < card < surface by
+ * lightness, and dark keeps that same rank so the panel still reads as lifted.
+ * The hero green does not shift between modes; only --k0-accent-ink lightens,
+ * because #4A7C00 is unreadable on a dark ground.
+ */
 :where(.anorha-app-theme).dark,
 .dark:has(.anorha-intake-theme),
 .dark .anorha-intake-theme,
 .anorha-intake-theme.dark {
-  --background: oklch(0.19 0.008 100);
-  --foreground: oklch(0.94 0.006 100);
-  --card: oklch(0.23 0.009 100);
-  --card-foreground: oklch(0.94 0.006 100);
-  --popover: oklch(0.23 0.009 100);
-  --popover-foreground: oklch(0.94 0.006 100);
-  --primary: oklch(0.72 0.13 45);
-  --primary-foreground: oklch(0.985 0.004 100);
-  --secondary: oklch(0.28 0.01 100);
-  --secondary-foreground: oklch(0.91 0.006 100);
-  --muted: oklch(0.28 0.01 100);
-  --muted-foreground: oklch(0.7 0.01 100);
-  --accent: oklch(0.34 0.045 42);
-  --accent-foreground: oklch(0.86 0.08 50);
-  --border: oklch(0.34 0.012 100);
-  --input: oklch(0.34 0.012 100);
-  --ring: oklch(0.72 0.13 45);
-  --sidebar: oklch(0.22 0.008 100);
-  --sidebar-foreground: oklch(0.91 0.006 100);
-  --sidebar-primary: oklch(0.64 0.12 43);
-  --sidebar-primary-foreground: oklch(0.985 0.004 100);
-  --sidebar-accent: oklch(0.3 0.01 100);
-  --sidebar-accent-foreground: oklch(0.91 0.006 100);
-  --sidebar-border: oklch(0.34 0.012 100);
-  --sidebar-ring: oklch(0.72 0.13 45);
+  --k0-page: #121214;
+  --k0-surface: #1e1e21;
+  --k0-card: #191a1c;
+  --k0-border: #2c2c31;
+  --k0-border-strong: #3c3c43;
+  --k0-hairline: #242428;
+  --k0-ink: #f5f5f7;
+  --k0-ink-2: #a8a8ae;
+  --k0-ink-3: #7b7b82;
+  --k0-accent-ink: #a7d64b;
+  --k0-accent-wash: #23301a;
+  --k0-good: #35c46a;
+  --k0-warn: #e0a94a;
+  --k0-bad: #e86a74;
+
+  --brand-foreground: #ffffff;
+  --primary-foreground: #ffffff;
+  --destructive-foreground: #ffffff;
+
+  --chart-2: #7fae35;
+  --chart-3: #5f8324;
+  --chart-4: #45601a;
+  --chart-5: #2f4312;
 }
 
 @theme inline {
   --color-warning: var(--warning);
+  --color-k0-page: var(--k0-page);
+  --color-k0-surface: var(--k0-surface);
+  --color-k0-card: var(--k0-card);
+  --color-k0-border: var(--k0-border);
+  --color-k0-border-strong: var(--k0-border-strong);
+  --color-k0-hairline: var(--k0-hairline);
+  --color-k0-ink: var(--k0-ink);
+  --color-k0-ink-2: var(--k0-ink-2);
+  --color-k0-ink-3: var(--k0-ink-3);
+  --color-k0-accent-fill: var(--k0-accent-fill);
+  --color-k0-accent-bright: var(--k0-accent-bright);
+  --color-k0-accent-ink: var(--k0-accent-ink);
+  --color-k0-accent-wash: var(--k0-accent-wash);
+  --color-k0-good: var(--k0-good);
+  --color-k0-warn: var(--k0-warn);
+  --color-k0-bad: var(--k0-bad);
+  --text-nav: var(--text-nav);
+  --text-card-title: var(--text-card-title);
+  --text-page-title: var(--text-page-title);
 }
 
-@layer components {
-  :where(
-      .anorha-app-theme,
-      .anorha-intake-theme,
-      :root:has(.anorha-intake-theme)
-    )
-    [data-slot="button"] {
-    border-radius: 999px;
-    font-weight: 650;
-  }
+/*
+ * These rules are deliberately UNLAYERED. With cascade layers, layer order beats
+ * specificity outright, and Tailwind emits utilities in a layer that comes after
+ * @layer components. cva puts `rounded-md text-sm` on every button, so the same
+ * rules inside @layer components lose no matter how specific they are: that is
+ * why the previous `border-radius: 999px` on [data-slot="button"] never rendered
+ * a pill. Unlayered declarations outrank every layered one, so these win.
+ *
+ * The cost is that a caller's `className="rounded-lg"` on a Button no longer
+ * wins either. That is intended: this is the board geometry, not a default.
+ * Anything that genuinely needs to opt out should use a `!` utility.
+ */
+/*
+ * Board section 5.2: buttons are 34px pills, label 13/18, no shadow.
+ * The primary carries asymmetric 14/16 inline padding as optical balance
+ * against its leading icon.
+ */
+.anorha-app-theme [data-slot="button"],
+.anorha-intake-theme [data-slot="button"] {
+  border-radius: var(--radius-pill);
+  box-shadow: none;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+}
 
-  :where(
-      .anorha-app-theme,
-      .anorha-intake-theme,
-      :root:has(.anorha-intake-theme)
-    )
-    [data-slot="input"] {
-    min-height: 2.75rem;
-    border-radius: 0.875rem;
-    box-shadow: none;
-  }
+.anorha-app-theme [data-slot="button"][data-size="default"],
+.anorha-intake-theme [data-slot="button"][data-size="default"] {
+  height: 34px;
+  padding-inline: 14px;
+}
 
-  :where(
-      .anorha-app-theme,
-      .anorha-intake-theme,
-      :root:has(.anorha-intake-theme)
-    )
-    [data-slot="card"] {
-    border-radius: 1.125rem;
-    box-shadow: none;
-  }
+.anorha-app-theme [data-slot="button"][data-variant="default"],
+.anorha-intake-theme [data-slot="button"][data-variant="default"] {
+  font-weight: 600;
+}
 
-  :where(
-      .anorha-app-theme,
-      .anorha-intake-theme,
-      :root:has(.anorha-intake-theme)
-    )
-    [data-intake-status="accepted"] {
-    border-color: color-mix(in oklch, var(--success) 35%, var(--border));
-    background: color-mix(in oklch, var(--success) 10%, var(--card));
-    color: var(--success);
-  }
+.anorha-app-theme
+  [data-slot="button"][data-variant="default"][data-size="default"],
+.anorha-intake-theme
+  [data-slot="button"][data-variant="default"][data-size="default"] {
+  padding-left: 14px;
+  padding-right: 16px;
+}
 
-  :where(
-      .anorha-app-theme,
-      .anorha-intake-theme,
-      :root:has(.anorha-intake-theme)
-    )
-    [data-intake-status="new"] {
-    border-color: color-mix(in oklch, var(--primary) 35%, var(--border));
-    background: color-mix(in oklch, var(--primary) 10%, var(--card));
-    color: var(--brand-muted-foreground);
-  }
+.anorha-app-theme [data-slot="button"][data-variant="outline"],
+.anorha-intake-theme [data-slot="button"][data-variant="outline"] {
+  border-color: var(--k0-border-strong);
+  color: var(--k0-ink);
+}
 
-  :where(
-      .anorha-app-theme,
-      .anorha-intake-theme,
-      :root:has(.anorha-intake-theme)
-    )
-    [data-intake-status="reviewing"] {
-    border-color: color-mix(in oklch, var(--warning) 35%, var(--border));
-    background: color-mix(in oklch, var(--warning) 10%, var(--card));
-    color: var(--warning);
-  }
+.anorha-app-theme [data-slot="input"],
+.anorha-app-theme [data-slot="select-trigger"],
+.anorha-app-theme [data-slot="textarea"],
+.anorha-intake-theme [data-slot="input"],
+.anorha-intake-theme [data-slot="select-trigger"],
+.anorha-intake-theme [data-slot="textarea"] {
+  border-radius: var(--radius-control);
+  box-shadow: none;
+}
+
+.anorha-app-theme [data-slot="card"],
+.anorha-intake-theme [data-slot="card"] {
+  border-radius: var(--radius-card);
+  box-shadow: none;
+}
+
+.anorha-app-theme [data-slot="badge"],
+.anorha-intake-theme [data-slot="badge"] {
+  border-radius: var(--radius-pill);
+}
+
+.anorha-app-theme [data-slot="popover-content"],
+.anorha-app-theme [data-slot="dropdown-menu-content"],
+.anorha-app-theme [data-slot="select-content"],
+.anorha-intake-theme [data-slot="popover-content"],
+.anorha-intake-theme [data-slot="dropdown-menu-content"],
+.anorha-intake-theme [data-slot="select-content"] {
+  border-radius: var(--radius-card);
+}
+
+.anorha-app-theme [data-intake-status="accepted"],
+.anorha-intake-theme [data-intake-status="accepted"] {
+  border-color: color-mix(in srgb, var(--k0-good) 35%, var(--k0-border));
+  background: color-mix(in srgb, var(--k0-good) 10%, var(--k0-card));
+  color: var(--k0-good);
+}
+
+.anorha-app-theme [data-intake-status="new"],
+.anorha-intake-theme [data-intake-status="new"] {
+  border-color: color-mix(in srgb, var(--k0-accent-fill) 35%, var(--k0-border));
+  background: var(--k0-accent-wash);
+  color: var(--k0-accent-ink);
+}
+
+.anorha-app-theme [data-intake-status="reviewing"],
+.anorha-intake-theme [data-intake-status="reviewing"] {
+  border-color: color-mix(in srgb, var(--k0-warn) 35%, var(--k0-border));
+  background: color-mix(in srgb, var(--k0-warn) 10%, var(--k0-card));
+  color: var(--k0-warn);
 }

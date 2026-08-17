@@ -3,26 +3,32 @@
 @import "@repo/design-system/styles/anorha-app-theme.css";
 
 @source "./**/*.{ts,tsx}";
+@source "../components/**/*.{ts,tsx}";
 
 @layer base {
   body {
-    background: var(--background);
-    font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+    background: var(--k0-page);
+    color: var(--foreground);
+    font-feature-settings: normal;
   }
 
   ::selection {
-    background: color-mix(in oklch, var(--primary) 34%, transparent);
+    background: color-mix(in srgb, var(--k0-accent-fill) 30%, transparent);
   }
 }
 
+/*
+ * Settings uses bare inputs rather than the design-system Input, so it needs the
+ * same control geometry the theme layer gives [data-slot="input"].
+ */
 .anorha-settings input,
 .anorha-settings select {
-  min-height: 2.75rem;
+  min-height: 2.5rem;
   border: 1px solid var(--input);
-  border-radius: 0.875rem;
-  background: var(--card);
+  border-radius: var(--radius-control);
+  background: var(--k0-surface);
   color: var(--foreground);
-  padding-inline: 0.875rem;
+  padding-inline: 0.75rem;
   font-size: 0.875rem;
   outline: none;
   box-shadow: none;
@@ -31,5 +37,5 @@
 .anorha-settings input:focus-visible,
 .anorha-settings select:focus-visible {
   border-color: var(--ring);
-  box-shadow: 0 0 0 3px color-mix(in oklch, var(--ring) 24%, transparent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--ring) 24%, transparent);
 }
