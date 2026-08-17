@@ -14,9 +14,7 @@ import {
   LayoutDashboardIcon,
   LinkIcon,
   PackageIcon,
-  PlugIcon,
   SettingsIcon,
-  ShoppingBagIcon,
   SmartphoneIcon,
   UsersIcon,
 } from 'lucide-react';
@@ -38,11 +36,14 @@ type NavItem = {
 // Board 2SAU-0 groups Platform as Dashboard, Inventory, Orders, Connections.
 // Intake links is a shipped surface with its own board (2UHG-0) and sits with
 // them; it postdates the shell board.
+//
+// Orders and Connections are deliberately absent. Inventory sync is not ready,
+// and a nav entry is a promise that the thing behind it works. The routes stay
+// live and reachable by URL, they are simply not advertised. Put them back here
+// when sync ships; nothing else has to change.
 const platformItems: readonly NavItem[] = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon },
   { title: 'Inventory', url: '/inventory', icon: PackageIcon },
-  { title: 'Orders', url: '/orders', icon: ShoppingBagIcon },
-  { title: 'Connections', url: '/connections', icon: PlugIcon },
   { title: 'Intake links', url: '/intake-links', icon: LinkIcon },
 ];
 

@@ -55,7 +55,7 @@
 }
 
 .admin-plane :focus-visible {
-  outline: 2px solid var(--admin-accent-ink);
+  outline: 2px solid var(--admin-text);
   outline-offset: 2px;
 }
 

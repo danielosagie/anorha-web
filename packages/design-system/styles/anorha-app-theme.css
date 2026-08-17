@@ -81,7 +81,10 @@
   --warning: var(--k0-warn);
   --border: var(--k0-border);
   --input: var(--k0-border);
-  --ring: var(--k0-accent-ink);
+  /* Founder veto: no green borders anywhere, focus rings included. The focus
+     indicator is the ink colour, which is the highest-contrast neutral in both
+     modes. Green stays a fill and a text colour. */
+  --ring: var(--k0-ink);
   --radius: var(--radius-row);
   --sidebar: var(--k0-page);
   --sidebar-foreground: var(--k0-ink-2);
@@ -90,7 +93,7 @@
   --sidebar-accent: var(--k0-hairline);
   --sidebar-accent-foreground: var(--k0-ink);
   --sidebar-border: var(--k0-border);
-  --sidebar-ring: var(--k0-accent-ink);
+  --sidebar-ring: var(--k0-ink);
 
   /* Charts read as one green ramp, brightest bar last, per the dashboard board */
   --chart-1: var(--k0-accent-bright);
@@ -317,7 +320,7 @@
 
 .anorha-app-theme [data-intake-status="new"],
 .anorha-intake-theme [data-intake-status="new"] {
-  border-color: color-mix(in srgb, var(--k0-accent-fill) 35%, var(--k0-border));
+  border-color: var(--k0-border);
   background: var(--k0-accent-wash);
   color: var(--k0-accent-ink);
 }
