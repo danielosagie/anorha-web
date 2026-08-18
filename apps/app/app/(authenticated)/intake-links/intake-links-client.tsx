@@ -5,7 +5,10 @@ import type {
   CreatedIntakeLink,
   LinkMetrics,
   SellerIntakeLink,
+  SellerStoreLink,
   SellerSubmissionListItem,
+  SlugCheckResponse,
+  UpdatedIntakeLinkSlug,
 } from '@/lib/intake-contract';
 import { useAuth } from '@repo/auth/client';
 import { IntakeLinkCard } from '@repo/design-system/components/intake/intake-link-card';
@@ -32,15 +35,23 @@ import {
 import { Input } from '@repo/design-system/components/ui/input';
 import { Label } from '@repo/design-system/components/ui/label';
 import { Spinner } from '@repo/design-system/components/ui/spinner';
-import { CheckIcon, CopyIcon, PlusIcon, RefreshCwIcon } from 'lucide-react';
+import {
+  CheckIcon,
+  ChevronDownIcon,
+  CopyIcon,
+  PlusIcon,
+  RefreshCwIcon,
+} from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { type FormEvent, useEffect, useState } from 'react';
+import { type FormEvent, useCallback, useEffect, useState } from 'react';
 import { PageWrapper } from '../components/page-wrapper';
+import { StoreLinkCard } from './store-link-card';
 
 function blankLink(created: CreatedIntakeLink): SellerIntakeLink {
   return {
     Id: created.id,
     Name: created.name,
+    Slug: created.slug,
     Status: created.status,
     AnalysisActorUserId: null,
     CreatedByUserId: '',
@@ -50,6 +61,7 @@ function blankLink(created: CreatedIntakeLink): SellerIntakeLink {
     RevokedAt: null,
     metrics: { items: 0, new: 0, reviewed: 0 },
     bytes: { reserved: 0, actual: 0 },
+    storeUrl: created.storeUrl,
   };
 }
 
@@ -199,29 +211,34 @@ export function IntakeLinksClient({
   error,
   initialCursor,
   initialLinks,
+  initialStoreLink,
   initialSubmissions,
   metrics,
 }: {
   error: boolean;
   initialCursor: string | null;
   initialLinks: SellerIntakeLink[];
+  initialStoreLink: SellerStoreLink;
   initialSubmissions: SellerSubmissionListItem[];
   metrics: LinkMetrics;
 }) {
   const { getToken } = useAuth();
   const router = useRouter();
   const [links, setLinks] = useState(initialLinks);
+  const [storeLink, setStoreLink] = useState(initialStoreLink);
   const [createdUrls, setCreatedUrls] = useState<Record<string, string>>({});
   const [submissions, setSubmissions] = useState(initialSubmissions);
   const [cursor, setCursor] = useState(initialCursor);
   const [queuePending, setQueuePending] = useState(false);
   const [queueError, setQueueError] = useState(false);
+  const [showOtherLinks, setShowOtherLinks] = useState(false);
 
   useEffect(() => {
     setLinks(initialLinks);
+    setStoreLink(initialStoreLink);
     setSubmissions(initialSubmissions);
     setCursor(initialCursor);
-  }, [initialCursor, initialLinks, initialSubmissions]);
+  }, [initialCursor, initialLinks, initialStoreLink, initialSubmissions]);
 
   const onCreated = (created: CreatedIntakeLink) => {
     setLinks((current) => [blankLink(created), ...current]);
@@ -230,6 +247,73 @@ export function IntakeLinksClient({
       [created.id]: created.publicUrl,
     }));
   };
+
+  const authorized = useCallback(async () => {
+    const token = await getToken();
+    if (!token) {
+      throw new Error('Sign in required.');
+    }
+    return token;
+  }, [getToken]);
+
+  const checkSlug = useCallback(
+    async (slug: string) => {
+      const token = await authorized();
+      return intakeRequest<SlugCheckResponse>({
+        path: `/links/slug-available?slug=${encodeURIComponent(slug)}`,
+        token,
+      });
+    },
+    [authorized]
+  );
+
+  const saveSlug = useCallback(
+    async (slug: string) => {
+      const token = await authorized();
+      // The first store link does not exist yet, so saving it creates the link
+      // and claims the address in one request instead of leaving a seller with
+      // a nameless link they then have to find and edit.
+      if (storeLink.linkId) {
+        const updated = await intakeRequest<UpdatedIntakeLinkSlug>({
+          path: `/links/${encodeURIComponent(storeLink.linkId)}/slug`,
+          token,
+          method: 'PATCH',
+          body: { slug },
+        });
+        setStoreLink((current) => ({
+          ...current,
+          slug: updated.slug,
+          storeUrl: updated.storeUrl,
+          suggestedSlug: null,
+        }));
+        setLinks((current) =>
+          current.map((link) =>
+            link.Id === updated.id
+              ? { ...link, Slug: updated.slug, storeUrl: updated.storeUrl }
+              : link
+          )
+        );
+        return;
+      }
+
+      const created = await intakeRequest<CreatedIntakeLink>({
+        path: '/links',
+        token,
+        method: 'POST',
+        body: { name: 'Store link', slug },
+      });
+      onCreated(created);
+      setStoreLink((current) => ({
+        ...current,
+        linkId: created.id,
+        name: created.name,
+        slug: created.slug,
+        storeUrl: created.storeUrl,
+        suggestedSlug: null,
+      }));
+    },
+    [authorized, storeLink.linkId]
+  );
 
   const loadMore = async () => {
     if (!cursor) {
@@ -258,10 +342,15 @@ export function IntakeLinksClient({
     }
   };
 
+  // The store link is one row; everything else is the old many-links model kept
+  // alive so no printed token breaks. It stays collapsed until there is more
+  // than the store link to look at.
+  const otherLinks = links.filter((link) => link.Id !== storeLink.linkId);
+
   return (
     <PageWrapper
       actions={<CreateLinkDialog onCreated={onCreated} />}
-      title="Intake links"
+      title="Store link"
     >
       {error ? (
         <Card>
@@ -277,39 +366,51 @@ export function IntakeLinksClient({
         </Card>
       ) : (
         <div className="flex flex-col gap-8">
+          <StoreLinkCard
+            onCheck={checkSlug}
+            onSave={saveSlug}
+            storeLink={storeLink}
+          />
+
           <Metrics metrics={metrics} />
 
-          <section className="flex flex-col gap-4">
-            <h2 className="font-semibold text-lg">Links</h2>
-            {links.length === 0 ? (
-              <Card>
-                <CardHeader>
-                  <CardTitle>No links</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <p className="text-muted-foreground text-sm">
-                    Create a link to receive items.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-4 xl:grid-cols-2">
-                {links.map((link) => (
-                  <IntakeLinkCard
-                    href={`/intake-links/${link.Id}`}
-                    key={link.Id}
-                    link={{
-                      id: link.Id,
-                      name: link.Name,
-                      status: link.Status,
-                      metrics: link.metrics,
-                    }}
-                    publicUrl={createdUrls[link.Id]}
-                  />
-                ))}
-              </div>
-            )}
-          </section>
+          {otherLinks.length > 0 ? (
+            <section className="flex flex-col gap-4">
+              <Button
+                aria-expanded={showOtherLinks}
+                className="self-start"
+                onClick={() => setShowOtherLinks((current) => !current)}
+                type="button"
+                variant="ghost"
+              >
+                <ChevronDownIcon
+                  aria-hidden
+                  className={
+                    showOtherLinks ? 'rotate-180 transition' : 'transition'
+                  }
+                  data-icon="inline-start"
+                />
+                More links ({otherLinks.length})
+              </Button>
+              {showOtherLinks ? (
+                <div className="grid gap-4 xl:grid-cols-2">
+                  {otherLinks.map((link) => (
+                    <IntakeLinkCard
+                      href={`/intake-links/${link.Id}`}
+                      key={link.Id}
+                      link={{
+                        id: link.Id,
+                        name: link.Name,
+                        status: link.Status,
+                        metrics: link.metrics,
+                      }}
+                      publicUrl={link.storeUrl ?? createdUrls[link.Id]}
+                    />
+                  ))}
+                </div>
+              ) : null}
+            </section>
+          ) : null}
 
           <section className="flex flex-col gap-4">
             <h2 className="font-semibold text-lg">Submissions</h2>

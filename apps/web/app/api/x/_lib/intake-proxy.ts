@@ -144,9 +144,15 @@ async function readMetadataBody(request: Request): Promise<MetadataBody> {
   return { body };
 }
 
+/**
+ * `segment` is whatever the customer has in their URL bar. It is a store-link
+ * slug or a share token, and this proxy deliberately does not care which: the
+ * backend owns the one resolver that tells them apart. Adding a shape guard
+ * here would silently break one of the two the next time either shape changes.
+ */
 export async function proxyIntakeRequest(input: {
   request: Request;
-  token: string;
+  segment: string;
   suffix?: string;
 }): Promise<Response> {
   const rateLimit = await enforceRateLimit(input.request);
@@ -163,7 +169,7 @@ export async function proxyIntakeRequest(input: {
   const { body } = metadata;
 
   const suffix = input.suffix ? `/${input.suffix}` : '';
-  const upstreamUrl = `${baseUrl}/intake/public/links/${encodeURIComponent(input.token)}${suffix}`;
+  const upstreamUrl = `${baseUrl}/intake/public/links/${encodeURIComponent(input.segment)}${suffix}`;
 
   try {
     const upstream = await fetch(upstreamUrl, {
