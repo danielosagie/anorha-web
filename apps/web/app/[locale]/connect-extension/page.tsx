@@ -24,8 +24,6 @@ export const metadata: Metadata = {
 };
 
 const extensionIdPattern = /^[a-p]{32}$/;
-const chromeWebStoreHome =
-  'https://chromewebstore.google.com/category/extensions';
 
 // This page mints a pairing grant and hands it to `extensionId`. Letting the URL
 // choose that id meant ?extId=<attacker-extension> pointed a signed-in seller's
@@ -140,7 +138,7 @@ export default async function ConnectExtensionPage({
   const extensionId = extensionOverride ?? env.NEXT_PUBLIC_ANORHA_EXTENSION_ID;
   const storeUrl = env.NEXT_PUBLIC_ANORHA_EXTENSION_ID
     ? `https://chromewebstore.google.com/detail/${env.NEXT_PUBLIC_ANORHA_EXTENSION_ID}`
-    : chromeWebStoreHome;
+    : undefined;
 
   return (
     <ConnectExtensionClient

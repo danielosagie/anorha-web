@@ -14,6 +14,7 @@ type PairingState =
   | 'idle'
   | 'connecting'
   | 'connected'
+  | 'configuration-missing'
   | 'extension-not-installed'
   | 'failed';
 
@@ -35,7 +36,7 @@ type PairingResponse = {
 type ConnectExtensionClientProps = {
   autoConnect: boolean;
   extensionId?: string;
-  storeUrl: string;
+  storeUrl?: string;
 };
 
 const stateCopy: Record<
@@ -56,6 +57,12 @@ const stateCopy: Record<
     description: 'You can close this tab and return to Anorha.',
     eyebrow: 'Ready',
     title: 'Extension connected',
+  },
+  'configuration-missing': {
+    description:
+      'This deployment is missing NEXT_PUBLIC_ANORHA_EXTENSION_ID.',
+    eyebrow: 'Setup required',
+    title: 'Extension ID missing',
   },
   'extension-not-installed': {
     description: 'Install the Anorha extension, then return here to connect.',
@@ -140,7 +147,7 @@ export function ConnectExtensionClient({
   storeUrl,
 }: ConnectExtensionClientProps) {
   const [pairingState, setPairingState] = useState<PairingState>(
-    autoConnect ? 'connecting' : 'idle'
+    !extensionId ? 'configuration-missing' : autoConnect ? 'connecting' : 'idle'
   );
   const autoStarted = useRef(false);
   const requestId = useRef(0);
@@ -150,7 +157,7 @@ export function ConnectExtensionClient({
     requestId.current = currentRequest;
 
     if (!extensionId) {
-      setPairingState('failed');
+      setPairingState('configuration-missing');
       return;
     }
 
@@ -233,6 +240,9 @@ export function ConnectExtensionClient({
           {pairingState === 'failed' ? (
             <CircleAlert size={25} strokeWidth={2} />
           ) : null}
+          {pairingState === 'configuration-missing' ? (
+            <CircleAlert size={25} strokeWidth={2} />
+          ) : null}
           {pairingState === 'idle' ? (
             <Cable size={25} strokeWidth={2} />
           ) : null}
@@ -263,7 +273,7 @@ export function ConnectExtensionClient({
           </button>
         ) : null}
 
-        {pairingState === 'extension-not-installed' ? (
+        {pairingState === 'extension-not-installed' && storeUrl ? (
           <a
             className={styles.action}
             href={storeUrl}
