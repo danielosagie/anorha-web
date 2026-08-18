@@ -33,6 +33,8 @@ export const env = createEnv({
     ANORHA_CONNECT_EXTID_ALLOWLIST: z.string().optional(),
   },
   client: {
+    // Optional so a misconfigured deployment can render an honest connect-page
+    // error instead of failing the whole web build.
     NEXT_PUBLIC_ANORHA_EXTENSION_ID: z
       .string()
       .regex(/^[a-p]{32}$/)
