@@ -51,14 +51,14 @@ function PageFrame({ children }: { children: ReactNode }) {
 }
 
 export function PublicIntakePage() {
-  const params = useParams<{ token: string }>();
+  const params = useParams<{ link: string }>();
   const [state, setState] = useState<PageState>({ kind: 'loading' });
 
   const load = useCallback(async () => {
     setState({ kind: 'loading' });
     let response: Response;
     try {
-      response = await fetch(`/api/x/${encodeURIComponent(params.token)}`, {
+      response = await fetch(`/api/x/${encodeURIComponent(params.link)}`, {
         cache: 'no-store',
       });
     } catch {
@@ -85,7 +85,7 @@ export function PublicIntakePage() {
       return;
     }
     setState({ kind: 'ready', link: body as PublicIntakeLink });
-  }, [params.token]);
+  }, [params.link]);
 
   useEffect(() => {
     load().catch(() => setState({ kind: 'error' }));

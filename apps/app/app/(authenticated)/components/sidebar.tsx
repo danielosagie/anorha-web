@@ -44,7 +44,7 @@ type NavItem = {
 const platformItems: readonly NavItem[] = [
   { title: 'Dashboard', url: '/', icon: LayoutDashboardIcon },
   { title: 'Inventory', url: '/inventory', icon: PackageIcon },
-  { title: 'Intake links', url: '/intake-links', icon: LinkIcon },
+  { title: 'Store link', url: '/intake-links', icon: LinkIcon },
 ];
 
 const accountItems: readonly NavItem[] = [

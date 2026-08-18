@@ -5,8 +5,8 @@ export const dynamic = 'force-dynamic';
 
 export async function GET(
   request: Request,
-  context: { params: Promise<{ token: string }> }
+  context: { params: Promise<{ link: string }> }
 ) {
-  const { token } = await context.params;
-  return proxyIntakeRequest({ request, token });
+  const { link } = await context.params;
+  return proxyIntakeRequest({ request, segment: link });
 }

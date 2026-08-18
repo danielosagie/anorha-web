@@ -69,19 +69,19 @@ export function IntakeForm({
 }: {
   mediaPolicy: PublicIntakeLink['mediaPolicy'];
 }) {
-  const params = useParams<{ token: string }>();
-  const tokenPath = encodeURIComponent(params.token);
+  const params = useParams<{ link: string }>();
+  const linkPath = encodeURIComponent(params.link);
 
   const reserveSubmission = (payload: IntakeReservationPayload) =>
     bffAction<IntakeReservation>({
-      path: `/api/x/${tokenPath}/submissions`,
+      path: `/api/x/${linkPath}/submissions`,
       payload,
       fallback: 'Submission could not start. Check the fields and try again.',
     });
 
   const finalizeSubmission = (payload: IntakeFinalizePayload) =>
     bffAction<IntakeFinalizeResponse>({
-      path: `/api/x/${tokenPath}/submissions/${encodeURIComponent(payload.submissionId)}/finalize`,
+      path: `/api/x/${linkPath}/submissions/${encodeURIComponent(payload.submissionId)}/finalize`,
       payload: {
         finalizeToken: payload.finalizeToken,
         media: payload.media,

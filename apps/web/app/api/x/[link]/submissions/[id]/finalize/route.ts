@@ -5,12 +5,12 @@ export const dynamic = 'force-dynamic';
 
 export async function POST(
   request: Request,
-  context: { params: Promise<{ token: string; id: string }> }
+  context: { params: Promise<{ link: string; id: string }> }
 ) {
-  const { id, token } = await context.params;
+  const { id, link } = await context.params;
   return proxyIntakeRequest({
     request,
-    token,
+    segment: link,
     suffix: `submissions/${encodeURIComponent(id)}/finalize`,
   });
 }

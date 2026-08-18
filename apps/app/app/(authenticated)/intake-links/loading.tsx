@@ -3,7 +3,7 @@ import { PageWrapper } from '../components/page-wrapper';
 
 export default function IntakeLinksLoading() {
   return (
-    <PageWrapper title="Intake links">
+    <PageWrapper title="Store link">
       <div className="flex flex-col gap-6">
         <Skeleton className="h-32 w-full rounded-[1.125rem]" />
         <div className="grid gap-4 xl:grid-cols-2">

@@ -27,6 +27,7 @@ export type LinkLimits = {
 export type SellerIntakeLink = {
   Id: string;
   Name: string;
+  Slug: string | null;
   Status: IntakeLinkStatus;
   AnalysisActorUserId: string | null;
   CreatedByUserId: string;
@@ -36,6 +37,30 @@ export type SellerIntakeLink = {
   RevokedAt: string | null;
   metrics: LinkMetrics;
   bytes: LinkBytes;
+  // The slug address. Named storeUrl and never publicUrl: publicUrl is the
+  // token capability, which a list response must never carry.
+  storeUrl: string | null;
+};
+
+// The one link a seller prints. Derived server-side from the slugged active
+// link, falling back to the oldest active one.
+export type SellerStoreLink = {
+  // Rendered as given. The client never guesses the public host.
+  storeUrlPrefix: string;
+  linkId: string | null;
+  name: string | null;
+  slug: string | null;
+  storeUrl: string | null;
+  suggestedSlug: string | null;
+  otherLinkCount: number;
+};
+
+export type SlugCheckResponse = {
+  slug: string;
+  available: boolean;
+  reason: string | null;
+  message: string | null;
+  suggestions: string[];
 };
 
 export type SellerSubmissionListItem = {
@@ -64,6 +89,7 @@ export type SellerLinkListResponse = {
     end: string;
     timezone: 'UTC';
   };
+  storeLink: SellerStoreLink;
   links: SellerIntakeLink[];
   metrics: LinkMetrics;
 };
@@ -114,10 +140,21 @@ export type SellerSubmissionDetailResponse = {
 export type CreatedIntakeLink = {
   id: string;
   name: string;
+  slug: string | null;
   status: 'active';
   publicToken: string;
   publicUrl: string;
+  storeUrl: string | null;
   createdAt: string;
+};
+
+export type UpdatedIntakeLinkSlug = {
+  id: string;
+  name: string;
+  slug: string;
+  status: IntakeLinkStatus;
+  storeUrl: string;
+  updatedAt: string;
 };
 
 export type RevealedIntakeLink = {
