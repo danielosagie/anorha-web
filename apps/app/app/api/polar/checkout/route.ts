@@ -1,8 +1,7 @@
-import { Checkout } from '@polar-sh/nextjs';
 import { auth } from '@repo/auth/server';
-import { polarServer } from '@repo/payments/keys';
 import { type NextRequest, NextResponse } from 'next/server';
-import { getPolarProductIds } from '@/lib/polar-config';
+import { getPolarProductIds } from '../../../../lib/polar-config';
+import { getSupabaseToken } from '../../billing/_utils';
 
 /**
  * Checkout is authenticated and only ever sells the tiers we actually offer.
@@ -44,6 +43,65 @@ function resolveOrigin(req: NextRequest): string {
   return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
 }
 
+type CheckoutTier = 'Growth' | 'Teams';
+type CheckoutReceipt = {
+  action: 'redirect';
+  provider: 'polar' | 'shopify';
+  url: string;
+};
+
+function configuredCheckoutProducts(): Array<{
+  productId: string;
+  tier: CheckoutTier;
+}> {
+  const productIds = getPolarProductIds();
+  return [
+    { productId: productIds.growth, tier: 'Growth' as const },
+    { productId: productIds.teams, tier: 'Teams' as const },
+  ].filter(
+    (product): product is { productId: string; tier: CheckoutTier } =>
+      typeof product.productId === 'string' &&
+      product.productId.length > 0 &&
+      !product.productId.startsWith('missing-')
+  );
+}
+
+function parseCheckoutReceipt(value: unknown): CheckoutReceipt | null {
+  if (!value || typeof value !== 'object') {
+    return null;
+  }
+
+  const receipt = value as Readonly<Record<string, unknown>>;
+  if (
+    receipt.action !== 'redirect' ||
+    (receipt.provider !== 'polar' && receipt.provider !== 'shopify') ||
+    typeof receipt.url !== 'string'
+  ) {
+    return null;
+  }
+
+  return {
+    action: receipt.action,
+    provider: receipt.provider,
+    url: receipt.url,
+  };
+}
+
+function checkoutRedirectUrl(receipt: CheckoutReceipt): URL {
+  const redirectUrl = new URL(receipt.url);
+  const isLocalHttp =
+    redirectUrl.protocol === 'http:' &&
+    (redirectUrl.hostname === 'localhost' ||
+      redirectUrl.hostname === '127.0.0.1');
+  if (redirectUrl.protocol !== 'https:' && !isLocalHttp) {
+    throw new Error('Backend returned a non-HTTPS checkout redirect');
+  }
+  if (receipt.provider === 'polar') {
+    redirectUrl.searchParams.set('theme', 'light');
+  }
+  return redirectUrl;
+}
+
 export const GET = async (req: NextRequest) => {
   const { userId } = await auth();
   if (!userId) {
@@ -51,11 +109,9 @@ export const GET = async (req: NextRequest) => {
   }
 
   const requested = new URL(req.url).searchParams.get('products');
-  const allowed = Object.values(getPolarProductIds()).filter(
-    (id): id is string => typeof id === 'string' && !id.startsWith('missing-')
-  );
+  const configuredProducts = configuredCheckoutProducts();
 
-  if (allowed.length === 0) {
+  if (configuredProducts.length === 0) {
     // Otherwise a deploy without the product ids rejects every checkout with a
     // 400 that reads like the caller's fault.
     console.error(
@@ -70,66 +126,61 @@ export const GET = async (req: NextRequest) => {
     );
   }
 
-  if (!requested || !allowed.includes(requested)) {
+  const selectedProduct = configuredProducts.find(
+    (product) => product.productId === requested
+  );
+  if (!requested || !selectedProduct) {
     console.warn(`[polar/checkout] Rejected product id: ${requested}`);
     return NextResponse.json({ error: 'Unknown product' }, { status: 400 });
   }
 
-  const accessToken = process.env.POLAR_ACCESS_TOKEN?.trim();
-  if (!accessToken) {
-    console.error('[polar/checkout] POLAR_ACCESS_TOKEN is not set');
-    return NextResponse.json(
-      {
-        error: 'Checkout unavailable',
-        reasonCode: 'POLAR_CHECKOUT_CONFIG_MISSING',
-      },
-      { status: 503 }
-    );
-  }
-
-  let server: 'production' | 'sandbox';
   try {
-    server = polarServer();
-  } catch (error) {
-    console.error('[polar/checkout] POLAR_API_SERVER is invalid:', error);
-    return NextResponse.json(
-      {
-        error: 'Checkout unavailable',
-        reasonCode: 'POLAR_CHECKOUT_CONFIG_INVALID',
+    const { token, apiBase } = await getSupabaseToken();
+    const response = await fetch(`${apiBase}/billing/checkout`, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/json',
       },
-      { status: 503 }
-    );
-  }
-
-  try {
-    const checkout = Checkout({
-      accessToken,
-      successUrl: `${resolveOrigin(req)}/billing/success`,
-      server,
-      theme: 'light',
+      body: JSON.stringify({
+        tier: selectedProduct.tier,
+        successUrl: `${resolveOrigin(req)}/billing/success?checkout_id={CHECKOUT_ID}`,
+      }),
     });
 
-    const response = await checkout(req);
-    // @polar-sh/nextjs catches Polar SDK failures and returns Response.error(),
-    // so those failures do not reach this route's catch block.
-    if (response.type === 'error' || response.status === 0) {
-      console.error('[polar/checkout] POLAR_CHECKOUT_UPSTREAM_FAILED');
+    if (!response.ok) {
+      const detail = await response.text();
+      console.error(
+        `[polar/checkout] Backend checkout failed: ${response.status} ${detail.slice(0, 500)}`
+      );
       return NextResponse.json(
         {
           error: 'Checkout failed',
-          reasonCode: 'POLAR_CHECKOUT_UPSTREAM_FAILED',
+          reasonCode: 'BILLING_CHECKOUT_BACKEND_REJECTED',
         },
-        { status: 502 }
+        {
+          status:
+            response.status >= 400 && response.status <= 599
+              ? response.status
+              : 502,
+        }
       );
     }
 
-    return response;
+    const receipt = parseCheckoutReceipt(
+      await response.json().catch(() => null)
+    );
+    if (!receipt) {
+      throw new Error('Backend returned an invalid checkout redirect receipt');
+    }
+
+    return NextResponse.redirect(checkoutRedirectUrl(receipt));
   } catch (error) {
     console.error('[polar/checkout] Checkout failed:', error);
     return NextResponse.json(
       {
         error: 'Checkout failed',
-        reasonCode: 'POLAR_CHECKOUT_UPSTREAM_FAILED',
+        reasonCode: 'BILLING_CHECKOUT_FAILED',
       },
       { status: 502 }
     );

@@ -32,6 +32,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { PageWrapper } from '../components/page-wrapper';
 import { BillingActions } from './billing-actions';
+import { parseBillingCredits } from './billing-contract';
 import { TierSelector } from './tier-selector';
 
 interface BillingClientProps {
@@ -249,6 +250,27 @@ export function BillingClient({
   const showOnDemandUsage = false; // Hide on-demand usage/limit per request
 
   const pricePerScan = aiUnitCents / 100;
+  const billingCredits = parseBillingCredits(summary);
+  const creditUsageTotalCents = billingCredits
+    ? billingCredits.usedCents + billingCredits.remainingCents
+    : 0;
+  const creditUsagePercent =
+    billingCredits && creditUsageTotalCents > 0
+      ? Math.min((billingCredits.usedCents / creditUsageTotalCents) * 100, 100)
+      : 0;
+  const creditMixTotalCents = billingCredits
+    ? billingCredits.planCents + billingCredits.topupRemainingCents
+    : 0;
+  const planCreditPercent =
+    billingCredits && creditMixTotalCents > 0
+      ? (billingCredits.planCents / creditMixTotalCents) * 100
+      : 0;
+  const addedCreditPercent =
+    billingCredits && creditMixTotalCents > 0
+      ? (billingCredits.topupRemainingCents / creditMixTotalCents) * 100
+      : 0;
+
+  const formatCents = (value: number) => formatCurrency(value / 100);
 
   // Plan copy based on current tier
   let planTitle = 'No active plan';
@@ -566,42 +588,131 @@ export function BillingClient({
           </CardContent>
         </Card>
 
-        {/* Current Usage - Match image's two usage bars style */}
+        {/* Credit balance */}
         <Card className="mt-4">
           <CardHeader className="pb-2">
-            <CardTitle className="flex items-center gap-2 text-base">
-              {/*<TrendingUpIcon className="size-5" />*/}
-              Current Usage
-            </CardTitle>
-            <CardDescription>
-              Usage for the current billing period
-            </CardDescription>
+            <CardTitle className="text-base">Credit balance</CardTitle>
+            <CardDescription>Plan and added credit this period</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="flex flex-col gap-4">
-              {/* "AI Scans" progress bar */}
-              <div>
-                <div className="mb-1 flex items-baseline justify-between text-xs">
-                  <span className="font-semibold">AI Credits</span>
-                  <span className="font-mono">
-                    {aiCreditsUsed} / {aiCreditsLimit} credits
-                    {aiOverageDollars > 0 && (
-                      <span className="ml-2 text-muted-foreground">
-                        (${aiOverageDollars.toFixed(2)} overage)
+              {billingCredits ? (
+                <>
+                  <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm md:grid-cols-4">
+                    <div>
+                      <p className="text-muted-foreground text-xs">Balance</p>
+                      <p className="mt-0.5 font-semibold tabular-nums">
+                        {formatCents(billingCredits.remainingCents)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">Used</p>
+                      <p className="mt-0.5 font-semibold tabular-nums">
+                        {formatCents(billingCredits.usedCents)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">
+                        Plan credit
+                      </p>
+                      <p className="mt-0.5 font-semibold tabular-nums">
+                        {formatCents(billingCredits.planCents)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-muted-foreground text-xs">
+                        Added credit
+                      </p>
+                      <p className="mt-0.5 font-semibold tabular-nums">
+                        {formatCents(billingCredits.topupRemainingCents)}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-baseline justify-between gap-3 text-xs">
+                      <span className="font-semibold">Credit use</span>
+                      <span className="font-mono tabular-nums">
+                        {formatCents(billingCredits.usedCents)} used
                       </span>
-                    )}
-                  </span>
-                </div>
-                <Progress
-                  value={
-                    aiCreditsLimit > 0
-                      ? Math.min((aiCreditsUsed / aiCreditsLimit) * 100, 100)
-                      : 0
-                  }
-                  className="h-3 bg-muted"
-                  indicatorClassName="bg-primary"
-                />
-              </div>
+                    </div>
+                    <Progress
+                      value={creditUsagePercent}
+                      className="h-3 bg-muted"
+                      indicatorClassName="bg-primary"
+                      aria-label="Credit use"
+                      aria-valuetext={`${formatCents(billingCredits.usedCents)} used, ${formatCents(billingCredits.remainingCents)} remaining`}
+                    />
+                    <div className="flex items-center justify-between gap-3 text-muted-foreground text-xs">
+                      <span>Used</span>
+                      <span>
+                        {formatCents(billingCredits.remainingCents)} remaining
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="flex flex-col gap-2">
+                    <div className="flex items-baseline justify-between gap-3 text-xs">
+                      <span className="font-semibold">Credit mix</span>
+                      <span className="font-mono tabular-nums">
+                        {formatCents(billingCredits.totalCents)} total
+                      </span>
+                    </div>
+                    <div
+                      className="flex h-3 w-full overflow-hidden rounded-full bg-muted"
+                      role="img"
+                      aria-label={`Plan credit ${formatCents(billingCredits.planCents)}, added credit ${formatCents(billingCredits.topupRemainingCents)}`}
+                    >
+                      <div
+                        className="h-full bg-primary"
+                        style={{ width: `${planCreditPercent}%` }}
+                      />
+                      <div
+                        className="h-full bg-chart-4"
+                        style={{ width: `${addedCreditPercent}%` }}
+                      />
+                    </div>
+                    <div className="flex flex-wrap items-center gap-x-5 gap-y-1 text-xs">
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          className="size-2 rounded-full bg-primary"
+                          aria-hidden="true"
+                        />
+                        Plan credit
+                      </span>
+                      <span className="inline-flex items-center gap-1.5">
+                        <span
+                          className="size-2 rounded-full bg-chart-4"
+                          aria-hidden="true"
+                        />
+                        Added credit
+                      </span>
+                    </div>
+                  </div>
+
+                  {billingCredits.topupTotalCents > 0 ? (
+                    <p className="text-muted-foreground text-xs">
+                      Top-ups: {formatCents(billingCredits.topupTotalCents)}{' '}
+                      total
+                      {billingCredits.lastTopupCents !== null &&
+                      billingCredits.lastTopupAt
+                        ? `, last added ${formatCents(billingCredits.lastTopupCents)} on ${new Date(
+                            billingCredits.lastTopupAt
+                          ).toLocaleDateString('en-US', {
+                            month: 'short',
+                            day: 'numeric',
+                            year: 'numeric',
+                          })}`
+                        : ''}
+                    </p>
+                  ) : null}
+                </>
+              ) : (
+                <p className="text-muted-foreground text-sm">
+                  Credit data is temporarily unavailable.
+                </p>
+              )}
+
               {/* On-Demand Usage progress bar (hidden per request) */}
               {showOnDemandUsage && (
                 <div>
